@@ -124,7 +124,75 @@ export default defineAppConfig({
       }
     },
     taginput: {
-      root: 'relative w-full'
+      root: 'relative w-full',
+      base: 'flex flex-wrap',
+      background: 'bg-white dark:bg-gray-800',
+      rounded: 'rounded-md',
+      size: {
+        '2xs': 'text-xs',
+        xs: 'text-xs',
+        sm: 'text-sm',
+        md: 'text-sm',
+        lg: 'text-sm',
+        xl: 'text-base'
+      },
+      gap: {
+        '2xs': 'gap-1',
+        xs: 'gap-1.5',
+        sm: 'gap-1.5',
+        md: 'gap-1.5',
+        lg: 'gap-2.5',
+        xl: 'gap-2.5'
+      },
+      padding: {
+        '2xs': 'px-2 py-1',
+        xs: 'px-2.5 py-[0.3125rem]',
+        sm: 'px-2.5 py-[0.3125rem]',
+        md: 'px-3 py-[0.4375rem]',
+        lg: 'px-3.5 py-[0.5625rem]',
+        xl: 'px-3.5 py-[0.5625rem]'
+      },
+      color: {
+        white: {
+          outline:
+            'bg-white dark:bg-gray-900 text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus-within:ring-primary-500 dark:focus-within:ring-primary-400'
+        },
+        gray: {
+          outline:
+            'bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus-within:ring-primary-500 dark:focus-within:ring-primary-400'
+        }
+      },
+      variant: {
+        outline:
+          'bg-transparent text-gray-900 dark:text-white ring-1 ring-inset ring-{color}-500 dark:ring-{color}-400 focus-within:ring-{color}-500 dark:focus-within:ring-{color}-400',
+        none: 'bg-transparent focus:ring-0 focus:shadow-none'
+      },
+      input: {
+        wrapper: 'relative inline-flex grow shrink',
+        base: 'w-full outline-none py-px bg-transparent',
+        placeholder: 'placeholder-gray-400 dark:placeholder-gray-500',
+        autocomplete: 'pointer-events-none'
+      },
+      tag: {
+        base: 'inline-flex items-center max-w-full whitespace-nowrap select-none gap-1',
+        background: 'bg-slate-200 dark:bg-slate-700',
+        rounded: 'rounded',
+        padding: {
+          '2xs': 'px-1.5 py-px',
+          xs: 'px-1.5 py-px',
+          sm: 'px-1.5 py-px',
+          md: 'px-1.5 py-px',
+          lg: 'px-2.5 py-[0.210rem]',
+          xl: 'px-2.5 py-1'
+        },
+        label: 'inline-flex items-center truncate h-full overflow-hidden leading-[1]',
+        close: 'inline-flex grow-0 shrink-0 cursor-pointer'
+      },
+      default: {
+        size: 'sm',
+        color: 'white',
+        variant: 'outline'
+      }
     }
   }
 });

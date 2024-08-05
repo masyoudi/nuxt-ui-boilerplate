@@ -1,30 +1,23 @@
 <template>
   <div class="relative w-full">
-    <div :class="wrapperClass" data-taginput="root" @click="onClickRoot">
-      <div class="flex flex-wrap gap-1.5" data-taginput="wrapper">
-        <UBadge v-for="(val, i) in tags" :key="i" class="relative" :size="size" :ui="uiBadge">
-          <span>{{ props.formatLabelTag(val) }}</span>
-          <span class="absolute inline-flex items-center top-0 right-0 bottom-0 p-1">
-            <span class="inline-flex rounded p-px hover:bg-slate-400 cursor-pointer" @click="(evt) => removeItem(i, evt)">
-              <UIcon name="i-heroicons-x-mark" class="w-4 h-4"></UIcon>
-            </span>
-          </span>
-        </UBadge>
+    <div :class="wrapperClass" data-taginput="wrapper" @click="onClickWrapper">
+      <div v-for="(val, i) in tags" :key="i" :class="tagClass.wrapper">
+        <span :class="tagClass.label">{{ props.formatLabelTag(val) }}</span>
+        <span :class="tagClass.close" @click="(evt) => removeItem(i, evt)">
+          <UIcon name="i-heroicons-x-mark" class="w-4 h-4"></UIcon>
+        </span>
+      </div>
 
-        <div class="relative inline-flex">
-          <div v-if="isAutocomplete" class="absolute inset-0 z-[1]" data-taginput="input-overlay"></div>
-          <input
-            v-model="newItem"
-            class="outline-none py-px bg-transparent"
-            :class="[{ 'pointer-events-none': isAutocomplete }, ui.placeholder]"
-            :placeholder="props.placeholder"
-            @focus="() => (focused = true)"
-            @blur="() => (focused = false)"
-            @compositionstart="() => (isComposing = true)"
-            @compositionend="() => (isComposing = false)"
-            @keydown="onKeydown"
-          />
-        </div>
+      <div :class="inputWrapperClass" data-taginput="input-wrapper">
+        <input
+          v-model="newItem"
+          :class="inputClass"
+          :placeholder="props.placeholder"
+          :readonly="isAutocomplete"
+          @compositionstart="() => (isComposing = true)"
+          @compositionend="() => (isComposing = false)"
+          @keydown="onKeydown"
+        />
       </div>
     </div>
 
@@ -56,7 +49,6 @@
 import { twJoin } from 'tailwind-merge';
 import { useDebounceFn } from '@vueuse/core';
 import type { OptionItem } from '@@/types/ui/autocomplete';
-import { input } from '#ui/ui.config';
 import { useFormGroup } from '#ui/composables/useFormGroup.js';
 import { useInjectButtonGroup } from '#ui/composables/useButtonGroup.js';
 import { mergeConfig } from '#ui/utils';
@@ -90,7 +82,7 @@ interface Props {
   class?: string;
   ui?: Record<string, any>;
   color?: string;
-  size?: 'xs' | 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -119,43 +111,34 @@ const emits = defineEmits<{
 }>();
 
 /** UI */
-const config = mergeConfig<typeof input>(appConfig.ui.strategy, appConfig.ui.input, input);
-const { ui } = useUI('input', toRef(props, 'ui'), config, toRef(props, 'class'));
+const config = mergeConfig<typeof appConfig.ui.taginput>(appConfig.ui.strategy, appConfig.ui.taginput);
+const { ui } = useUI('taginput', toRef(props, 'ui'), config, toRef(props, 'class'));
 const { color, size: sizeFormGroup } = useFormGroup(props, config);
 const { size: sizeButtonGroup, rounded } = useInjectButtonGroup({ ui, props });
 const currentSize = computed(() => sizeButtonGroup.value ?? sizeFormGroup.value);
-
-const paddings: Record<string, string> = {
-  xs: 'px-2 py-1.5',
-  sm: 'px-2 py-1.5',
-  md: 'px-2 py-[7px]',
-  lg: 'px-2.5'
-};
-const padding = computed(() => paddings[currentSize.value]);
-const focused = ref(false);
 
 const wrapperClass = computed(() => {
   const variant = (ui.value.color as any)?.[color.value as string]?.[props.variant as string] || ui.value.variant[props.variant];
 
   return twJoin(
     ui.value.base,
-    ui.value.form,
     rounded.value,
     (ui.value.size as any)[currentSize.value],
-    padding.value,
-    variant?.replaceAll('{color}', color.value),
-    focused.value && 'ring-1 ring-primary-400'
+    (ui.value.gap as any)[currentSize.value],
+    (ui.value.padding as any)[currentSize.value],
+    variant?.replaceAll('{color}', color.value)
   );
 });
 
-const uiBadge = /* ui */ {
-  size: {
-    xs: 'text-xs pl-1.5 pr-7 py-px',
-    sm: 'text-xs pl-2 pr-7 py-px',
-    md: 'text-sm pl-2 pr-7 py-px',
-    lg: 'text-sm pl-2.5 pr-7 py-1.5'
-  }
-};
+const inputWrapperClass = computed(() => ui.value.input.wrapper);
+const inputClass = computed(() =>
+  twJoin(ui.value.input.base, ui.value.input.placeholder, isAutocomplete.value ? ui.value.input.autocomplete : '')
+);
+const tagClass = computed(() => ({
+  wrapper: twJoin(ui.value.tag.base, ui.value.tag.background, ui.value.tag.rounded, (ui.value.tag.padding as any)[currentSize.value]),
+  label: ui.value.tag.label,
+  close: ui.value.tag.close
+}));
 
 const uiPopover = /* ui */ {
   width: 'w-full',
@@ -306,20 +289,16 @@ const debouncedOpenPopover = useDebounceFn(() => {
   isAfterClosePopover.value = false;
 }, 275);
 
-function onClickRoot(evt: Event) {
+function onClickWrapper(evt: Event) {
   evt.preventDefault();
   const target = evt.target as HTMLElement;
 
-  if (!['root', 'wrapper', 'input-overlay'].includes(target.dataset?.taginput ?? '')) {
+  if (!['wrapper', 'input-wrapper'].includes(target.dataset?.taginput ?? '')) {
     return;
   }
 
   if (!open.value && !isAfterClosePopover.value && isAutocomplete.value) {
     open.value = true;
-  }
-
-  if (!isAutocomplete.value) {
-    target.querySelector('input')?.focus();
   }
 }
 

@@ -9,7 +9,7 @@
 </style>
 
 <template>
-  <div ref="root" class="w-full min-h-[200px] border rounded-md" :class="focused ? 'border-primary': 'dark:border-slate-700'">
+  <div ref="root" class="w-full min-h-[200px] border rounded-md" :class="focused ? 'border-primary' : 'dark:border-slate-700'">
     <div class="flex flex-wrap gap-1 px-3 py-2 border-b dark:border-b-slate-700">
       <UDropdown :items="[textSizes]" :popper="{ placement: 'bottom-start', arrow: true }">
         <UButton
@@ -239,6 +239,8 @@ const menus = computed(() => [
   }
 ]);
 
+const toast = useToast();
+
 // Link
 const link = reactive({
   open: false,
@@ -303,8 +305,13 @@ async function onChangeImage(e: Event) {
     }
 
     _editor.chain().focus().setImage({ src }).run();
-  } catch {
-    // todo handle error
+  } catch (err: any) {
+    if (err?.response) {
+      useRequestError(err.response);
+      return;
+    }
+
+    toast.add({ description: typeof err?.message === 'string' ? err.message : 'Failed to open file', color: 'red' });
   }
 }
 

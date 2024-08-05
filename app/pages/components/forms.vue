@@ -31,11 +31,11 @@
 
       <FormRoot ref="formAdvanceRef" class="space-y-6" @submit="() => onSubmitAdvance()">
         <UFormGroup label="Photo" name="photo">
-          <UInput type="file" icon="i-heroicons-folder" size="md" @change="(files: any[]) => (formAdvanceModel.photo = files?.[0])" />
+          <UInput type="file" icon="i-heroicons-folder" @change="(files: any[]) => (formAdvanceModel.photo = files?.[0])" />
         </UFormGroup>
 
         <UFormGroup label="Hobbies" name="hobbies">
-          <TagInput v-model="formAdvanceModel.hobbies" placeholder="Separated with comma" />
+          <TagsInput v-model="formAdvanceModel.hobbies" placeholder="Separated with comma" />
         </UFormGroup>
 
         <UFormGroup label="Country" name="country">
@@ -58,7 +58,7 @@
           ></DropdownSelect>
         </UFormGroup>
 
-        <UFormGroup label="Test">
+        <UFormGroup label="Editor">
           <TextEditor placeholder="Enter text..." :image-handler="generateImage"></TextEditor>
         </UFormGroup>
 
