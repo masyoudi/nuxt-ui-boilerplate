@@ -58,6 +58,10 @@
           ></DropdownSelect>
         </UFormGroup>
 
+        <UFormGroup label="Test">
+          <TextEditor placeholder="Enter text..." :image-handler="generateImage"></TextEditor>
+        </UFormGroup>
+
         <UFormGroup label="Security" name="security">
           <div class="flex gap-x-2">
             <div class="inline-flex grow-0 shrink-0">
@@ -132,4 +136,14 @@ const { status: statusAdvance, execute: onSubmitAdvance } = useRequest('/api/for
     toast.add({ description: 'Data successfully submitted', color: 'green' });
   }
 });
+
+function generateImage(file: File) {
+  return new Promise<string>((resolve) => {
+    const reader = new FileReader();
+
+    reader.addEventListener('load', () => resolve(reader.result as string));
+    reader.addEventListener('error', () => resolve(''));
+    reader.readAsDataURL(file);
+  });
+}
 </script>

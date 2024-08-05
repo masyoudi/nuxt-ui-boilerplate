@@ -47,7 +47,7 @@ export default defineNuxtConfig({
     }
   },
 
-  modules: ['@nuxt/ui'],
+  modules: ['@nuxt/fonts', '@nuxt/ui'],
 
   typescript: {
     strict: true,
@@ -55,7 +55,8 @@ export default defineNuxtConfig({
       compilerOptions: {
         noUnusedParameters: true,
         noUnusedLocals: true,
-        verbatimModuleSyntax: true
+        verbatimModuleSyntax: true,
+        types: ['./types/app']
       }
     }
   },
