@@ -34,6 +34,7 @@ function onSubmit(event: Event) {
     return;
   }
 
+  (document.activeElement as any)?.blur();
   emit('submit', event);
 }
 

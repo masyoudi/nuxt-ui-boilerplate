@@ -9,6 +9,9 @@ export default <Partial<Config>>{
           ...getColors('#74bbf2'),
           DEFAULT: '#74bbf2'
         }
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif']
       }
     }
   }

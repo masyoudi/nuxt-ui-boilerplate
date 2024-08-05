@@ -1,5 +1,5 @@
 import { Fragment, type Component, type VNode } from 'vue-demi';
-import { serialize, type Options as FormDataBuilder } from 'object-to-formdata';
+import { serialize, type Options as FormDataBuilderOptions } from 'object-to-formdata';
 
 /**
  * Find childrend nodes
@@ -26,7 +26,7 @@ export function findNodeChildrens(vnodes: VNode[], ...names: string[]) {
 
 export function formDataBuilder(
   value: Record<string, any>,
-  options: FormDataBuilder = { indices: true, dotsForObjectNotation: true }
+  options: FormDataBuilderOptions = { indices: true, dotsForObjectNotation: true }
 ) {
   return serialize(value, options);
 }
