@@ -1,5 +1,5 @@
 <template>
-  <UForm ref="form" :data-form-id="id" :state="state" :validate-on="['submit']" @submit="onSubmit">
+  <UForm ref="form" :data-form-id="id" :state="state" @submit="onSubmit">
     <slot />
   </UForm>
 </template>
@@ -25,7 +25,7 @@ function clear() {
 function setErrors(val: any) {
   form.value?.setErrors(val);
 
-  setTimeout(scrollToError, 275);
+  nextTick(scrollToError);
 }
 
 // Emit submit event

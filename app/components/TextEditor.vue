@@ -45,13 +45,14 @@
             <UFormGroup label="Link" size="xs">
               <UInput v-model="link.url" placeholder="Enter link" size="xs"></UInput>
             </UFormGroup>
-            <div class="flex justify-end gap-2 pt-1">
+            <div class="flex items-center justify-end gap-2 pt-1">
               <UButton
-                v-if="link.url"
+                v-if="isValidLink(link.url)"
                 icon="i-heroicons-arrow-top-right-on-square"
                 size="xs"
                 variant="ghost"
                 :to="link.url"
+                external
                 target="_blank"
               ></UButton>
               <UButton color="red" size="xs" @click="onToggleLink(false)">Reset</UButton>
@@ -285,6 +286,11 @@ function onToggleLink(isAdd: boolean) {
 
   setLink().command(insertText).run();
   link.open = false;
+}
+
+function isValidLink(url: string) {
+  const result = url.match(/(http(s)?:\/\/.)?(www\.)?[-\w@:%.+~#=]{2,256}\.[a-z]{2,6}\b([-\w@:%+.~#?&/=]*)/g);
+  return !!result;
 }
 
 // Image

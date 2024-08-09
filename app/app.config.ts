@@ -37,7 +37,7 @@ export default defineAppConfig({
         outline: 'focus:ring-1'
       },
       default: {
-        size: 'lg'
+        size: 'md'
       }
     },
     popover: {
@@ -65,6 +65,16 @@ export default defineAppConfig({
       td: {
         base: 'whitespace-normal',
         color: 'text-slate-500'
+      }
+    },
+    textarea: {
+      color: {
+        white: {
+          outline: 'focus:ring-1'
+        }
+      },
+      variant: {
+        outline: 'focus:ring-1'
       }
     },
     sidebar: {

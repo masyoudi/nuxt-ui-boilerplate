@@ -4,11 +4,11 @@
       <div class="text-lg font-semibold mb-6">Basic</div>
       <FormRoot ref="formBasicRef" class="space-y-6" @submit="() => onSubmitBasic()">
         <UFormGroup label="Name" name="name">
-          <UInput v-model="formBasicModel.name" placeholder="Enter your name" size="md" />
+          <UInput v-model="formBasicModel.name" placeholder="Enter your name" />
         </UFormGroup>
 
         <UFormGroup label="Email" name="email">
-          <UInput v-model="formBasicModel.email" placeholder="Enter your email address" size="md" />
+          <UInput v-model="formBasicModel.email" placeholder="Enter your email address" />
         </UFormGroup>
 
         <UFormGroup label="Gender" name="gender">
@@ -17,7 +17,7 @@
         </UFormGroup>
 
         <UFormGroup label="Address" name="address">
-          <UTextarea v-model="formBasicModel.address" placeholder="Enter address" size="md" />
+          <UTextarea v-model="formBasicModel.address" placeholder="Enter address" />
         </UFormGroup>
 
         <div class="flex justify-end">
@@ -62,6 +62,10 @@
           <TextEditor placeholder="Enter text..." :image-handler="generateImage"></TextEditor>
         </UFormGroup>
 
+        <UFormGroup label="Date">
+          <DatePicker v-model="dates" placeholder="DD/MM/YYYY - DD/MM/YYYY"></DatePicker>
+        </UFormGroup>
+
         <UFormGroup label="Security" name="security">
           <div class="flex gap-x-2">
             <div class="inline-flex grow-0 shrink-0">
@@ -98,6 +102,7 @@ const formBasicModel = reactive({
   gender: '',
   address: ''
 });
+const dates = ref([]);
 
 const formAdvanceRef = ref();
 const formAdvanceModel = reactive({
