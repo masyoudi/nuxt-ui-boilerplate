@@ -21,7 +21,6 @@ type ReturnT<DataT, DefaultT, ErrorT, PickKeys extends KeysOf<DataT>> = AsyncDat
 interface Options {
   formRef?: Ref;
   ignoreErrorParser?: boolean;
-  isCoreAPI?: boolean;
 }
 
 interface OptionsRaw extends Omit<FetchOptions, 'headers' | 'method' | 'body' | 'query'>, Options {
@@ -40,14 +39,12 @@ const defaults: UseFetchOptions<any> & Options = {
   retry: false,
   timeout: 30000,
   dedupe: 'cancel',
-  ignoreErrorParser: false,
-  isCoreAPI: true
+  ignoreErrorParser: false
 };
 
 const defaultRaw: OptionsRaw = {
   method: 'GET',
-  timeout: 30000,
-  isCoreAPI: true
+  timeout: 30000
 };
 
 export function useRequest<
@@ -104,12 +101,11 @@ export function useRequest<
   };
 
   const reqOptions = {
-    ...omit(opts, ['formRef', 'ignoreErrorParser', 'isCoreAPI']),
+    ...omit(opts, ['formRef', 'ignoreErrorParser']),
     onResponseError
   };
 
-  const reqURL = (opts?.isCoreAPI ? '/api' : '').concat(url) as any;
-  const request = useFetch<ResT, ErrorT, ReqT, Method, _ResT, DataT, PickKeys, DefaultT>(reqURL, reqOptions);
+  const request = useFetch<ResT, ErrorT, ReqT, Method, _ResT, DataT, PickKeys, DefaultT>(url as any, reqOptions);
 
   const doRequest = async () => {
     await request.execute();
@@ -131,10 +127,9 @@ export function useRequest<
  */
 export async function useRequestRaw<T = any>(url: string, options?: OptionsRaw) {
   const opts = { ...defaultRaw, ...(options ?? {}) };
-  const reqURL = (opts.isCoreAPI ? '/api' : '').concat(url);
-  const reqOptions = omit(opts, ['formRef', 'ignoreErrorParser', 'isCoreAPI']);
+  const reqOptions = omit(opts, ['formRef', 'ignoreErrorParser']);
 
-  const result = await $fetch<T>(reqURL, reqOptions);
+  const result = await $fetch<T>(url, reqOptions);
 
   return result;
 }
@@ -146,20 +141,15 @@ export async function useRequestRaw<T = any>(url: string, options?: OptionsRaw) 
  */
 export function useRequestError(err: any, formRef?: Ref) {
   const toast = useToast();
-  let isNotified = false;
-
-  if (!!err.response?._data) {
-    const description = typeof err.response._data.message === 'string' ? err.response._data.message : err.response.statusText;
-    toast.add({ description, color: 'red' });
-    isNotified = true;
-  }
 
   if (err.response?.status === 400 && Array.isArray(err.response?._data?.data?.errors) && !!formRef) {
     formRef?.value?.setErrors(err.response?._data.data.errors);
     return;
   }
 
-  if (isNotified) {
+  if (!!err.response?._data) {
+    const description = typeof err.response._data.message === 'string' ? err.response._data.message : err.response.statusText;
+    toast.add({ description, color: 'red' });
     return;
   }
 
