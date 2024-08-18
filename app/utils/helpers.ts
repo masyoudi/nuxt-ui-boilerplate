@@ -30,3 +30,29 @@ export function formDataBuilder(
 ) {
   return serialize(value, options);
 }
+
+/**
+ * Set data as array
+ * @param value - Value to check
+ * @param assign - Force assign to array
+ * @returns array
+ */
+export function toArray<T>(value: T | T[], assign: boolean = false): T[] {
+  return Array.isArray(value) ? [...value] : assign ? [value] : [];
+}
+
+/**
+ * Omit object by key
+ * @param source - Source object
+ * @param keys - Object keys to remove
+ * @returns object
+ */
+export function omit<T extends Record<string, any>>(source: T, keys: keyof T | (keyof T)[]) {
+  return Object.keys(source).reduce((prev: Record<string, any>, key) => {
+    if (!(keys as string[]).includes(key)) {
+      prev[key] = source[key];
+    }
+
+    return prev;
+  }, {});
+}

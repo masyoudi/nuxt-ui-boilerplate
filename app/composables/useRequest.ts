@@ -1,6 +1,7 @@
-import type { FetchError } from 'ofetch';
+import type { FetchError, FetchOptions } from 'ofetch';
+import type { HTTPMethod } from 'h3';
 import type { NitroFetchRequest, TypedInternalResponse, AvailableRouterMethod } from 'nitropack';
-import { omit } from '@@/utils';
+import { omit } from '@/utils/helpers';
 import type { AsyncData, KeysOf, PickFrom } from '#app/composables/asyncData.js';
 import type { UseFetchOptions } from '#app/composables/fetch.js';
 
@@ -20,6 +21,14 @@ type ReturnT<DataT, DefaultT, ErrorT, PickKeys extends KeysOf<DataT>> = AsyncDat
 interface Options {
   formRef?: Ref;
   ignoreErrorParser?: boolean;
+  isCoreAPI?: boolean;
+}
+
+interface OptionsRaw extends Omit<FetchOptions, 'headers' | 'method' | 'body' | 'query'>, Options {
+  headers?: Record<string, string>;
+  method: Readonly<HTTPMethod>;
+  body?: any;
+  query?: Record<string, any>;
 }
 
 const defaults: UseFetchOptions<any> & Options = {
@@ -31,7 +40,14 @@ const defaults: UseFetchOptions<any> & Options = {
   retry: false,
   timeout: 30000,
   dedupe: 'cancel',
-  ignoreErrorParser: false
+  ignoreErrorParser: false,
+  isCoreAPI: true
+};
+
+const defaultRaw: OptionsRaw = {
+  method: 'GET',
+  timeout: 30000,
+  isCoreAPI: true
 };
 
 export function useRequest<
@@ -62,6 +78,11 @@ export function useRequest<
   options?: UseFetchOptions<_ResT, DataT, PickKeys, DefaultT, ReqT, Method> & Options
 ): ReturnT<DataT, DefaultT, ErrorT, PickKeys>;
 
+/**
+ * Request with useFetch
+ * @param url - Request URL
+ * @param options - Request options
+ */
 export function useRequest<
   ResT = void,
   ErrorT = FetchError,
@@ -74,22 +95,21 @@ export function useRequest<
 >(url: string, options?: UseFetchOptions<_ResT, DataT, PickKeys, DefaultT, ReqT, Method> & Options) {
   const opts = { ...defaults, ...(options ?? {}) };
 
-  const reqOptions = {
-    ...omit(opts, ['formRef', 'ignoreErrorParser', 'onResponseError'])
-  };
-
   const onResponseError = (ctx: any) => {
     (opts as any)?.onResponseError?.(ctx);
 
     if (!opts.ignoreErrorParser) {
-      useRequestError(ctx.response, opts.formRef);
+      useRequestError(ctx, opts.formRef);
     }
   };
 
-  const request = useFetch<ResT, ErrorT, ReqT, Method, _ResT, DataT, PickKeys, DefaultT>(url as any, {
-    ...reqOptions,
+  const reqOptions = {
+    ...omit(opts, ['formRef', 'ignoreErrorParser', 'isCoreAPI']),
     onResponseError
-  });
+  };
+
+  const reqURL = (opts?.isCoreAPI ? '/api' : '').concat(url) as any;
+  const request = useFetch<ResT, ErrorT, ReqT, Method, _ResT, DataT, PickKeys, DefaultT>(reqURL, reqOptions);
 
   const doRequest = async () => {
     await request.execute();
@@ -104,16 +124,49 @@ export function useRequest<
   return result;
 }
 
-export function useRequestError(response: any, formRef?: Ref) {
-  const { status, _data, statusText } = response;
+/**
+ * Request with ofetch
+ * @param url - Request URL
+ * @param options - Request options
+ */
+export async function useRequestRaw<T = any>(url: string, options?: OptionsRaw) {
+  const opts = { ...defaultRaw, ...(options ?? {}) };
+  const reqURL = (opts.isCoreAPI ? '/api' : '').concat(url);
+  const reqOptions = omit(opts, ['formRef', 'ignoreErrorParser', 'isCoreAPI']);
 
-  if (status === 400 && Array.isArray(_data?.data?.errors)) {
-    formRef?.value?.setErrors(_data.data.errors);
+  const result = await $fetch<T>(reqURL, reqOptions);
+
+  return result;
+}
+
+/**
+ * Parse error request
+ * @param err - Error response
+ * @param formRef - FormRoot ref
+ */
+export function useRequestError(err: any, formRef?: Ref) {
+  const toast = useToast();
+  let isNotified = false;
+
+  if (!!err.response?._data) {
+    const description = typeof err.response._data.message === 'string' ? err.response._data.message : err.response.statusText;
+    toast.add({ description, color: 'red' });
+    isNotified = true;
+  }
+
+  if (err.response?.status === 400 && Array.isArray(err.response?._data?.data?.errors) && !!formRef) {
+    formRef?.value?.setErrors(err.response?._data.data.errors);
     return;
   }
 
-  const toast = useToast();
-  const description = typeof _data?.message === 'string' ? _data.message : statusText || 'Something went wrong';
+  if (isNotified) {
+    return;
+  }
 
-  toast.add({ description, color: 'red' });
+  if (typeof err === 'string') {
+    toast.add({ description: err, color: 'red' });
+    return;
+  }
+
+  toast.add({ description: typeof err.message === 'string' ? err.message : 'Something went wrong', color: 'red' });
 }

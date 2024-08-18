@@ -1,6 +1,6 @@
 import type { NuxtPage } from 'nuxt/schema';
 
-let reload = 0;
+// let reload = 0;
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -25,25 +25,6 @@ export default defineNuxtConfig({
       pagesToRemove.forEach((page) => {
         pages.splice(pages.indexOf(page), 1);
       });
-    }
-  },
-
-  nitro: {
-    hooks: {
-      'dev:reload': () => {
-        reload++;
-        console.info('App is', reload === 1 ? 'running' : 'reloaded');
-      }
-    },
-    typescript: {
-      strict: true,
-      tsConfig: {
-        compilerOptions: {
-          noUnusedParameters: true,
-          noUnusedLocals: true,
-          verbatimModuleSyntax: true
-        }
-      }
     }
   },
 
@@ -74,6 +55,8 @@ export default defineNuxtConfig({
   colorMode: {
     preference: 'light'
   },
+
+  ssr: false,
 
   devtools: {
     enabled: true

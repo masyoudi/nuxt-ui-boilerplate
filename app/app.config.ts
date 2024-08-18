@@ -1,5 +1,6 @@
 export default defineAppConfig({
   ui: {
+    strategy: 'merge',
     primary: 'main',
     button: {
       default: {
