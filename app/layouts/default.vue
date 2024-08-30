@@ -57,14 +57,7 @@
             </template>
           </UAccordion>
 
-          <NavMenu
-            v-else
-            :label="menu.label"
-            :active="activeMenu.parent === menu.key"
-            :icon="menu.icon"
-            :to="menu.link"
-            :ui="uiNavMenu"
-          ></NavMenu>
+          <NavMenu v-else :label="menu.label" :active="activeMenu.parent === menu.key" :icon="menu.icon" :to="menu.link" :ui="uiNavMenu"></NavMenu>
         </div>
       </div>
     </aside>
@@ -127,7 +120,7 @@
         <p class="text-center mb-8">Are you sure you want to logout?</p>
         <div class="flex justify-center gap-x-4">
           <UButton @click="openLogout = false">Cancel</UButton>
-          <UButton :loading="statusLogout === 'pending'" color="red" @click="doLogout">Logout</UButton>
+          <UButton color="red" @click="doLogout">Logout</UButton>
         </div>
       </div>
     </UModal>
@@ -234,6 +227,8 @@ const activeMenu = computed(() => {
   };
 });
 
+const { clearAuth } = useStateAuth();
+
 function setTitle() {
   const txt = document.title;
   title.value = txt.trim();
@@ -257,15 +252,10 @@ function onToggleMinify(minified: boolean) {
   isEnterSidebar.value = false;
 }
 
-const { status: statusLogout, execute: doLogout } = useRequest('/api/logout', {
-  onResponse({ response }) {
-    if (!response.ok) {
-      return;
-    }
-
-    window.location.replace('/login');
-  }
-});
+function doLogout() {
+  clearAuth();
+  nextTick(() => window.location.replace('/login'));
+}
 
 onMounted(() => {
   setTitle();

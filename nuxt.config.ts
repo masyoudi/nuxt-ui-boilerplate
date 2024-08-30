@@ -42,6 +42,33 @@ export default defineNuxtConfig({
     }
   },
 
+  icon: {
+    provider: 'server',
+    serverBundle: {
+      collections: ['heroicons']
+    },
+    clientBundle: {
+      icons: [
+        'heroicons:chevron-double-left-16-solid',
+        'heroicons:chevron-double-right-16-solid',
+        'heroicons:chevron-right-20-solid',
+        'heroicons:ellipsis-horizontal-circle',
+        'heroicons:moon-20-solid',
+        'heroicons:sun-20-solid',
+        'heroicons:magnifying-glass-20-solid',
+        'heroicons:arrow-up',
+        'heroicons:arrow-down',
+        'heroicons:pencil-square',
+        'heroicons:calendar',
+        'heroicons:trash',
+        'heroicons:x-mark'
+      ],
+      scan: true,
+      includeCustomCollections: true,
+      sizeLimitKb: 256
+    }
+  },
+
   vite: {
     clearScreen: false
   },
