@@ -1,3 +1,4 @@
+// eslint-disable-next-line
 const TYPEOF_OBJECTS = [
   'array',
   'bigint',

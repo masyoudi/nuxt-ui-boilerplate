@@ -1,4 +1,4 @@
-import { type SessionConfig } from 'h3';
+import type { SessionConfig } from 'h3';
 
 export type UserSessionConfig = Omit<SessionConfig, 'name' | 'maxAge'> & {
   name: string;

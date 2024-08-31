@@ -12,7 +12,7 @@ interface Options {
   throwOnError?: boolean;
 }
 
-interface OptionsBase extends Omit<Options, 'source'> {}
+type OptionsBase = Omit<Options, 'source'>;
 
 interface OptionsValidateBody extends OptionsBase, OptionsMultipart {}
 

@@ -24,7 +24,7 @@ export default createConfigForNuxt(
   .override('nuxt/typescript/rules', {
     rules: {
       '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
-      '@typescript-eslint/quotes': ['error', 'single'],
+      '@/quotes': ['error', 'single'],
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/unified-signatures': 'off',
       'no-extra-boolean-cast': 'off',

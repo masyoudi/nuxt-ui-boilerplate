@@ -1,4 +1,4 @@
-import { type MultiPartData, type H3Event } from 'h3';
+import type { MultiPartData, H3Event } from 'h3';
 import { parseFormData } from 'parse-nested-form-data';
 import { isObjectLike } from '@@/utils';
 
