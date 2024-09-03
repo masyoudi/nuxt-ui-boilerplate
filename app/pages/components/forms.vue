@@ -2,7 +2,7 @@
   <UContainer class="grid grid-cols-1 gap-8 py-10">
     <UCard>
       <div class="text-lg font-semibold mb-6">Basic</div>
-      <FormRoot ref="formBasicRef" class="space-y-6" @submit="() => onSubmitBasic()">
+      <FormRoot ref="formBasicRef" :schema="validationBasic" :state="formBasicModel" class="space-y-6" @submit="onSubmitBasic">
         <UFormGroup label="Name" name="name">
           <UInput v-model="formBasicModel.name" placeholder="Enter your name" />
         </UFormGroup>
@@ -21,7 +21,7 @@
         </UFormGroup>
 
         <div class="flex justify-end">
-          <UButton type="submit" :loading="statusBasic === 'pending'">Submit</UButton>
+          <UButton type="submit">Submit</UButton>
         </div>
       </FormRoot>
     </UCard>
@@ -29,7 +29,13 @@
     <UCard>
       <div class="text-lg font-semibold mb-6">Advanced</div>
 
-      <FormRoot ref="formAdvanceRef" class="space-y-6" @submit="() => onSubmitAdvance()">
+      <FormRoot
+        ref="formAdvanceRef"
+        class="space-y-6"
+        :schema="validationAdvanced"
+        :state="formAdvanceModel"
+        @submit="onSubmitAdvance"
+      >
         <UFormGroup label="Photo" name="photo">
           <UInput type="file" icon="i-heroicons-folder" @change="(files: any[]) => (formAdvanceModel.photo = files?.[0])" />
         </UFormGroup>
@@ -76,7 +82,7 @@
         </UFormGroup>
 
         <div class="flex justify-end">
-          <UButton type="submit" :loading="statusAdvance === 'pending'">Submit</UButton>
+          <UButton type="submit">Submit</UButton>
         </div>
       </FormRoot>
     </UCard>
@@ -84,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { formDataBuilder } from '~/utils/helpers';
+import { z } from 'zod';
 
 definePageMeta({
   middleware: 'auth',
@@ -112,35 +118,34 @@ const formAdvanceModel = reactive({
   language: '',
   security: true
 });
+
+const validationBasic = z.object({
+  name: z.string().trim().min(1, 'Enter your name'),
+  email: z.string().trim().min(1, 'Enter your email address').email('Invalid email address'),
+  gender: z
+    .string()
+    .min(1, 'Choose your gender')
+    .refine((v) => ['male', 'female'].includes(v), 'Invalid gender'),
+  address: z.string().trim().min(1, 'Enter your address')
+});
+
+const validationAdvanced = z.object({
+  photo: z.any().refine((v) => v instanceof File, 'Please upload photo'),
+  hobbies: z.array(z.string(), { required_error: 'Please enter your hobbies' }).min(1, 'Please enter your hobbies'),
+  country: z.coerce.number().min(1, 'Please select country'),
+  language: z.string().min(2, 'Please select language'),
+  security: z.coerce.boolean()
+});
+
 const toast = useToast();
 
-const { status: statusBasic, execute: onSubmitBasic } = useRequest('/api/forms/json', {
-  method: 'POST',
-  body: formBasicModel,
-  formRef: formBasicRef,
-  onResponse: ({ response }) => {
-    if (!response.ok) {
-      return;
-    }
+async function onSubmitBasic() {
+  toast.add({ description: 'Data successfully submitted', color: 'green' });
+}
 
-    toast.add({ description: 'Data successfully submitted', color: 'green' });
-  }
-});
-
-const { status: statusAdvance, execute: onSubmitAdvance } = useRequest('/api/forms/form-data', {
-  method: 'POST',
-  formRef: formAdvanceRef,
-  onRequest: (ctx) => {
-    ctx.options.body = formDataBuilder(formAdvanceModel);
-  },
-  onResponse: ({ response }) => {
-    if (!response.ok) {
-      return;
-    }
-
-    toast.add({ description: 'Data successfully submitted', color: 'green' });
-  }
-});
+async function onSubmitAdvance() {
+  toast.add({ description: 'Data successfully submitted', color: 'green' });
+}
 
 function generateImage(file: File) {
   return new Promise<string>((resolve) => {

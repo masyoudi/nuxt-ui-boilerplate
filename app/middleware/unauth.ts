@@ -3,9 +3,9 @@
  */
 export default defineNuxtRouteMiddleware(() => {
   try {
-    const { isValid } = useStateAuth();
+    const { isAuthenticated } = useStateAuth();
 
-    if (isValid()) {
+    if (isAuthenticated()) {
       return navigateTo('/');
     }
   } catch (err: any) {

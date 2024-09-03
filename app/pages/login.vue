@@ -50,8 +50,11 @@ async function onSubmit(event: any) {
     name: event.data.email.split('@')[0],
     email: event.data.email
   };
+
   const d = new Date();
-  setAuth({ user: user, expiry: new Date(d.getFullYear(), d.getMonth(), d.getDate() + 2).getTime() });
+  const expiry = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 2).getTime();
+
+  setAuth({ user, expiry });
   window.location.replace('/');
 }
 </script>

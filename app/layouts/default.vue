@@ -227,7 +227,7 @@ const activeMenu = computed(() => {
   };
 });
 
-const { clearAuth } = useStateAuth();
+const { clear } = useStateAuth();
 
 function setTitle() {
   const txt = document.title;
@@ -253,7 +253,7 @@ function onToggleMinify(minified: boolean) {
 }
 
 function doLogout() {
-  clearAuth();
+  clear();
   nextTick(() => window.location.replace('/login'));
 }
 

@@ -95,6 +95,9 @@ async function onSubmit(event: SubmitEvent) {
     return;
   }
 
+  setErrors([]);
+  await nextTick();
+
   const validation = await validate();
   if (!validation?.errors || validation?.errors?.length > 0) {
     setErrors(validation?.errors ?? []);

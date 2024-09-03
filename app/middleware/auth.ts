@@ -3,10 +3,10 @@
  */
 export default defineNuxtRouteMiddleware(async () => {
   try {
-    const { isValid, clearAuth } = useStateAuth();
+    const { isAuthenticated, clear } = useStateAuth();
 
-    if (!isValid()) {
-      clearAuth();
+    if (!isAuthenticated()) {
+      clear();
       await nextTick();
 
       window.location.replace('/login');

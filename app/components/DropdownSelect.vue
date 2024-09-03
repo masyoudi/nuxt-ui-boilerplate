@@ -1,7 +1,7 @@
 <template>
   <UPopover v-model:open="open" :ui="{ width: 'w-full' }" :popper="{ strategy: 'absolute' }">
     <!-- Popover trigger -->
-    <UInput v-model="label" :placeholder="props.placeholder" :ui="{ wrapper: 'w-full' }" size="md" readonly>
+    <UInput v-model="label" v-bind="attrs" :placeholder="props.placeholder" :ui="{ wrapper: 'w-full' }" size="md" readonly>
       <template #trailing>
         <UIcon
           name="i-heroicons-chevron-right-20-solid"
@@ -49,6 +49,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emits = defineEmits<{
   (e: 'update:modelValue', val: string | number): void;
 }>();
+const attrs = useAttrs();
 
 const label = ref('');
 const search = ref('');
