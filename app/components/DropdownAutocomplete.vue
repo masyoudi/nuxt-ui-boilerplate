@@ -1,7 +1,7 @@
 <template>
   <UPopover v-model:open="open" :ui="{ width: 'w-full' }" :popper="{ strategy: 'absolute' }" @update:open="onOpen">
     <!-- Popover trigger -->
-    <UInput v-model="inputValue" v-bind="attrs" :placeholder="props.placeholder" :ui="{ wrapper: 'w-full' }" size="md" readonly>
+    <UInput v-model="inputValue" :placeholder="props.placeholder" :ui="{ wrapper: 'w-full' }" size="md" readonly>
       <template #trailing>
         <UIcon
           name="i-heroicons-chevron-right-20-solid"
@@ -63,7 +63,6 @@ const emits = defineEmits<{
   (e: 'update:label', val: string): void;
   (e: 'selected', val?: OptionItem): void;
 }>();
-const attrs = useAttrs();
 
 const _label = ref('');
 const inputValue = computed({
@@ -92,34 +91,32 @@ const query = computed(() => {
 const isFetched = ref(false);
 const options = ref<OptionItem[]>([]);
 
-const { data, execute: fetchData } = useRequest<OptionItem[]>(props.url, {
-  transform: (_result) => props.transformFetchData(_result),
-  query,
-  onRequest: () => {
-    loading.value = true;
-  },
-  onResponse: ({ response }) => {
-    loading.value = false;
-    isFetched.value = true;
-
-    if (!response.ok || !props.paginated) {
-      return;
-    }
-
-    const arr = props.transformFetchData(response._data);
-    isLastPage.value = arr.length < perPage.value;
-    page.value += 1;
-    options.value.push(...arr);
-  }
-});
-
 const items = computed(() => {
   if (!props.paginated) {
-    return (data.value ?? []).filter((v) => v.label.toLowerCase().includes(search.value.toLowerCase()));
+    return (options.value ?? []).filter((v) => v.label.toLowerCase().includes(search.value.toLowerCase()));
   }
 
   return options.value;
 });
+
+async function fetchData() {
+  try {
+    loading.value = true;
+    const result = await useRequest(props.url, {
+      query: query.value
+    });
+
+    isFetched.value = true;
+    const arr = props.transformFetchData(result);
+    isLastPage.value = arr.length < perPage.value;
+    page.value += 1;
+    options.value.push(...arr);
+
+    loading.value = false;
+  } catch {
+    loading.value = false;
+  }
+}
 
 function onSelected(value: OptionItem) {
   open.value = false;
@@ -128,7 +125,7 @@ function onSelected(value: OptionItem) {
 }
 
 function onScrollEnd() {
-  if (loading.value || !props.paginated || isLastPage.value) {
+  if ([loading.value, !props.paginated, isLastPage.value].includes(true)) {
     return;
   }
 
@@ -146,7 +143,7 @@ function onOpen(isOpen: boolean) {
     return;
   }
 
-  if (!data.value?.length) {
+  if (!options.value.length) {
     loading.value = true;
     setTimeout(fetchData, 250);
   }

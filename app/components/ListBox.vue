@@ -123,7 +123,7 @@ const emits = defineEmits<{
   (e: 'reset'): void;
 }>();
 
-const configMenu = mergeConfig<typeof selectMenu>(appConfig.ui.strategy, appConfig.ui.selectMenu, selectMenu);
+const configMenu = mergeConfig<typeof selectMenu>(appConfig.ui.strategy as any, appConfig.ui.selectMenu, selectMenu);
 const { ui: uiMenu } = useUI('selectMenu', toRef(props, 'uiMenu'), configMenu);
 
 const items = computed(() => props.options);

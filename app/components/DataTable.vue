@@ -182,7 +182,7 @@ const selectedRows = computed({
 });
 
 // Pagination
-const sort = ref(props.sorting);
+const sort = ref<Sorting>(props.sorting as any);
 const page = ref(1);
 const perPage = ref(10);
 
@@ -233,11 +233,9 @@ async function fetchData() {
 
     data.value = _data;
     total.value = isServerPagination.value ? _total ?? 0 : _data.length;
-  } catch (err: any) {
-    if (err?.response) {
-      useRequestError(err.response);
-    }
-  } finally {
+
+    loading.value = false;
+  } catch {
     loading.value = false;
   }
 }

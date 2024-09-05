@@ -111,7 +111,7 @@ const emits = defineEmits<{
 }>();
 
 /** UI */
-const config = mergeConfig<typeof appConfig.ui.taginput>(appConfig.ui.strategy, appConfig.ui.taginput);
+const config = mergeConfig<typeof appConfig.ui.taginput>(appConfig.ui.strategy as any, appConfig.ui.taginput);
 const { ui } = useUI('taginput', toRef(props, 'ui'), config, toRef(props, 'class'));
 const { color, size: sizeFormGroup } = useFormGroup(props, config);
 const { size: sizeButtonGroup, rounded } = useInjectButtonGroup({ ui, props });
@@ -131,9 +131,7 @@ const wrapperClass = computed(() => {
 });
 
 const inputWrapperClass = computed(() => ui.value.input.wrapper);
-const inputClass = computed(() =>
-  twJoin(ui.value.input.base, ui.value.input.placeholder, isAutocomplete.value ? ui.value.input.autocomplete : '')
-);
+const inputClass = computed(() => twJoin(ui.value.input.base, ui.value.input.placeholder, isAutocomplete.value ? ui.value.input.autocomplete : ''));
 const tagClass = computed(() => ({
   wrapper: twJoin(ui.value.tag.base, ui.value.tag.background, ui.value.tag.rounded, (ui.value.tag.padding as any)[currentSize.value]),
   label: ui.value.tag.label,
@@ -264,26 +262,22 @@ function removeItem(index: number, event?: Event): void {
   }
 }
 
-const { execute: fetchData } = useRequest<OptionItem[]>(props.url ?? '/', {
-  transform: (_result) => props.transformFetchData(_result),
-  query,
-  onRequest: () => {
+async function fetchData() {
+  try {
     loading.value = true;
-  },
-  onResponse: ({ response }) => {
-    loading.value = false;
+    const result = await useRequest(props.url ?? '/', {
+      query: query.value
+    });
+
     isFetched.value = true;
-
-    if (!response.ok) {
-      return;
-    }
-
-    const arr = props.transformFetchData(response._data);
+    const arr = props.transformFetchData(result);
     isLastPage.value = arr.length < perPage.value;
     page.value += 1;
     data.value.push(...arr);
+  } catch {
+    loading.value = false;
   }
-});
+}
 
 const debouncedOpenPopover = useDebounceFn(() => {
   isAfterClosePopover.value = false;

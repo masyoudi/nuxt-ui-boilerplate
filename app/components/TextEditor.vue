@@ -312,11 +312,6 @@ async function onChangeImage(e: Event) {
 
     _editor.chain().focus().setImage({ src }).run();
   } catch (err: any) {
-    if (err?.response) {
-      useRequestError(err.response);
-      return;
-    }
-
     toast.add({ description: typeof err?.message === 'string' ? err.message : 'Failed to open file', color: 'red' });
   }
 }
