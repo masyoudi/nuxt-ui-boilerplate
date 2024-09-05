@@ -3,7 +3,7 @@
     <UCard class="w-full max-w-[450px]" :ui="{ shadow: 'shadow-lg' }">
       <div class="text-xl font-bold text-slate-800 text-center mb-1">Welcome back</div>
       <p class="text-center text-slate-600 mb-6">Login to your account</p>
-      <FormRoot ref="formRef" class="space-y-4" @submit="() => onSubmit()">
+      <FormRoot ref="formRef" :disabled="loading" class="space-y-4" @submit="onSubmit">
         <UFormGroup label="Email" name="email">
           <UInput v-model="formModel.email" placeholder="Enter your email address" size="md" />
         </UFormGroup>
@@ -13,7 +13,7 @@
         </UFormGroup>
 
         <div class="flex pt-5">
-          <UButton type="submit" :loading="status === 'pending'" block> Submit </UButton>
+          <UButton type="submit" :loading="loading" block> Submit </UButton>
         </div>
       </FormRoot>
     </UCard>
@@ -35,17 +35,23 @@ const formModel = reactive({
   email: '',
   password: ''
 });
+const loading = ref(false);
 
-const { status, execute: onSubmit } = useRequest('/api/login', {
-  method: 'POST',
-  body: formModel,
-  formRef,
-  onResponse({ response }) {
-    if (!response.ok) {
-      return;
-    }
+const toast = useToast();
 
-    window.location.replace('/');
+async function onSubmit() {
+  try {
+    loading.value = true;
+    await useRequest('/api/login', {
+      method: 'POST',
+      body: formModel,
+      formRef
+    });
+
+    toast.add({ description: 'Login success', color: 'green' });
+    setTimeout(() => window.location.replace('/'), 1000);
+  } catch {
+    loading.value = false;
   }
-});
+}
 </script>

@@ -1,5 +1,8 @@
+import type { Strategy } from '#ui/types';
+
 export default defineAppConfig({
   ui: {
+    strategy: 'merge' as Strategy,
     primary: 'main',
     button: {
       default: {

@@ -2,7 +2,7 @@
   <UContainer class="grid grid-cols-1 gap-8 py-10">
     <UCard>
       <div class="text-lg font-semibold mb-6">Basic</div>
-      <FormRoot ref="formBasicRef" class="space-y-6" @submit="() => onSubmitBasic()">
+      <FormRoot ref="formBasicRef" class="space-y-6" @submit="onSubmitBasic">
         <UFormGroup label="Name" name="name">
           <UInput v-model="formBasicModel.name" placeholder="Enter your name" />
         </UFormGroup>
@@ -21,7 +21,7 @@
         </UFormGroup>
 
         <div class="flex justify-end">
-          <UButton type="submit" :loading="statusBasic === 'pending'">Submit</UButton>
+          <UButton type="submit">Submit</UButton>
         </div>
       </FormRoot>
     </UCard>
@@ -29,7 +29,7 @@
     <UCard>
       <div class="text-lg font-semibold mb-6">Advanced</div>
 
-      <FormRoot ref="formAdvanceRef" class="space-y-6" @submit="() => onSubmitAdvance()">
+      <FormRoot ref="formAdvanceRef" class="space-y-6" @submit="onSubmitAdvance">
         <UFormGroup label="Photo" name="photo">
           <UInput type="file" icon="i-heroicons-folder" @change="(files: any[]) => (formAdvanceModel.photo = files?.[0])" />
         </UFormGroup>
@@ -76,7 +76,7 @@
         </UFormGroup>
 
         <div class="flex justify-end">
-          <UButton type="submit" :loading="statusAdvance === 'pending'">Submit</UButton>
+          <UButton type="submit">Submit</UButton>
         </div>
       </FormRoot>
     </UCard>
@@ -112,35 +112,38 @@ const formAdvanceModel = reactive({
   language: '',
   security: true
 });
+const loading = ref(false);
 const toast = useToast();
 
-const { status: statusBasic, execute: onSubmitBasic } = useRequest('/api/forms/json', {
-  method: 'POST',
-  body: formBasicModel,
-  formRef: formBasicRef,
-  onResponse: ({ response }) => {
-    if (!response.ok) {
-      return;
-    }
+async function onSubmitBasic() {
+  try {
+    loading.value = true;
+    await useRequest('/api/forms/json', {
+      method: 'POST',
+      body: formBasicModel,
+      formRef: formBasicRef
+    });
 
     toast.add({ description: 'Data successfully submitted', color: 'green' });
+  } catch {
+    loading.value = false;
   }
-});
+}
 
-const { status: statusAdvance, execute: onSubmitAdvance } = useRequest('/api/forms/form-data', {
-  method: 'POST',
-  formRef: formAdvanceRef,
-  onRequest: (ctx) => {
-    ctx.options.body = formDataBuilder(formAdvanceModel);
-  },
-  onResponse: ({ response }) => {
-    if (!response.ok) {
-      return;
-    }
+async function onSubmitAdvance() {
+  try {
+    loading.value = true;
+    await useRequest('/api/forms/form-data', {
+      method: 'POST',
+      body: formDataBuilder(formAdvanceModel),
+      formRef: formAdvanceRef
+    });
 
     toast.add({ description: 'Data successfully submitted', color: 'green' });
+  } catch {
+    loading.value = false;
   }
-});
+}
 
 function generateImage(file: File) {
   return new Promise<string>((resolve) => {

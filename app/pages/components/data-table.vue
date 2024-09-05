@@ -43,7 +43,7 @@ async function fetchData(params: any) {
     _order: params.direction
   };
 
-  const res = await $fetch<any[]>('https://jsonplaceholder.typicode.com/todos', {
+  const res = await useRequest<any[]>('https://jsonplaceholder.typicode.com/todos', {
     query
   });
 
