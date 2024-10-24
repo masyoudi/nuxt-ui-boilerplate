@@ -1,11 +1,10 @@
-<template>
-  <UForm ref="form" :data-form-id="id" :state="state" @submit="onSubmit">
-    <slot />
-  </UForm>
-</template>
-
 <script setup lang="ts">
-const props = withDefaults(defineProps<{ disabled?: boolean; submit?: () => void }>(), {
+interface Props {
+  disabled?: boolean;
+  submit?: () => void;
+}
+
+const props = withDefaults(defineProps<Props>(), {
   disabled: false
 });
 const emit = defineEmits<{
@@ -58,3 +57,14 @@ defineExpose({
   clear
 });
 </script>
+
+<template>
+  <UForm
+    ref="form"
+    :data-form-id="id"
+    :state="state"
+    @submit="onSubmit"
+  >
+    <slot />
+  </UForm>
+</template>

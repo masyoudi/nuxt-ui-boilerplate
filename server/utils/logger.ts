@@ -1,55 +1,48 @@
-import { createLogger, format, transports, type LogEntry } from 'winston';
-import type { H3Event } from 'h3';
-
-interface ErrorOptions {
-  event: H3Event;
-  error: any;
-}
+import { createLogger, format, transports } from 'winston';
+import { isEvent } from 'h3';
 
 /**
- * Error formatter
- * @returns string
+ * Custom parser logging metadata
+ * @param metadata - Logger metadata
+ * @returns object
  */
-function formatter({ event }: ErrorOptions) {
-  return format.printf(({ level, message }: LogEntry) => {
-    const path: string = String(event.node.req.url).split(/[?#]/)[0];
+function parseMetadata(metadata?: Record<string, any>) {
+  let result: Record<string, any> = {};
 
-    const str = JSON.stringify({
-      level: level,
-      ...(message ? { message: message } : {}),
-      path: path,
+  if (!metadata) {
+    return result;
+  }
+
+  const event = (metadata as any)?.event;
+  if (isEvent(event)) {
+    result = {
+      path: event.node.req.originalUrl?.split('?')[0],
       method: event.node.req.method,
-      ...(Object.hasOwn(event.node.req.headers, 'user-agent') ? { ua: event.node.req.headers['user-agent'] } : {}),
-      time: new Date().toISOString()
-    });
-
-    return str.concat('\n');
-  });
-}
-
-/**
- * Error logger
- */
-function error({ event, error }: ErrorOptions) {
-  const isErrorForm = Object.hasOwn(error, 'statusCode') ? error.statusCode === 400 : false;
-  if (isErrorForm) {
-    return;
+      ...(Object.hasOwn(event.node.req.headers, 'user-agent') && { ua: event.node.req.headers['user-agent'] })
+    };
   }
 
-  const message = error?.statusMessage ? error.statusMessage : error?.message ? error.message : '';
-  if (typeof message !== 'string' || message === '') {
-    return;
-  }
-
-  const logger = createLogger({
-    level: 'error',
-    format: formatter({ event, error }),
-    transports: [new transports.Console()]
-  });
-
-  return logger.error(error?.statusMessage ? error.statusMessage : '');
+  return result;
 }
 
-export default {
-  error
-};
+const formatTemplate = format.printf(({ level, message, timestamp, metadata }) => {
+  const result = JSON.stringify({
+    level,
+    message,
+    timestamp,
+    ...parseMetadata(metadata as any)
+  });
+
+  return result.concat('\n');
+});
+
+export const logger = createLogger({
+  format: format.combine(
+    format.metadata(),
+    format.timestamp(),
+    formatTemplate
+  ),
+  transports: [
+    new transports.Console()
+  ]
+});

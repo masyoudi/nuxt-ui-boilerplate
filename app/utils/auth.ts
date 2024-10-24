@@ -1,52 +1,73 @@
-const ROLE_CODES = ['4951'];
-
-const isValidDate = (val: string | number) => !Number.isNaN(new Date(val).getDate());
+const BASIC_ROLE = 55;
 
 /**
- * Check auth role
- * @param auth - Auth value
+ * Validate auth schema
+ * @param value - Auth value
  * @returns boolean
  */
-export function isValidRole(auth: string) {
-  const pos = Number.parseInt(auth.substring(auth.length - 1));
-
-  if (pos > auth.length) {
+function isValidSchema(value: string) {
+  if (!/^\d+$/.test(value)) {
     return false;
   }
 
-  const parts = auth.substring(0, auth.length - 1);
-  const role = parts.substring(pos, pos + 2);
-  const char = role.split('').map((v) => v.charCodeAt(0));
-  return ROLE_CODES.includes(char.join(''));
+  const d = new Date().valueOf().toString();
+  const length = d.length * 2 + 5;
+
+  return value.length === length;
 }
 
 /**
- * Check auth expiry
- * @param auth - Auth value
- * @returns boolean
+ * Get expiry date from auth value
+ * @param value - Auth value
+ * @returns number
  */
-export function isValidExpiry(auth: string) {
-  const pos = Number.parseInt(auth.substring(auth.length - 1));
-
-  if (pos > auth.length) {
-    return false;
+function getExpiry(value: string) {
+  if (!isValidSchema(value)) {
+    return 0;
   }
 
-  const parts = auth.substring(0, auth.length - 1);
-  const exp = Number.parseInt(parts.substring(0, pos) + parts.substring(pos + 2, parts.length));
+  const dateLength = new Date().valueOf().toString().length;
+  const splitter = Number(value.substring(value.length - 1));
+  const firstPartExp = value.substring(value.length - splitter - 1, value.length - 1);
+  const secondPartExp = value.substring(0, dateLength - splitter);
+  const exp = firstPartExp + secondPartExp;
 
-  return isValidDate(exp) ? new Date(exp).valueOf() > new Date().valueOf() : false;
+  return Number(exp);
 }
 
 /**
- * Check auth is valid
- * @param auth - Auth value
+ * Get role number from auth value
+ * @param value - Auth value
  * @returns boolean
  */
-export function isValidAuth(auth: string) {
-  if (!auth || typeof auth !== 'string' || !/^\d+$/.test(auth)) {
-    return false;
+function getRole(value: string) {
+  const isExpired = getExpiry(value) < new Date().valueOf();
+
+  if (isExpired) {
+    return 0;
   }
 
-  return isValidExpiry(auth) && isValidRole(auth);
+  const dateLength = new Date().valueOf().toString().length;
+  const splitter = Number(value.substring(value.length - 1));
+  const diff = dateLength - splitter;
+  const roleCodes = value.substring(diff, diff + 4);
+  const roleCode = [roleCodes.substring(0, 2), roleCodes.substring(2)].map((v) => String.fromCharCode(Number(v))).join('');
+
+  return Number(roleCode);
+}
+
+/**
+ * Check if auth is valid
+ * @param value - Auth value
+ * @returns boolean
+ */
+function isValidAuth(value: string) {
+  return [BASIC_ROLE].includes(getRole(value));
+}
+
+export default function authValidator(value: string) {
+  return {
+    valid: () => isValidAuth(value),
+    expired: () => getExpiry(value) >= new Date().valueOf()
+  };
 }

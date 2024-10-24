@@ -1,16 +1,13 @@
-import { isValidAuth } from '@/utils/auth';
+import authValidator from '~/utils/auth';
 
-/**
- * Auth validator with named middleware
- */
 export default defineNuxtRouteMiddleware(async () => {
   try {
-    const auth = useStateAuth();
-    const user = useStateUser();
+    const authState = useStateAuth();
+    const userState = useStateUser();
+    const authCheck = authValidator(authState.value);
 
-    // Redirect to login page when user auth is invalid.
-    if (!auth.value || !isValidAuth(auth.value) || !user.value) {
-      auth.value = '';
+    if (!authState.value || !userState.value || (authState.value && !authCheck.valid())) {
+      authState.value = '';
 
       if (import.meta.client) {
         window.location.replace('/login');
@@ -19,7 +16,8 @@ export default defineNuxtRouteMiddleware(async () => {
 
       return await navigateTo('/login');
     }
-  } catch (err: any) {
+  }
+  catch (err: any) {
     abortNavigation(err);
   }
 });

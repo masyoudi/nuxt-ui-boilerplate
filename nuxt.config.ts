@@ -1,84 +1,90 @@
-let reload = 0;
+import { colors, createAssetColors } from './config/colors';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-
-  modules: ['@nuxt/fonts', '@nuxt/ui'],
-
+  modules: ['@nuxt/ui', '@nuxt/eslint'],
   devtools: {
     enabled: true
   },
+
   app: {
-    rootId: '__app',
-    head: {
-      meta: [{ charset: 'utf-8' }, { name: 'viewport', content: 'width=device-width, initial-scale=1' }],
-      link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }]
-    },
-    buildAssetsDir: '/__assets/'
+    buildAssetsDir: '/_assets/'
   },
 
-  colorMode: {
-    preference: 'light'
+  css: ['~/assets/css/main.css'],
+
+  ui: {
+    colorMode: false,
+    theme: {
+      colors: Object.keys(colors)
+    }
   },
+
+  srcDir: 'app/',
+  serverDir: 'server/',
 
   future: {
     compatibilityVersion: 4
   },
-
-  compatibilityDate: '2024-07-28',
+  compatibilityDate: '2024-11-01',
 
   nitro: {
-    hooks: {
-      'dev:reload': () => {
-        reload++;
-        console.info('App is', reload === 1 ? 'running' : 'reloaded');
-      }
-    },
     typescript: {
       strict: true,
       tsConfig: {
         compilerOptions: {
-          noUnusedParameters: true,
-          noUnusedLocals: true,
-          verbatimModuleSyntax: true
+          types: ['./server/types/h3']
         }
       }
     }
   },
 
   vite: {
-    clearScreen: false
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (['echarts', 'zrender'].includes(id)) {
+              return 'echarts';
+            }
+          }
+        }
+      }
+    }
   },
 
   typescript: {
     strict: true,
     tsConfig: {
       compilerOptions: {
-        noUnusedParameters: true,
-        noUnusedLocals: true,
-        verbatimModuleSyntax: true,
-        types: ['./types/app']
+        types: ['./shared/types/app']
       }
     }
   },
 
-  telemetry: {
-    enabled: false
-  },
+  telemetry: false,
 
   hooks: {
+    'build:before': () => createAssetColors(),
     'pages:extend': (pages) => {
-      const pagesToRemove = pages.filter((page) => page.path.includes('_components'));
+      const ignorePaths = ['_components', '_utils'];
+      const pagesToRemove = pages.filter((page) => page.path.split('/').some((path) => ignorePaths.includes(path)));
 
       pagesToRemove.forEach((page) => {
-        pages.splice(pages.indexOf(page), 1);
+        pages.splice(pages.findIndex((p) => p.path === page.path), 1);
       });
     }
   },
 
-  icon: {
-    serverBundle: {
-      collections: ['heroicons']
+  eslint: {
+    config: {
+      formatters: true,
+      stylistic: {
+        semi: true,
+        quotes: 'single',
+        commaDangle: 'never',
+        arrowParens: true
+      }
     }
   }
 });

@@ -1,133 +1,187 @@
-<style>
-:root {
-  --vc-gray-50: rgb(var(--color-gray-50));
-  --vc-gray-100: rgb(var(--color-gray-100));
-  --vc-gray-200: rgb(var(--color-gray-200));
-  --vc-gray-300: rgb(var(--color-gray-300));
-  --vc-gray-400: rgb(var(--color-gray-400));
-  --vc-gray-500: rgb(var(--color-gray-500));
-  --vc-gray-600: rgb(var(--color-gray-600));
-  --vc-gray-700: rgb(var(--color-gray-700));
-  --vc-gray-800: rgb(var(--color-gray-800));
-  --vc-gray-900: rgb(var(--color-gray-900));
-}
+<script setup lang="ts" generic="IsRange extends boolean = false">
+import { CalendarDate, getLocalTimeZone } from '@internationalized/date';
+import { formatDate } from '@vueuse/core';
+import type { ButtonProps } from '#ui/components/Button.vue';
+import type { CalendarProps } from '#ui/components/Calendar.vue';
+import type { DatepickerValue } from '~/types/datepicker';
+import { toArray } from '~~/shared/utils';
 
-.vc-primary {
-  --vc-accent-50: rgb(var(--color-primary-50));
-  --vc-accent-100: rgb(var(--color-primary-100));
-  --vc-accent-200: rgb(var(--color-primary-200));
-  --vc-accent-300: rgb(var(--color-primary-300));
-  --vc-accent-400: rgb(var(--color-primary-400));
-  --vc-accent-500: rgb(var(--color-primary-500));
-  --vc-accent-600: rgb(var(--color-primary-600));
-  --vc-accent-700: rgb(var(--color-primary-700));
-  --vc-accent-800: rgb(var(--color-primary-800));
-  --vc-accent-900: rgb(var(--color-primary-900));
-}
-</style>
+type RangeValue = {
+  start: CalendarDate;
+  end: CalendarDate;
+};
 
-<template>
-  <UPopover v-model:open="open" :popper="{ placement: 'bottom-start' }" :disabled="props.disabled">
-    <UInput
-      :model-value="label"
-      :placeholder="props.placeholder"
-      :icon="props.icon"
-      :ui="{ wrapper: 'w-full' }"
-      readonly
-      :disabled="props.disabled"
-    ></UInput>
+type TModel<R extends boolean = false> = R extends true ? DatepickerValue[] : DatepickerValue;
 
-    <template #panel="{ close }">
-      <VDatePicker v-if="Array.isArray(date)" v-model.range="range" :columns="2" v-bind="{ ...attrs, ...$attrs }" />
-      <VDatePicker v-else v-model="date" v-bind="{ ...attrs, ...$attrs }" @dayclick="close" />
-    </template>
-  </UPopover>
-</template>
-
-<script setup lang="ts">
-import { DatePicker as VDatePicker } from 'v-calendar';
-import { format as formatDate, isValid as isValidDate } from 'date-fns';
-import 'v-calendar/dist/style.css';
-
-type DateT = Date | number | string;
-
-interface Props {
-  modelValue?: DateT | DateT[];
-  format?: string;
-  placeholder?: string;
-  parser?: (val?: DateT | DateT[]) => DateT | DateT[];
+interface Props<R extends boolean> {
+  modelValue?: TModel<R>;
+  range?: R & boolean;
+  size?: ButtonProps['size'];
+  calendarSize?: CalendarProps<any, any>['size'];
   icon?: string;
+  iconRight?: string;
+  min?: Date;
+  max?: Date;
+  creator?: (value: Date) => TModel<R>;
+  formatter?: (value: Date) => string;
+  placeholder?: string;
   disabled?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  format: 'dd/MM/yyyy',
-  icon: 'i-heroicons:calendar',
-  parser: (val?: DateT | DateT[]) => {
-    if (!val) {
-      return '';
-    }
-
-    if (val) {
-      return Array.isArray(val) ? val.map((v) => new Date(v).toISOString()) : new Date(val).toISOString();
-    }
-
-    return val;
-  },
+const props = withDefaults(defineProps<Props<IsRange>>(), {
+  placeholder: 'Pick a date',
+  icon: 'lucide:calendar',
+  creator: (value: Date) => value as TModel<IsRange>,
   disabled: false
 });
+
 const emits = defineEmits<{
-  (e: 'update:modelValue', val?: DateT | DateT[]): void;
+  (e: 'update:modelValue', value: DatepickerValue | DatepickerValue[]): void;
 }>();
 
 const open = ref(false);
+const hasModel = ref(!props.range ? typeof props.modelValue !== 'undefined' : Array.isArray(props.modelValue));
 
-const _date = ref<DateT | DateT[]>();
-const date = computed({
+const _model = ref();
+const vmodel = computed({
   get: () => {
-    const value = props.modelValue ?? _date.value;
-    return Array.isArray(value) ? [...value] : value;
+    const value = hasModel.value ? props.modelValue : _model.value;
+    if (
+      !value
+      || (!props.range && Number.isNaN(new Date(value).valueOf()))
+      || (props.range && !Array.isArray(value))
+      || (props.range && Array.isArray(value) && value.length !== 2)
+      || (props.range && Array.isArray(value) && value.some((val) => Number.isNaN(new Date(val !== null ? val : undefined).valueOf())))
+    ) {
+      return undefined as any;
+    }
+
+    if (props.range) {
+      const [start, end] = toArray(value).map((v) => new Date(v)) as [Date, Date];
+
+      return {
+        start: new CalendarDate(start.getFullYear(), start.getMonth() + 1, start.getDate()),
+        end: new CalendarDate(end.getFullYear(), end.getMonth() + 1, end.getDate())
+      };
+    }
+
+    const d = new Date(value);
+    return new CalendarDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
   },
-  set: (value) => {
-    _date.value = value;
-    emits('update:modelValue', typeof props.parser === 'function' ? props.parser(value) : value);
+  set: (val) => {
+    if (props.range && isValueRange(val as RangeValue)) {
+      const { start, end } = val as RangeValue;
+      const values = [start.toDate(getLocalTimeZone()), new Date(end.toDate(getLocalTimeZone()).setHours(23, 59, 59, 999))];
+      _model.value = values;
+      emits('update:modelValue', values.map((v) => props.creator(v)) as DatepickerValue[]);
+    }
+
+    if (!props.range && val) {
+      const value = (val as CalendarDate).toDate(getLocalTimeZone());
+      _model.value = value;
+      emits('update:modelValue', props.creator(value));
+    }
+
+    open.value = false;
   }
 });
 
-const range = computed({
-  get: () => {
-    if (!Array.isArray(date.value)) {
-      return null;
-    }
-
-    const [start, end] = date.value as [DateT, DateT];
-    return { start, end };
-  },
-  set: (value) => {
-    if (value?.start && value?.end) {
-      open.value = false;
-      date.value = [value.start, value.end];
-    }
+const minDate = computed(() => {
+  if (!props.min || (props.min && Number.isNaN(new Date(props.min).valueOf()))) {
+    return undefined;
   }
+
+  const d = new Date(props.min);
+  return new CalendarDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
 });
 
-const label = computed(() => {
-  if (!date.value) {
+const maxDate = computed(() => {
+  if (!props.max || (props.max && Number.isNaN(new Date(props.max).valueOf()))) {
+    return undefined;
+  }
+
+  const d = new Date(props.max);
+  return new CalendarDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
+});
+
+const displayDate = computed(() => {
+  if (!vmodel.value || (props.range && !isValueRange(vmodel.value as RangeValue))) {
     return '';
   }
 
-  const dates = (Array.isArray(date.value) ? date.value : [date.value]).filter((_date) => isValidDate(new Date(_date)));
-  return dates.map((d) => formatDate(new Date(d), props.format)).join(' - ');
+  if (props.range) {
+    const { start, end } = vmodel.value as RangeValue;
+    return `${format(start.toDate(getLocalTimeZone()))} - ${format(end.toDate(getLocalTimeZone()))}`;
+  }
+
+  const val = vmodel.value as CalendarDate;
+  return format(val.toDate(getLocalTimeZone()));
 });
 
-const attrs = {
-  transparent: true,
-  borderless: true,
-  color: 'primary',
-  'is-dark': {
-    selector: 'html',
-    darkClass: 'dark'
-  },
-  'first-day-of-week': 2
-};
+function format(date: Date) {
+  if (!props.formatter || (props.formatter && typeof props.formatter !== 'function')) {
+    return formatDate(date, 'DD/MM/YYYY');
+  }
+
+  return props.formatter(date);
+}
+
+function isValueRange(value: RangeValue) {
+  return (
+    Object.keys(value).length === 2
+    && Object.keys(value).every((k) => ['start', 'end'].includes(k))
+    && typeof value?.start === 'object'
+    && typeof value?.end === 'object'
+  );
+}
+
+function close() {
+  open.value = false;
+}
+
+watch(() => props.modelValue, () => {
+  if (
+    (props.range && Array.isArray(props.modelValue))
+    || (!props.range && typeof props.modelValue !== 'undefined')
+  ) {
+    hasModel.value = true;
+  }
+});
 </script>
+
+<template>
+  <UPopover
+    v-model:open="open"
+    :ui="{ content: 'z-50' }"
+    :content="{ align: 'start' }"
+  >
+    <UButton
+      color="neutral"
+      variant="outline"
+      class="justify-start font-normal group hover:bg-white hover:ring-slate-400"
+      :ui="{ leadingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700' }"
+      block
+      :icon="props.icon"
+      :trailing-icon="props.iconRight"
+      :size="props.size"
+      :disabled="props.disabled"
+    >
+      <span :class="{ 'text-slate-400': !displayDate }">{{ displayDate ? displayDate : props.placeholder }}</span>
+    </UButton>
+
+    <template #content>
+      <UCalendar
+        v-model="vmodel"
+        class="p-2"
+        :min-value="minDate"
+        :max-value="maxDate"
+        :range="props.range"
+        :size="props.calendarSize"
+      />
+      <slot
+        name="footer"
+        :close="close"
+      />
+    </template>
+  </UPopover>
+</template>

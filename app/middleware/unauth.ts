@@ -1,17 +1,16 @@
-// import { isValidAuth } from '@@/app/utils/auth';
+import authValidator from '~/utils/auth';
 
-/**
- * Middleware to check if page has not required authentication
- */
-export default defineNuxtRouteMiddleware(() => {
+export default defineNuxtRouteMiddleware(async () => {
   try {
-    const auth = useStateAuth();
-    const user = useStateUser();
+    const authState = useStateAuth();
+    const userState = useStateUser();
+    const authCheck = authValidator(authState.value);
 
-    if (isValidAuth(auth.value) && user.value) {
+    if (userState.value && authState.value && authCheck.valid()) {
       return navigateTo('/');
     }
-  } catch (err: any) {
+  }
+  catch (err: any) {
     abortNavigation(err);
   }
 });

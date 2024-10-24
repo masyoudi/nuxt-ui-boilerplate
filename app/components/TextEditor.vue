@@ -1,5 +1,545 @@
+<script setup lang="ts">
+import { Editor, EditorContent } from '@tiptap/vue-3';
+import type { Editor as CoreEditor } from '@tiptap/core';
+import Link from '@tiptap/extension-link';
+import StarterKit from '@tiptap/starter-kit';
+import Superscript from '@tiptap/extension-superscript';
+import Subscript from '@tiptap/extension-subscript';
+import Underline from '@tiptap/extension-underline';
+import Placeholder from '@tiptap/extension-placeholder';
+import TextAlign from '@tiptap/extension-text-align';
+import type { HeadingOptions } from '@tiptap/extension-heading';
+import { promiseTimeout } from '@vueuse/core';
+import type { Node as ProsemirrorNode } from '@tiptap/pm/model';
+
+type ExtensionNames = 'bold'
+  | 'blockquote'
+  | 'bulletList'
+  | 'code'
+  | 'codeBlock'
+  | 'heading'
+  | 'horizontalRule'
+  | 'italic'
+  | 'listItem'
+  | 'orderedList'
+  | 'strike'
+  | 'underline'
+  | 'subscript'
+  | 'superscript'
+  | 'textAlign'
+  | 'link';
+
+interface CommonToolbarItem {
+  id: ExtensionNames;
+  name: string;
+  icon: string;
+  shortcuts: string[];
+  command: VoidFunction;
+  active: () => boolean | undefined;
+};
+
+interface PlaceholderProps {
+  editor: CoreEditor;
+  node: ProsemirrorNode;
+  pos: number;
+  hasAnchor: boolean;
+}
+
+interface Props {
+  modelValue?: string;
+  ignoreExtensions?: ExtensionNames[];
+  placeholder?: string | ((ctx: PlaceholderProps) => string);
+  disabled?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  placeholder: 'Enter text...',
+  disabled: false
+});
+const emits = defineEmits<{
+  (e: 'update:modelValue', val: string): void;
+}>();
+
+const editor = shallowRef<Editor>();
+
+const _content = ref('');
+const content = computed({
+  get: () => props.modelValue ?? _content.value,
+  set: (val) => {
+    _content.value = val;
+    emits('update:modelValue', val);
+  }
+});
+
+const headings = computed(() => [
+  {
+    id: 1,
+    label: 'Heading 1',
+    slot: 'heading1',
+    onSelect: async () => {
+      await promiseTimeout(150);
+      editor.value?.chain().focus().toggleHeading({ level: 1 }).run();
+    },
+    color: getDropdownItemColor(editor.value?.isActive('heading', { level: 1 }))
+  },
+  {
+    id: 2,
+    label: 'Heading 2',
+    slot: 'heading2',
+    onSelect: async () => {
+      await promiseTimeout(150);
+      editor.value?.chain().focus().toggleHeading({ level: 2 }).run();
+    },
+    color: getDropdownItemColor(editor.value?.isActive('heading', { level: 2 }))
+  },
+  {
+    id: 3,
+    label: 'Heading 3',
+    slot: 'heading3',
+    onSelect: async () => {
+      await promiseTimeout(150);
+      editor.value?.chain().focus().toggleHeading({ level: 3 }).run();
+    },
+    color: getDropdownItemColor(editor.value?.isActive('heading', { level: 3 }))
+  },
+  {
+    id: 0,
+    label: 'Paragraph',
+    onSelect: async () => {
+      await promiseTimeout(150);
+      editor.value?.chain().focus().setParagraph().run();
+    },
+    color: getDropdownItemColor(![1, 2, 3].some((v) => editor.value?.isActive('heading', { level: v })))
+  }
+]);
+
+const commonToolbarItems: CommonToolbarItem[] = [
+  {
+    id: 'bold',
+    name: 'Bold',
+    shortcuts: ['Ctrl', 'B'],
+    icon: 'lucide:bold',
+    command: () => {
+      editor.value?.chain().focus().toggleBold().run();
+    },
+    active: () => editor.value?.isActive('bold')
+  },
+  {
+    id: 'italic',
+    name: 'Italic',
+    shortcuts: ['Ctrl', 'I'],
+    icon: 'lucide:italic',
+    command: () => {
+      editor.value?.chain().focus().toggleItalic().run();
+    },
+    active: () => editor.value?.isActive('italic')
+  },
+  {
+    id: 'underline',
+    name: 'Underline',
+    shortcuts: ['Ctrl', 'U'],
+    icon: 'lucide:underline',
+    command: () => {
+      editor.value?.chain().focus().toggleUnderline().run();
+    },
+    active: () => editor.value?.isActive('underline')
+  },
+  {
+    id: 'strike',
+    name: 'Strikethrough',
+    shortcuts: ['Ctrl', 'Shift', 'S'],
+    icon: 'lucide:strikethrough',
+    command: () => {
+      editor.value?.chain().focus().toggleStrike().run();
+    },
+    active: () => editor.value?.isActive('strike')
+  },
+  {
+    id: 'superscript',
+    name: 'Superscript',
+    shortcuts: ['Ctrl', '.'],
+    icon: 'lucide:superscript',
+    command: () => {
+      editor.value?.chain().focus().toggleSuperscript().run();
+    },
+    active: () => editor.value?.isActive('superscript')
+  },
+  {
+    id: 'subscript',
+    name: 'Subscript',
+    shortcuts: ['Ctrl', ','],
+    icon: 'lucide:subscript',
+    command: () => {
+      editor.value?.chain().focus().toggleSubscript().run();
+    },
+    active: () => editor.value?.isActive('subscript')
+  },
+  {
+    id: 'blockquote',
+    name: 'Blockquote',
+    shortcuts: ['Ctrl', 'Shift', 'B'],
+    icon: 'lucide:quote',
+    command: () => {
+      editor.value?.chain().focus().toggleBlockquote().run();
+    },
+    active: () => editor.value?.isActive('blockquote')
+  },
+  {
+    id: 'bulletList',
+    name: 'Bullet List',
+    shortcuts: [],
+    icon: 'lucide:list',
+    command: () => {
+      editor.value?.chain().focus().toggleBulletList().run();
+    },
+    active: () => editor.value?.isActive('bulletList')
+  },
+  {
+    id: 'orderedList',
+    name: 'Ordered List',
+    shortcuts: [],
+    icon: 'lucide:list-ordered',
+    command: () => {
+      editor.value?.chain().focus().toggleOrderedList().run();
+    },
+    active: () => editor.value?.isActive('orderedList')
+  }
+];
+
+const textAligns = computed(() => [
+  {
+    id: 'left',
+    icon: 'lucide:align-left',
+    onSelect: async () => {
+      await promiseTimeout(150);
+      editor.value?.chain().focus().setTextAlign('left').run();
+    },
+    color: getDropdownItemColor(editor.value?.isActive({ textAlign: 'left' }))
+  },
+  {
+    id: 'right',
+    icon: 'lucide:align-right',
+    onSelect: async () => {
+      await promiseTimeout(150);
+      editor.value?.chain().focus().setTextAlign('right').run();
+    },
+    color: getDropdownItemColor(editor.value?.isActive({ textAlign: 'right' }))
+  },
+  {
+    id: 'center',
+    icon: 'lucide:align-center',
+    onSelect: async () => {
+      await promiseTimeout(150);
+      editor.value?.chain().focus().setTextAlign('center').run();
+    },
+    color: getDropdownItemColor(editor.value?.isActive({ textAlign: 'center' }))
+  },
+  {
+    id: 'justify',
+    icon: 'lucide:align-justify',
+    onSelect: async () => {
+      await promiseTimeout(150);
+      editor.value?.chain().focus().setTextAlign('justify').run();
+    },
+    color: getDropdownItemColor(editor.value?.isActive({ textAlign: 'justify' }))
+  }
+]);
+
+const isFocused = ref(false);
+
+const link = reactive({
+  open: false,
+  url: '',
+  mode: 'add' as 'add' | 'edit'
+});
+
+function getDropdownItemColor(isActive?: boolean) {
+  return isActive ? 'primary' as const : 'neutral' as const;
+}
+
+/**
+ * Check is extension disabled
+ * @param ext - Extension name
+ */
+function isEnable(ext: ExtensionNames) {
+  return !(props.ignoreExtensions ?? []).includes(ext);
+}
+
+/**
+ * Initialize editor
+ */
+function init() {
+  const headingConfig: Partial<HeadingOptions> = {
+    levels: [1, 2, 3]
+  };
+
+  const _TextAlign = TextAlign.configure({
+    types: ['heading', 'paragraph'],
+    alignments: textAligns.value.map((v) => v.id)
+  });
+
+  const _Link = Link.configure({
+    openOnClick: false,
+    defaultProtocol: 'https'
+  });
+
+  editor.value = new Editor({
+    editorProps: {
+      attributes: {
+        class: 'min-h-[150px] max-h-[500px] prose max-w-none outline-none resize-y overflow-y-auto p-1.5'
+      },
+      handleClick: (_view: any, _pos: any, evt: MouseEvent) => {
+        const { target } = evt;
+
+        if (!(target instanceof HTMLElement)) {
+          return;
+        }
+
+        const isAnchor = target instanceof HTMLAnchorElement ? true : target?.parentElement instanceof HTMLAnchorElement;
+        if (target.closest('a') && isAnchor) {
+          evt.stopPropagation();
+          onOpenLink();
+          nextTick(() => link.open = true);
+        }
+      }
+    },
+    extensions: [
+      StarterKit.configure({
+        bold: isEnable('bold') ? undefined : false,
+        blockquote: isEnable('blockquote') ? undefined : false,
+        bulletList: isEnable('bulletList') ? undefined : false,
+        code: isEnable('code') ? undefined : false,
+        codeBlock: isEnable('codeBlock') ? undefined : false,
+        heading: isEnable('heading') ? headingConfig : false,
+        horizontalRule: isEnable('horizontalRule') ? undefined : false,
+        italic: isEnable('italic') ? undefined : false,
+        listItem: isEnable('listItem') ? undefined : false,
+        orderedList: isEnable('orderedList') ? undefined : false,
+        strike: isEnable('strike') ? undefined : false
+      }),
+      ...(isEnable('subscript') ? [Subscript] : []),
+      ...(isEnable('superscript') ? [Superscript] : []),
+      ...(isEnable('underline') ? [Underline] : []),
+      ...(isEnable('textAlign') ? [_TextAlign] : []),
+      ...(isEnable('link') ? [_Link] : []),
+      Placeholder.configure({
+        emptyEditorClass: 'is-editor-empty',
+        placeholder: props.placeholder
+      })
+    ],
+    content: content.value,
+    editable: !props.disabled,
+    onFocus: () => {
+      isFocused.value = true;
+    },
+    onBlur: () => {
+      isFocused.value = false;
+    },
+    onUpdate: ({ editor: _editor }) => {
+      content.value = _editor.getHTML();
+    }
+  });
+}
+
+/**
+ * Set input url on open link
+ */
+async function onOpenLink() {
+  if (!editor.value) {
+    return;
+  }
+
+  const prevURL = editor.value.getAttributes('link').href;
+  const hasURL = typeof prevURL === 'string' && prevURL !== '';
+
+  link.mode = hasURL ? 'edit' : 'add';
+  link.url = hasURL ? prevURL : '';
+}
+
+/**
+ * Insert link
+ */
+function onSetLink() {
+  if (!editor.value || link.url === '') {
+    link.open = false;
+    return;
+  }
+
+  editor.value.chain().focus().extendMarkRange('link').setLink({ href: link.url }).run();
+}
+
+/**
+ * Remove link
+ */
+function onUnsetLink() {
+  if (!editor.value) {
+    link.open = false;
+    return;
+  }
+
+  editor.value.chain().focus().extendMarkRange('link').unsetLink().run();
+  link.open = false;
+}
+
+watchEffect(() => {
+  const isEqual = editor.value?.getHTML() === content.value;
+  if (isEqual) {
+    return;
+  }
+
+  editor.value?.commands.setContent(content.value, false);
+});
+
+watchEffect(() => {
+  editor.value?.setEditable(!props.disabled);
+});
+
+onMounted(() => {
+  init();
+});
+
+onUnmounted(() => {
+  editor.value?.destroy();
+});
+</script>
+
+<template>
+  <div
+    class="relative w-full bg-white border rounded-md tiptap"
+    :class="isFocused ? 'border-(--ui-color-primary-500)' : 'border-(--ui-border-accented)'"
+  >
+    <div class="flex flex-wrap bg-slate-50/40 gap-2 p-2 rounded-t-md border-b border-b-slate-100">
+      <UDropdownMenu
+        v-if="isEnable('heading')"
+        :items="headings"
+        :ui="{ content: 'w-38' }"
+      >
+        <UButton
+          :label="headings.find((val) => editor?.isActive('heading', { level: val.id }))?.label ?? 'Paragraph'"
+          color="neutral"
+          size="sm"
+          block
+          class="max-w-[115px] justify-between"
+          trailing-icon="lucide:chevron-down"
+          variant="soft"
+        />
+
+        <template #heading1-label="{ item }">
+          <div class="text-xl font-bold leading-5">
+            {{ item.label }}
+          </div>
+        </template>
+        <template #heading2-label="{ item }">
+          <div class="text-lg font-bold leading-5">
+            {{ item.label }}
+          </div>
+        </template>
+        <template #heading3-label="{ item }">
+          <div class="text-md font-bold leading-5">
+            {{ item.label }}
+          </div>
+        </template>
+      </UDropdownMenu>
+
+      <template
+        v-for="item in commonToolbarItems"
+        :key="item.id"
+      >
+        <UTooltip
+          v-if="isEnable(item.id)"
+          :text="item.name"
+          :kbds="item.shortcuts"
+          arrow
+        >
+          <UButton
+            size="sm"
+            :color="item.active() ? 'primary' : 'neutral'"
+            variant="soft"
+            :icon="item.icon"
+            class="cursor-pointer"
+            @click="item.command"
+          />
+        </UTooltip>
+      </template>
+
+      <UDropdownMenu
+        v-if="isEnable('textAlign')"
+        :items="textAligns"
+        size="sm"
+        :ui="{
+          content: 'min-w-9 w-9'
+        }"
+      >
+        <UTooltip
+          text="Text Align"
+          arrow
+        >
+          <UButton
+            :icon="textAligns.find((v) => editor?.isActive({ textAlign: v.id }))?.icon ?? 'lucide:align-left'"
+            color="neutral"
+            size="sm"
+            variant="soft"
+          />
+        </UTooltip>
+      </UDropdownMenu>
+
+      <UPopover
+        v-if="isEnable('link')"
+        v-model:open="link.open"
+      >
+        <UButton
+          icon="lucide:link"
+          :color="editor?.isActive('link') ? 'primary' : 'neutral'"
+          variant="soft"
+          size="sm"
+          @click="onOpenLink"
+        />
+
+        <template #content>
+          <div class="w-56 p-3">
+            <UFormField
+              label="URL"
+              class="mb-4"
+              size="xs"
+            >
+              <UInput
+                v-model="link.url"
+                class="w-full"
+                placeholder="Enter url..."
+                size="xs"
+              />
+            </UFormField>
+
+            <div class="flex justify-end gap-2">
+              <UButton
+                color="danger"
+                size="xs"
+                :disabled="!editor?.isActive('link')"
+                @click="onUnsetLink"
+              >
+                Unset Link
+              </UButton>
+              <UButton
+                color="primary"
+                size="xs"
+                @click="onSetLink"
+              >
+                {{ ucFirst(link.mode) }} Link
+              </UButton>
+            </div>
+          </div>
+        </template>
+      </UPopover>
+    </div>
+
+    <div class="w-full min-h-[150px] p-px">
+      <EditorContent :editor="editor" />
+    </div>
+  </div>
+</template>
+
 <style scoped>
-:deep(.tiptap) p.is-editor-empty:first-child::before {
+.tiptap :deep(.is-editor-empty:first-child::before) {
   color: #adb5bd;
   content: attr(data-placeholder);
   float: left;
@@ -7,336 +547,3 @@
   pointer-events: none;
 }
 </style>
-
-<template>
-  <div ref="root" class="w-full min-h-[200px] border rounded-md" :class="focused ? 'border-primary' : 'dark:border-slate-700'">
-    <div class="flex flex-wrap gap-1 px-3 py-2 border-b dark:border-b-slate-700">
-      <UDropdown :items="[textSizes]" :popper="{ placement: 'bottom-start', arrow: true }">
-        <UButton
-          color="white"
-          class="min-w-[100px] justify-between"
-          :label="textSizes.find((v) => v.active())?.label ?? 'Normal'"
-          trailing-icon="i-heroicons-chevron-down-20-solid"
-          size="2xs"
-        />
-      </UDropdown>
-
-      <UTooltip v-for="(menu, i) in menus" :key="i" :text="menu.title" :shortcuts="menu.shortcuts">
-        <UButton
-          :color="menu.active() ? 'primary' : 'gray'"
-          :icon="menu.icon"
-          size="2xs"
-          variant="ghost"
-          :disabled="menu.disable()"
-          @click="menu.handler"
-        />
-      </UTooltip>
-
-      <UPopover v-model:open="link.open" :popper="{ arrow: true }" @update:open="onTogglePopoverLink">
-        <UTooltip text="Link">
-          <UButton color="gray" icon="i-heroicons-link-16-solid" size="2xs" variant="ghost" />
-        </UTooltip>
-
-        <template #panel>
-          <div class="min-w-[245px] space-y-2 p-3">
-            <UFormGroup label="Text" size="xs">
-              <UInput v-model="link.text" placeholder="Enter text" size="xs" autofocus></UInput>
-            </UFormGroup>
-            <UFormGroup label="Link" size="xs">
-              <UInput v-model="link.url" placeholder="Enter link" size="xs"></UInput>
-            </UFormGroup>
-            <div class="flex items-center justify-end gap-2 pt-1">
-              <UButton
-                v-if="isValidLink(link.url)"
-                icon="i-heroicons-arrow-top-right-on-square"
-                size="xs"
-                variant="ghost"
-                :to="link.url"
-                external
-                target="_blank"
-              ></UButton>
-              <UButton color="red" size="xs" @click="onToggleLink(false)">Reset</UButton>
-              <UButton size="xs" @click="onToggleLink(true)">Save</UButton>
-            </div>
-          </div>
-        </template>
-      </UPopover>
-
-      <UTooltip v-if="typeof props.imageHandler === 'function'" text="Image">
-        <UButton color="gray" icon="i-heroicons-photo" size="2xs" variant="ghost" @click="() => inputImage?.click()" />
-      </UTooltip>
-    </div>
-
-    <div class="hidden pointer-events-none -z-10">
-      <input ref="inputImage" type="file" :accept="props.imageAccept" @change="onChangeImage" />
-    </div>
-
-    <EditorContent :editor="editor"></EditorContent>
-  </div>
-</template>
-
-<script setup lang="ts">
-import { getMarkRange } from '@tiptap/core';
-import { TextSelection } from '@tiptap/pm/state';
-import { useEditor, EditorContent } from '@tiptap/vue-3';
-import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
-import Placeholder from '@tiptap/extension-placeholder';
-import Underline from '@tiptap/extension-underline';
-import type { CommandProps } from '@tiptap/core';
-import { ImageResize } from '@/utils/tiptap/image-resize';
-
-interface Props {
-  modelValue?: string;
-  placeholder?: string;
-  imageAccept?: string;
-  imageHandler?: (file: File) => Promise<string>;
-  disabled?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  imageAccept: 'image/*',
-  disabled: false
-});
-const emits = defineEmits<{
-  (e: 'update:modelValue', val?: string): void;
-}>();
-
-const _value = ref('');
-const vmodel = computed({
-  get: () => props.modelValue ?? _value.value,
-  set: (val) => {
-    _value.value = val;
-    emits('update:modelValue', val);
-  }
-});
-const focused = ref(false);
-const root = ref();
-const inputImage = ref();
-
-const editor = useEditor({
-  content: props.modelValue ?? '',
-  extensions: [
-    StarterKit,
-    Link.configure({
-      openOnClick: false,
-      defaultProtocol: 'https'
-    }),
-    Placeholder.configure({
-      placeholder: props.placeholder,
-      showOnlyWhenEditable: true
-    }),
-    ImageResize,
-    Underline
-  ],
-  editable: !props.disabled,
-  editorProps: {
-    attributes: {
-      class: 'prose !max-w-none focus:outline-none min-h-[150px] px-3 py-2'
-    },
-    handleClick: (view, pos) => {
-      const { schema, doc, tr } = view.state;
-
-      const rangeLink = getMarkRange(doc.resolve(pos), schema.marks.link as any);
-      if (!rangeLink) {
-        return;
-      }
-
-      const _start = doc.resolve(rangeLink.from);
-      const _end = doc.resolve(rangeLink.to);
-      const transaction = tr.setSelection(new TextSelection(_start, _end));
-
-      view.dispatch(transaction);
-      view.state.doc.nodesBetween(view.state.selection.from, view.state.selection.to, (node) => {
-        const mark = node.marks.find((v) => v.type.name === 'link');
-        link.url = mark?.attrs?.href ?? '';
-        link.text = node.text ?? '';
-        link.open = true;
-      });
-    }
-  },
-  onUpdate: (ctx) => {
-    vmodel.value = ctx.editor.getHTML();
-  },
-  onFocus: () => {
-    focused.value = true;
-  },
-  onBlur: () => {
-    focused.value = false;
-  }
-});
-
-const textSizes = computed(() => [
-  {
-    label: 'Normal',
-    active: () => editor.value?.isActive('paragraph'),
-    click: () => editor.value?.chain().focus().setParagraph().run()
-  },
-  {
-    label: 'Heading 1',
-    active: () => editor.value?.isActive('heading', { level: 1 }),
-    click: () => editor.value?.chain().focus().toggleHeading({ level: 1 }).run()
-  },
-  {
-    label: 'Heading 2',
-    active: () => editor.value?.isActive('heading', { level: 2 }),
-    click: () => editor.value?.chain().focus().toggleHeading({ level: 2 }).run()
-  },
-  {
-    label: 'Heading 3',
-    active: () => editor.value?.isActive('heading', { level: 3 }),
-    click: () => editor.value?.chain().focus().toggleHeading({ level: 3 }).run()
-  }
-]);
-
-const menus = computed(() => [
-  {
-    title: 'Bold',
-    icon: 'i-heroicons-bold',
-    shortcuts: ['Ctrl', 'B'],
-    active: () => editor.value?.isActive('bold'),
-    disable: () => !editor.value?.can().chain().focus().toggleBold().run(),
-    handler: () => editor.value?.chain().focus().toggleBold().run()
-  },
-  {
-    title: 'Italic',
-    icon: 'i-heroicons-italic-16-solid',
-    shortcuts: ['Ctrl', 'I'],
-    active: () => editor.value?.isActive('italic'),
-    disable: () => !editor.value?.can().chain().focus().toggleItalic().run(),
-    handler: () => editor.value?.chain().focus().toggleItalic().run()
-  },
-  {
-    title: 'Strikethrough',
-    icon: 'i-heroicons-strikethrough-16-solid',
-    shortcuts: ['Ctrl', 'Shift', 'S'],
-    active: () => editor.value?.isActive('strike'),
-    disable: () => !editor.value?.can().chain().focus().toggleStrike().run(),
-    handler: () => editor.value?.chain().focus().toggleStrike().run()
-  },
-  {
-    title: 'Underline',
-    icon: 'i-heroicons-underline-16-solid',
-    shortcuts: ['Ctrl', 'U'],
-    active: () => editor.value?.isActive('underline'),
-    disable: () => !editor.value?.can().chain().focus().toggleUnderline().run(),
-    handler: () => editor.value?.chain().focus().toggleUnderline().run()
-  },
-  {
-    title: 'Numbered List',
-    icon: 'i-heroicons-numbered-list-16-solid',
-    shortcuts: [],
-    active: () => editor.value?.isActive('orderedList'),
-    disable: () => !editor.value?.can().chain().focus().toggleOrderedList().run(),
-    handler: () => editor.value?.chain().focus().toggleOrderedList().run()
-  },
-  {
-    title: 'List Bullet',
-    icon: 'i-heroicons-list-bullet-16-solid',
-    shortcuts: [],
-    active: () => editor.value?.isActive('bulletList'),
-    disable: () => !editor.value?.can().chain().focus().toggleBulletList().run(),
-    handler: () => editor.value?.chain().focus().toggleBulletList().run()
-  }
-]);
-
-const toast = useToast();
-
-// Link
-const link = reactive({
-  open: false,
-  text: '',
-  url: ''
-});
-
-function onTogglePopoverLink(open: boolean) {
-  const state = editor.value?.state;
-  if (open && link.text === '' && link.url === '' && state) {
-    state.doc.nodesBetween(state.selection.from, state.selection.to, (node) => {
-      const mark = node.marks.find((v) => v.type.name === 'link');
-      link.url = mark?.attrs?.href ?? '';
-      link.text = node.text ?? '';
-    });
-  }
-
-  if (!open) {
-    link.text = '';
-    link.url = '';
-  }
-}
-
-function onToggleLink(isAdd: boolean) {
-  const _editor = editor.value;
-  if (!_editor) {
-    return;
-  }
-
-  const insertText = (cmd: CommandProps) => {
-    cmd.tr.insertText(link.text);
-    return true;
-  };
-
-  if (!isAdd) {
-    _editor.chain().focus().extendMarkRange('link').command(insertText).unsetLink().run();
-    link.open = false;
-    return;
-  }
-
-  const setLink = () => _editor.chain().focus().extendMarkRange('link').setLink({ href: link.url });
-
-  setLink().command(insertText).run();
-  link.open = false;
-}
-
-function isValidLink(url: string) {
-  const result = url.match(/(http(s)?:\/\/.)?(www\.)?[-\w@:%.+~#=]{2,256}\.[a-z]{2,6}\b([-\w@:%+.~#?&/=]*)/g);
-  return !!result;
-}
-
-// Image
-async function onChangeImage(e: Event) {
-  const [file] = [...(e.target as any).files];
-
-  if (!file || typeof props.imageHandler !== 'function') {
-    return;
-  }
-
-  try {
-    const src = await props.imageHandler(file);
-    const isExists = await isImageExists(src);
-    const _editor = editor.value;
-
-    if (!isExists || !_editor) {
-      return;
-    }
-
-    _editor.chain().focus().setImage({ src }).run();
-  } catch (err: any) {
-    toast.add({ description: typeof err?.message === 'string' ? err.message : 'Failed to open file', color: 'red' });
-  }
-}
-
-function isImageExists(src: string) {
-  return new Promise<boolean>((resolve) => {
-    const image = new Image();
-    image.addEventListener('load', () => resolve(true));
-    image.addEventListener('error', () => resolve(false));
-    image.src = src;
-  });
-}
-
-// Content
-function setContent() {
-  if (editor.value?.getHTML() === vmodel.value) {
-    return;
-  }
-
-  editor.value?.commands.setContent(vmodel.value, false);
-}
-
-watch(() => vmodel.value, setContent);
-
-onBeforeUnmount(() => {
-  editor.value?.destroy();
-});
-</script>

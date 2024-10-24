@@ -1,167 +1,208 @@
-<template>
-  <aside :class="sidebarClass" @mouseenter="onMouseEnter(true)" @mouseleave="onMouseEnter(false)">
-    <!-- Sidebar header -->
-    <div class="relative w-full px-6 py-4" :class="{ 'lg:px-1': isMini && !isEntering }">
-      <div class="flex w-full items-center gap-x-2" :class="{ 'lg:justify-center': isMini && !isEntering }">
-        <div class="inline-flex grow-0 shrink-0">
-          <img src="/favicon.ico" class="w-7" />
-        </div>
-        <div class="inline-flex text-xl font-bold text-center" :class="{ 'lg:hidden': isMini && !isEntering }">NUXT</div>
-      </div>
-
-      <!-- Toggle mini sidebar -->
-      <div class="absolute hidden lg:inline-flex top-5 -right-3">
-        <div
-          class="inline-flex bg-white dark:bg-slate-800 border dark:border-slate-500 shadow rounded-full p-px select-none cursor-pointer"
-          @click="onToggleMinify(!isMini)"
-        >
-          <UIcon
-            :name="`i-heroicons:chevron-double-${isMini ? 'right' : 'left'}-16-solid`"
-            class="w-5 h-5 text-slate-500 dark:text-slate-400"
-          ></UIcon>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sidebar content -->
-    <div class="relative block w-full grow shrink py-2 overflow-y-auto px-4">
-      <div v-for="(menu, i) in menus" :key="i" class="relative w-full mb-1">
-        <UAccordion v-if="Array.isArray(menu.subs)" :items="[menu]" :default-open="menu.key === activeMenu.parent">
-          <template #default="{ open: _open }">
-            <NavMenu :label="menu.label" :icon="menu.icon" :ui="uiNavMenu">
-              <template #trailing>
-                <span class="inline-flex grow-0 shrink-0" :class="{ 'lg:hidden': isMini && !isEntering }">
-                  <UIcon
-                    name="i-heroicons-chevron-right-20-solid"
-                    class="w-5 h-5 text-slate-500 transition-transform"
-                    :class="{ 'transform rotate-90': _open }"
-                  ></UIcon>
-                </span>
-              </template>
-            </NavMenu>
-          </template>
-
-          <template #item>
-            <div class="flex flex-col w-full gap-y-1" :class="{ 'lg:invisible lg:pointer-events-none': isMini && !isEntering }">
-              <NavMenu
-                v-for="(sub, s) in menu.subs"
-                :key="'sub-' + i + s"
-                :label="sub.label"
-                :active="activeMenu.child === sub.key"
-                :ui="{ padding: 'pl-9 pr-2 py-1.5' }"
-                :to="sub.link"
-              ></NavMenu>
-            </div>
-          </template>
-        </UAccordion>
-
-        <NavMenu v-else :label="menu.label" :active="activeMenu.parent === menu.key" :icon="menu.icon" :to="menu.link" :ui="uiNavMenu"></NavMenu>
-      </div>
-    </div>
-  </aside>
-</template>
-
 <script setup lang="ts">
-import appConfig from '#build/app.config.mjs';
+import { useThrottleFn } from '@vueuse/core';
+import theme from '~/utils/theme/sidebar';
 
 interface Props {
   open?: boolean;
   mini?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {});
+
 const emits = defineEmits<{
   (e: 'update:open', val: boolean): void;
+  // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'update:mini', val: boolean): void;
 }>();
 
-const _isOpen = ref(false);
+const _open = ref(false);
 const isOpen = computed({
-  get: () => props.open ?? _isOpen.value,
+  get: () => props.open ?? _open.value,
   set: (val) => {
-    _isOpen.value = val;
+    _open.value = val;
     emits('update:open', val);
   }
 });
 
-const _isMini = ref(false);
+const _mini = ref(false);
 const isMini = computed({
-  get: () => props.mini ?? _isMini.value,
+  get: () => props.mini ?? _mini.value,
   set: (val) => {
-    _isMini.value = val;
+    _mini.value = val;
     emits('update:mini', val);
   }
 });
-const isEntering = ref(false);
+
+const isHovered = ref(false);
+const isMinified = computed(() => isMini.value && !isHovered.value);
+const _isChildVisible = ref(!(props.mini ?? _mini.value));
+const isChildVisible = computed(() => isMini.value ? _isChildVisible.value : true);
 
 const menus = [
   {
+    id: 'home',
     label: 'Home',
-    icon: 'i-heroicons-home',
     link: '/',
-    key: 'index'
+    icon: 'lucide:house',
+    subs: []
   },
   {
+    id: 'components',
     label: 'Components',
-    icon: 'i-heroicons-square-3-stack-3d',
-    key: 'components',
+    link: '/',
+    icon: 'lucide:layers-3',
     subs: [
       {
-        label: 'Forms',
-        link: '/components/forms',
-        key: 'components-forms'
+        id: 'datepicker',
+        label: 'Datepicker',
+        link: '/components/datepicker'
       },
       {
-        label: 'Data Table',
-        link: '/components/data-table',
-        key: 'components-data-table'
+        id: 'input',
+        label: 'Input',
+        link: '/components/input'
+      },
+      {
+        id: 'loading',
+        label: 'Loading',
+        link: '/components/loading'
+      },
+      {
+        id: 'modal',
+        label: 'Modal',
+        link: '/components/modal'
+      },
+      {
+        id: 'select',
+        label: 'Select',
+        link: '/components/select'
+      },
+      {
+        id: 'table',
+        label: 'Table',
+        link: '/components/table'
+      },
+      {
+        id: 'upload',
+        label: 'Upload',
+        link: '/components/upload'
       }
     ]
   }
 ];
 
-const uiSidebar = computed(() => appConfig.ui.sidebar);
-const sidebarClass = computed(() => [
-  uiSidebar.value.base,
-  uiSidebar.value.background,
-  uiSidebar.value.shadow,
-  uiSidebar.value.width.normal,
-  isMini.value && !isEntering.value ? uiSidebar.value.width.mini : '',
-  uiSidebar.value.placing.default,
-  isOpen.value ? uiSidebar.value.placing.normal : uiSidebar.value.placing.mobile
-]);
+const ui = theme();
 
-const uiNavMenu = computed(() => ({
-  ...(isMini.value && !isEntering.value && { base: 'justify-center' }),
-  ...(isMini.value && !isEntering.value && { text: 'lg:hidden' })
-}));
+const route = useRoute();
 
-const router = useRouter();
-const activeMenu = computed(() => {
-  const { activeMenu: _val } = router.currentRoute.value.meta;
-  const [parent, child] = (_val ? (Array.isArray(_val) ? _val : [_val]) : []) as string[];
+const onHovered = useThrottleFn((hovered: boolean) => {
+  isHovered.value = hovered;
+  setTimeout(() => _isChildVisible.value = hovered, hovered ? 100 : 0);
+}, 200);
 
-  return {
-    parent: parent ?? '',
-    child: child ?? ''
-  };
-});
-
-function onMouseEnter(entered: boolean) {
-  if (!isMini.value) {
-    return;
-  }
-
-  isEntering.value = entered;
+async function onMinify() {
+  const value = !isMini.value;
+  await nextTick();
+  isMini.value = value;
+  isHovered.value = false;
+  _isChildVisible.value = false;
 }
 
-function onToggleMinify(minified: boolean) {
-  isMini.value = minified;
-
-  if (!minified) {
-    return;
+function isMenuActive(ids: string | string[]) {
+  const { activeMenu } = route.meta;
+  const metaActive = activeMenu ? Array.isArray(activeMenu) ? activeMenu : [activeMenu] : [];
+  if (!metaActive.length || !metaActive.every((v) => typeof v === 'string')) {
+    return false;
   }
 
-  isEntering.value = false;
+  if (!Array.isArray(ids)) {
+    return metaActive.includes(ids);
+  }
+
+  return ids.every((v) => metaActive.includes(v));
 }
 </script>
+
+<template>
+  <aside
+    :class="ui.root({ open: isOpen, mini: isMinified })"
+    @mouseenter="() => onHovered(true)"
+    @mouseleave="() => onHovered(false)"
+  >
+    <div
+      :class="ui.toggle()"
+      @click="onMinify"
+    >
+      <UIcon
+        name="lucide:arrow-left-to-line"
+        :class="[ui.toggleIcon(), { 'rotate-180': isMini }]"
+      />
+    </div>
+    <div class="flex h-16 grow-0 items-center shrink-0 px-3">
+      <div class="text-lg font-bold">
+        APP
+      </div>
+    </div>
+    <div class="flex flex-col grow shrink overflow-y-auto py-4">
+      <div
+        v-for="(menu, i) in menus"
+        :key="i"
+        :class="ui.menuWrapper()"
+      >
+        <UCollapsible
+          v-if="menu.subs.length > 0"
+          :default-open="menu.subs.some((s) => isMenuActive([menu.id, s.id]))"
+          class="flex flex-col w-full"
+          :ui="{ content: `${!isChildVisible ? 'lg:hidden' : ''} py-0.5` }"
+        >
+          <button :class="ui.menu({ class: 'group px-3', mini: isMinified })">
+            <span :class="ui.menuIcon({ class: 'size-4' })">
+              <UIcon
+                :name="menu.icon"
+                class="size-4"
+              />
+            </span>
+            <span :class="ui.menuLabel({ childVisible: isChildVisible })">{{ menu.label }}</span>
+            <span
+              :class="ui.menuIcon({ class: `${!isChildVisible ? 'lg:hidden' : ''}` })"
+            >
+              <UIcon
+                name="lucide:chevron-right"
+                class="size-4 transition-transform group-data-[state=open]:rotate-90"
+              />
+            </span>
+          </button>
+
+          <template #content>
+            <div
+              v-for="(sub, s) in menu.subs"
+              :key="i + s"
+              class="w-full mb-0.5"
+            >
+              <NuxtLink
+                :class="ui.menu({ class: 'pl-9 pr-3', menuActive: isMenuActive([menu.id, sub.id]) })"
+                :to="sub.link"
+              >
+                <span :class="ui.menuLabel({ childVisible: isChildVisible })">{{ sub.label }}</span>
+              </NuxtLink>
+            </div>
+          </template>
+        </UCollapsible>
+
+        <NuxtLink
+          v-if="!menu.subs.length"
+          :class="ui.menu({ class: 'px-3', mini: isMinified, menuActive: isMenuActive(menu.id) })"
+          :to="menu.link"
+        >
+          <span :class="ui.menuIcon({ class: 'size-4' })">
+            <UIcon
+              :name="menu.icon"
+              class="size-4"
+            />
+          </span>
+          <span :class="ui.menuLabel({ childVisible: isChildVisible })">{{ menu.label }}</span>
+        </NuxtLink>
+      </div>
+    </div>
+  </aside>
+</template>

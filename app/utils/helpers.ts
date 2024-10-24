@@ -1,5 +1,4 @@
 import { Fragment, type Component, type VNode } from 'vue-demi';
-import { serialize, type Options as FormDataBuilderOptions } from 'object-to-formdata';
 
 /**
  * Find childrend nodes
@@ -16,7 +15,8 @@ export function findNodeChildrens(vnodes: VNode[], ...names: string[]) {
 
     if (vnode?.type === Fragment && Array.isArray(vnode.children)) {
       scan.push(...(vnode.children as VNode[]));
-    } else if (names[0] === '*' || (vnode?.type && names.includes((vnode.type as Component).name ?? ''))) {
+    }
+    else if (names[0] === '*' || (vnode?.type && names.includes((vnode.type as Component).name ?? ''))) {
       result.push(vnode as VNode);
     }
   }
@@ -24,9 +24,45 @@ export function findNodeChildrens(vnodes: VNode[], ...names: string[]) {
   return result;
 }
 
-export function formDataBuilder(
-  value: Record<string, any>,
-  options: FormDataBuilderOptions = { indices: true, dotsForObjectNotation: true }
-) {
-  return serialize(value, options);
+/**
+ * Find focusable node
+ * @param element - Root element to find focusable node
+ */
+export function trapFocus(element: HTMLElement) {
+  if (!element || !document) {
+    return;
+  }
+
+  const nodes = 'a[href], button, input, textarea, select, details, [tabindex]:not([tabindex="-1"])';
+  const focusableNodes = [
+    ...Array.from(element.querySelectorAll(nodes))
+  ].filter((el) => !el.hasAttribute('disabled') && !el.getAttribute('aria-hidden'));
+
+  const focusableNodeFirst = focusableNodes[0] as HTMLElement;
+  const focusableNodeLast = focusableNodes[focusableNodes.length - 1] as HTMLElement;
+
+  if (focusableNodeFirst) {
+    focusableNodeFirst.focus();
+  }
+
+  element.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') {
+      return;
+    }
+
+    if (e.shiftKey) {
+      if (document.activeElement === focusableNodeFirst) {
+        focusableNodeLast.focus();
+        e.preventDefault();
+      }
+    }
+    else {
+      if (document.activeElement === focusableNodeLast) {
+        focusableNodeFirst.focus();
+        e.preventDefault();
+      }
+    }
+  });
+
+  return focusableNodeFirst;
 }

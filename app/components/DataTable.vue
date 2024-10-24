@@ -1,219 +1,241 @@
-<template>
-  <div class="relative w-full">
-    <!-- Filters -->
-    <div class="relative flex items-center gap-5 px-4 py-3">
-      <div class="relative inline-flex items-center gap-1.5">
-        <span class="text-sm leading-5">Show</span>
-        <div class="relative inline-flex">
-          <USelect v-model="perPage" :options="[10, 25, 50, 75, 100]" class="w-20" size="md" @update:model-value="refetch" />
-        </div>
-        <span class="text-sm">entries</span>
-      </div>
-      <UInput
-        v-if="props.searchable"
-        v-model="search"
-        icon="i-heroicons-magnifying-glass-20-solid"
-        :placeholder="props.placeholderSearch"
-        size="md"
-        @keyup.enter="refetch"
-      />
-    </div>
+<script setup lang="ts">
+import type { CellContext, ColumnSort, HeaderContext, Row, useVueTable } from '@tanstack/vue-table';
+import { promiseTimeout } from '@vueuse/core';
+import TableHeaderSelection from './TableHeaderSelection.vue';
+import TableRowSelection from './TableRowSelection.vue';
+import TableHeaderSorting from './TableHeaderSorting.vue';
+import type { TableFetchParams } from '~/types/table';
+import { toArray } from '~~/shared/utils';
+import { findNodeChildrens } from '~~/app/utils/helpers';
 
-    <!-- Table -->
-    <UTable
-      v-model="selectedRows"
-      v-model:sort="sort"
-      :rows="rows"
-      :columns="columns"
-      :loading="loading"
-      sort-asc-icon="i-heroicons-arrow-up"
-      sort-desc-icon="i-heroicons-arrow-down"
-      sort-mode="manual"
-      class="w-full"
-      :ui="ui.table"
-      @update:sort="refetch"
-    >
-      <template v-for="column in columns.filter((v) => !!v.slotHeader)" #[column.slotHeaderName]="opt">
-        <component :is="() => column?.slotHeader?.(opt)"></component>
-      </template>
-
-      <template v-for="column in columns.filter((v) => !!v.slotData)" #[column.slotDataName]="opt">
-        <component :is="() => column?.slotData?.(opt)"></component>
-      </template>
-
-      <template v-if="isExpandable" #expand="{ row, index }">
-        <slot name="expand" :row="row" :index="index"></slot>
-      </template>
-    </UTable>
-
-    <!-- Pagination -->
-    <div class="relative grid grid-cols-1 lg:grid-cols-2 gap-5">
-      <div>
-        <slot name="bottom-left"></slot>
-      </div>
-
-      <div class="flex justify-end">
-        <UPagination
-          v-model="page"
-          :page-count="parseInt(String(perPage))"
-          :total="total"
-          :ui="ui.pagination"
-          :disabled="loading"
-          @update:model-value="refetch"
-        />
-      </div>
-    </div>
-  </div>
-</template>
-
-<script lang="ts" setup>
-import type { VNode } from 'vue-demi';
-import { findNodeChildrens } from '@/utils/helpers';
-
-interface ReturnGetData {
+interface GetDataResult {
   data: Record<string, any>[];
   total?: number;
 }
 
-interface Sorting {
-  column: string;
-  direction: 'asc' | 'desc';
-}
-
 interface Props {
-  getData: (params: Record<string, any>) => ReturnGetData | Promise<ReturnGetData>;
-  selected?: Record<string, any>[];
-  selectable?: boolean;
-  searchable?: boolean;
+  items?: Record<string, any>[];
+  getData?: (params: TableFetchParams) => GetDataResult | Promise<GetDataResult>;
+  sorting?: ColumnSort[];
+  perPage?: number;
   paginated?: boolean;
-  numbering?: boolean;
-  sorting?: Partial<Sorting>;
   serverPagination?: boolean;
+  paginationSimple?: boolean;
+  selection?: Record<string, any>[];
+  selectionField?: string;
+  selectable?: boolean;
+  selectableOrder?: number;
+  numbering?: boolean;
+  numberingLabel?: string;
+  numberingOrder?: number;
+  searchable?: boolean;
+  multiSort?: boolean;
   placeholderSearch?: string;
-}
-
-interface ExpandProps {
-  row: Record<string, any>;
-  index: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   paginated: true,
-  searchable: true,
   serverPagination: true,
+  selectionField: 'id',
+  selectable: false,
+  selectableOrder: 0,
   numbering: true,
-  placeholderSearch: 'Search...',
-  sorting: () => ({})
+  numberingLabel: 'No.',
+  numberingOrder: 0,
+  searchable: true,
+  multiSort: false,
+  placeholderSearch: 'Search...'
 });
 
 const emits = defineEmits<{
-  (e: 'update:selected', val?: Record<string, any>): void;
+  (e: 'update:items', val: Record<string, any>): void;
+  (e: 'update:perPage', val: number): void;
+  (e: 'update:sorting', val: ColumnSort[]): void;
+  (e: 'update:selection', val: Record<string, any>[]): void;
+  (e: 'removed'): void;
 }>();
 
 const slots = defineSlots<{
-  'default'(): VNode[];
-  'bottom-left'(): VNode[];
-  'expand'(slotProps: ExpandProps): VNode[];
+  default: () => VNode[];
+  expanded: (slotProps: { row: Row<any> }) => VNode[];
+  filter: (slotProps: { loading: boolean; data: Record<string, any>[] }) => VNode[];
+  toolbar: () => VNode[];
 }>();
 
-const ui = /* ui */ {
-  table: {
-    td: {
-      base: 'max-w-[0]'
-    }
-  },
-  pagination: {
-    wrapper: 'flex items-center gap-1',
-    rounded: '!rounded-full min-w-[32px] justify-center',
-    default: {
-      activeButton: {
-        variant: 'outline'
-      }
-    }
+const page = ref(1);
+const _perPage = ref(10);
+const perPageValue = computed({
+  get: () => props.perPage ?? _perPage.value,
+  set: (val) => {
+    _perPage.value = val;
+    emits('update:perPage', val);
   }
-};
+});
+const perPages = [10, 25, 50, 75, 100];
+const search = ref('');
+const isServerPagination = computed(() => !Array.isArray(props.items) && props.serverPagination && props.paginated);
 
-const columnNumbering = computed(() => ({
-  key: '_numbering',
-  label: 'No.',
-  visible: props.numbering,
-  slotDataName: '_numbering-data',
-  slotData: ({ index }: any) => {
-    return h('span', page.value <= 1 ? index + 1 : (page.value - 1) * perPage.value + (index + 1));
-  },
-  slotHeader: undefined,
-  slotHeaderName: '_numbering-header'
+const _data = ref<Record<string, any>[]>([]);
+const data = computed({
+  get: () => Array.isArray(props.items) ? props.items : _data.value,
+  set: (val) => {
+    _data.value = val;
+    emits('update:items', val);
+  }
+});
+
+const total = ref(0);
+const loading = ref(!Array.isArray(props.items));
+
+const _sorting = ref<ColumnSort[]>([]);
+const sortingCols = computed({
+  get: () => props.sorting ?? _sorting.value,
+  set: (val) => {
+    _sorting.value = val;
+    emits('update:sorting', val);
+  }
+});
+
+const filteredData = computed(() => {
+  return data.value.filter((obj) => {
+    return Object.values(obj).some((val) => String(val).toLowerCase().includes(search.value.toLowerCase()));
+  });
+});
+
+const visibleData = computed(() => {
+  if (isServerPagination.value) {
+    return data.value;
+  }
+
+  if (!props.paginated || (props.paginated && filteredData.value.length <= perPageValue.value)) {
+    return filteredData.value;
+  }
+
+  const start = (page.value - 1) * perPageValue.value;
+  const end = start + perPageValue.value;
+  return filteredData.value.slice(start, end);
+});
+
+const totalPagination = computed(() => {
+  if (isServerPagination.value) {
+    return total.value;
+  }
+
+  if (props.paginated && search.value.length > 0) {
+    return filteredData.value.length;
+  }
+
+  return data.value.length;
+});
+
+const expanded = ref({});
+const columnVisibility = ref({});
+
+const table = useTemplateRef<{ tableApi: ReturnType<typeof useVueTable> }>('table');
+
+const _checked = ref<Record<string, any>[]>([]);
+const checked = computed({
+  get: () => props.selection ?? _checked.value,
+  set: (val) => {
+    _checked.value = val;
+    emits('update:selection', val);
+  }
+});
+
+const selectionColumn = computed(() => ({
+  id: '__select',
+  accessorKey: '__selection',
+  label: 'Selection',
+  header: ({ table: tbl }: HeaderContext<any, any>) => h(TableHeaderSelection, {
+    table: tbl,
+    checked: checked.value,
+    field: props.selectionField,
+    onChange(val) {
+      checked.value = val;
+    }
+  }),
+  cell: ({ row }: CellContext<any, any>) => h(TableRowSelection, {
+    row,
+    checked: checked.value,
+    field: props.selectionField,
+    onChange() {
+      const value = row.original;
+      if (!checked.value.some((item) => item?.[props.selectionField] === value?.[props.selectionField])) {
+        checked.value.push(value);
+        return;
+      }
+
+      checked.value = checked.value.filter((item) => item?.[props.selectionField] !== value?.[props.selectionField]);
+    }
+  })
 }));
 
+const numberingColumn = computed(() => ({
+  accessorKey: '__numbering',
+  label: props.numberingLabel,
+  header: () => props.numberingLabel,
+  cell: (ctx: CellContext<any, any>) => {
+    const index = ctx.row.index;
+    if (!props.paginated) {
+      return h('span', index + 1);
+    }
+
+    return h('span', page.value <= 1 ? index + 1 : (page.value - 1) * perPageValue.value + (index + 1));
+  }
+}));
+
+const columnNodes = computed(() => findNodeChildrens(slots.default(), 'TableColumn'));
+
 const columns = computed(() => {
-  const nodes = findNodeChildrens(slots.default(), 'DataTableColumn').map((vnode, i) => {
-    const _props = vnode.props;
+  const result = columnNodes.value.map((node) => {
+    const _props = node.props;
+    const children = node.children as any;
+    const key = _props?.accessor ?? Math.random().toString(36).slice(2);
+    const label = _props?.label ?? '';
 
     return {
-      index: i,
-      key: String(_props?.key),
-      label: _props?.label ?? '',
-      sortable: typeof _props?.sortable === 'boolean' ? _props?.sortable : _props?.sortable === '',
-      visible: typeof _props?.visible === 'boolean' ? _props?.visible : true,
-      slotData: !!(vnode.children as any)?.default ? slotData(vnode) : undefined,
-      slotHeader: !!(vnode.children as any)?.header ? slotHeader(vnode) : undefined,
-      slotDataName: String(_props?.key).concat('-data'),
-      slotHeaderName: String(_props?.key).concat('-header'),
-      class: _props?.class,
-      rowClass: _props?.['row-class'] ?? _props?.rowClass
+      accessorKey: key,
+      label: _props?.label,
+      header: (ctx: HeaderContext<any, any>) => {
+        if (
+          (typeof _props?.sortable === 'boolean' && _props?.sortable)
+          || (typeof _props?.sortable === 'string' && _props?.sortable === '')
+        ) {
+          return h(TableHeaderSorting, { label, column: ctx.column, multiple: props.multiSort });
+        }
+
+        return children?.header?.(ctx) ?? label;
+      },
+      cell: (ctx: CellContext<any, any>) => {
+        return children?.default?.({ ...ctx, item: ctx.row.original }) ?? ctx.row.original?.[key] ?? '';
+      }
     };
   });
 
-  return [columnNumbering.value, ...nodes].filter((n) => n.visible);
-});
-
-const loading = ref(true);
-const data = ref<Record<string, any>[]>([]);
-const total = ref(0);
-const rows = computed(() => data.value);
-
-const _selected = ref<Record<string, any>>([]);
-const selectedRows = computed({
-  get: () => (typeof props.selected !== 'undefined' || props.selectable ? props.selected ?? _selected.value : undefined),
-  set: (value) => {
-    _selected.value = value ?? [];
-    emits('update:selected', value);
+  if (props.selectable) {
+    result.splice(props.selectableOrder, 0, selectionColumn.value);
   }
+
+  if (props.numbering) {
+    result.splice(props.numberingOrder, 0, numberingColumn.value);
+  }
+
+  return result;
 });
 
-// Pagination
-const sort = ref<Sorting>(props.sorting as any);
-const page = ref(1);
-const perPage = ref(10);
+const hasPrevPaginationSimple = computed(() => page.value > 1);
 
-const search = ref('');
-const filter = computed(() => ({
-  page: page.value,
-  perpage: perPage.value,
-  q: search.value,
-  column: sort.value.column,
-  direction: sort.value.direction
-}));
-const isServerPagination = computed(() => props.serverPagination);
+const hasNextPaginationSimple = computed(() => {
+  return (isServerPagination.value ? data.value.length : visibleData.value.length) >= perPageValue.value;
+});
 
-const isExpandable = computed(() => !!slots?.expand);
+const mounted = ref(true);
 
-function slotData(vnode: any) {
-  const _props = vnode.props;
-  const tag = _props?.tag ?? 'span';
-
-  return (option: any) => h(tag, { ..._props }, vnode.children.default(option));
-}
-
-function slotHeader(vnode: any) {
-  const _props = vnode.props;
-  const tag = _props?.headerTag ?? 'span';
-  const attrs = {
-    class: _props?.headerClass
-  };
-
-  return (option: any) => h(tag, { ...attrs }, vnode.children.header(option));
-}
+const uiTable = {
+  th: 'bg-[#F8FAFC] text-[#6B7280]',
+  tr: 'data-[selected=true]:bg-transparent',
+  td: 'whitespace-normal'
+};
 
 /**
  * Get data
@@ -225,33 +247,218 @@ async function fetchData() {
     }
 
     loading.value = true;
-    const func = props.getData(filter.value);
-    const isPromise = func instanceof Promise;
-    await nextTick();
+    const { data: _data, total: _total } = await props.getData({
+      page: page.value,
+      perpage: perPageValue.value,
+      limit: perPageValue.value,
+      offset: perPageValue.value * (page.value - 1),
+      q: search.value,
+      sorting: sortingCols.value.map((v) => ({ col: v.id, dir: v.desc ? 'desc' : 'asc' }))
+    });
 
-    const { data: _data, total: _total } = isPromise ? await func : func;
-
+    await promiseTimeout(700);
     data.value = _data;
-    total.value = isServerPagination.value ? _total ?? 0 : _data.length;
+    total.value = isServerPagination.value ? _total ?? 0 : toArray(_data).length;
 
     loading.value = false;
-  } catch {
+  }
+  catch {
     loading.value = false;
   }
 }
 
-function refetch() {
-  if (!isServerPagination.value) {
+function onPageChange() {
+  if (isServerPagination.value) {
+    data.value = [];
+    fetchData();
+  }
+}
+
+function onPerPageChange(val: number) {
+  perPageValue.value = val;
+  reset();
+}
+
+function reset() {
+  if (Array.isArray(props.items)) {
     return;
   }
 
-  data.value = [];
   loading.value = true;
+  page.value = 1;
+  data.value = [];
+  total.value = 0;
 
-  setTimeout(fetchData, 450);
+  nextTick(fetchData);
 }
+
+function onSorting() {
+  if (isServerPagination.value) {
+    page.value = 1;
+    fetchData();
+  }
+}
+
+function onSearch() {
+  if (isServerPagination.value) {
+    reset();
+  }
+}
+
+function onInputSearch() {
+  if (isServerPagination.value) {
+    return;
+  }
+
+  page.value = 1;
+}
+
+function onPrevPaginationSimple() {
+  if (!hasPrevPaginationSimple.value) {
+    return;
+  }
+
+  page.value = page.value - 1;
+  nextTick(onPageChange);
+}
+
+function onNextPaginationSimple() {
+  if (!hasNextPaginationSimple.value) {
+    return;
+  }
+
+  page.value = page.value + 1;
+  nextTick(onPageChange);
+}
+
+defineExpose({
+  tableApi: computed(() => table.value?.tableApi),
+  reset
+});
+
+watch(() => columnNodes.value.map((v) => v.props), () => {
+  mounted.value = false;
+  expanded.value = {};
+  nextTick(() => mounted.value = true);
+});
 
 onMounted(() => {
   fetchData();
 });
 </script>
+
+<template>
+  <div class="w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+      <div class="relative">
+        <div class="flex flex-wrap gap-3">
+          <div class="inline-flex items-center gap-x-2">
+            <div class="inline-flex text-sm">
+              Show
+            </div>
+            <USelect
+              v-model:model-value="perPageValue"
+              :items="perPages"
+              class="w-18"
+              @update:model-value="(val) => onPerPageChange(val)"
+            />
+          </div>
+
+          <div
+            v-if="props.searchable"
+            class="flex grow shrink"
+          >
+            <UInput
+              v-model="search"
+              :placeholder="props.placeholderSearch"
+              icon="lucide:search"
+              size="lg"
+              @keyup.enter="onSearch"
+              @input="onInputSearch"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <UTable
+      v-if="mounted"
+      ref="table"
+      v-model:sorting="sortingCols"
+      v-model:expanded="expanded"
+      v-model:column-visibility="columnVisibility"
+      :data="visibleData"
+      :columns="columns"
+      :loading="loading"
+      class="flex-1 border-t border-t-slate-200"
+      :ui="uiTable"
+      :sorting-options="{
+        manualSorting: isServerPagination,
+        enableMultiSort: props.multiSort
+      }"
+      @update:sorting="onSorting"
+    >
+      <template #expanded="{ row }">
+        <slot
+          name="expanded"
+          :row="row"
+        />
+      </template>
+
+      <template #empty>
+        <div class="flex flex-col py-20">
+          <div class="flex justify-center mb-2">
+            <UIcon
+              :name="loading ? 'lucide:loader' : 'lucide:database'"
+              :class="`w-8 h-8 ${loading ? 'animate-spin' : ''}`"
+            />
+          </div>
+          <p class="text-center">
+            {{ loading ? 'Loading...' : 'No results found.' }}
+          </p>
+        </div>
+      </template>
+    </UTable>
+
+    <div
+      class="flex border-t border-t-slate-200 py-4"
+    >
+      <template v-if="props.paginated">
+        <UPagination
+          v-if="!props.paginationSimple"
+          v-model:page="page"
+          active-color="primary"
+          :total="totalPagination"
+          show-edges
+          :sibling-count="1"
+          @update:page="onPageChange"
+        />
+        <div
+          v-else
+          class="flex flex-wrap gap-2"
+        >
+          <UButton
+            class="min-w-8 justify-center"
+            icon="lucide:chevron-left"
+            color="neutral"
+            variant="soft"
+            :disabled="!hasPrevPaginationSimple"
+            @click="onPrevPaginationSimple"
+          />
+
+          <UButton class="min-w-8 justify-center">
+            {{ page }}
+          </UButton>
+          <UButton
+            class="min-w-8 justify-center"
+            icon="lucide:chevron-right"
+            color="neutral"
+            variant="soft"
+            :disabled="!hasNextPaginationSimple"
+            @click="onNextPaginationSimple"
+          />
+        </div>
+      </template>
+    </div>
+  </div>
+</template>

@@ -1,49 +1,50 @@
-import { setHeaders, type H3Event } from 'h3';
-import { getUserSession } from '@@/server/utils/session';
-import type { UserSessionValue } from '~~/types/user-session';
-
-const roleCodes = {
-  BASIC: 13
-};
+import { useWAF } from '../waf';
+import { authSessionConfig } from '~~/server/utils/session';
+import type { AuthSessionData } from '~~/server/types/session';
 
 /**
- * Set auth expiry to context
- * @param session - User session
+ * Create auth value for client/browser
+ * @param sessionData - Session data
  * @returns string
  */
-function setAuth(session: UserSessionValue) {
-  const exp = String(session.cookie.expired_at);
-  const pos = Math.floor(Math.random() * 9);
+function createAuthClient(sessionData: AuthSessionData) {
+  const currentTime = new Date().valueOf().toString();
+  const expTime = sessionData.expiry.toString();
+  const randSplitter = Math.floor(Math.random() * (9 - 1 + 1)) + 1;
 
-  const result = [exp.substring(0, pos), roleCodes.BASIC, exp.substring(pos, exp.length), pos];
-  return result.join('');
+  const firstPartExp = expTime.substring(0, randSplitter);
+  const secondPartExp = expTime.substring(randSplitter);
+  const roleAsCharCode = String(sessionData.role).split('').map((v) => v.charCodeAt(0)).join('');
+
+  return [secondPartExp, roleAsCharCode, currentTime, firstPartExp, randSplitter].join('');
 }
 
-const createErrorNotFound = (event: H3Event) => ({
-  statusCode: 404,
-  message: 'Page not found',
-  data: { 'X-User-Agent': event.node.req.headers['user-agent'] }
-});
-
-// Event handler to check user session
-export const authHandler = defineEventHandler(async (event) => {
-  const user = await getUserSession(event);
-
-  if (!user) {
-    throw createError(createErrorNotFound(event));
+const waf = useWAF({
+  ignoreModules: ['bad-bots'],
+  ignoreRoutes: {
+    '/api/profile': {
+      ignoreModules: ['xml-injection'],
+      method: 'POST'
+    }
   }
 });
 
 export default defineEventHandler(async (event) => {
-  // Set response header
-  setHeaders(event, {
-    'X-XSS-Protection': '1; mode=block',
-    'X-Frame-Options': 'deny',
-    'X-Content-Type-Options': 'nosniff',
-    ...(!event.path.startsWith('/api') ? { 'Cache-Control': 'no-cache, no-store, must-revalidate, no-transform' } : {})
-  });
+  const authSession = await useSession<AuthSessionData>(event, authSessionConfig);
 
-  const session = await getUserSession(event);
-  event.context.session = session;
-  event.context.auth = session ? setAuth(session) : '';
+  event.context.session = undefined;
+  event.context.auth = '';
+
+  if (Object.keys(authSession.data).length > 0) {
+    event.context.session = authSession.data;
+    event.context.auth = createAuthClient(authSession.data);
+  }
+
+  const { success: isRequestSafe } = await waf.check(event);
+  if (!isRequestSafe) {
+    throw createError({
+      statusCode: 400,
+      message: 'Malicious request detected. Please contact administrator'
+    });
+  }
 });

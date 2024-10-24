@@ -1,139 +1,152 @@
-<template>
-  <div class="relative w-full min-h-screen">
-    <!-- Sidebar -->
-    <AppSidebar v-model:open="isOpenSidebar" v-model:mini="isMiniSidebar" />
-
-    <!-- Sidebar overlay -->
-    <Transition v-bind="uiSidebar.overlay.transition">
-      <div v-if="isOpenSidebar" :class="uiSidebar.overlay.base" @click="isOpenSidebar = false"></div>
-    </Transition>
-
-    <main
-      class="relative w-full min-h-screen bg-[#eaeef7] dark:bg-[#24293a] transition-all transform duration-300"
-      :class="isMiniSidebar ? uiSidebar.constraint.padding.mini : uiSidebar.constraint.padding.normal"
-    >
-      <!-- Navbar -->
-      <nav :class="navbarClass">
-        <!-- Navbar left -->
-        <div :class="uiNavbar.section">
-          <div class="lg:hidden text-slate-400 cursor-pointer" :class="uiNavbar.item" @click="isOpenSidebar = !isOpenSidebar">
-            <UIcon name="i-heroicons:ellipsis-horizontal-circle" class="w-6 h-6"></UIcon>
-          </div>
-          <div class="text-slate-600 dark:text-slate-400" :class="uiNavbar.item">
-            <div class="text-lg font-medium">{{ title }}</div>
-          </div>
-        </div>
-
-        <!-- Navbar right -->
-        <div :class="uiNavbar.section" class="justify-end">
-          <div :class="uiNavbar.item">
-            <ClientOnly>
-              <UButton
-                :icon="isDark ? 'i-heroicons-moon-20-solid' : 'i-heroicons-sun-20-solid'"
-                color="primary"
-                variant="ghost"
-                aria-label="Theme"
-                size="sm"
-                @click="isDark = !isDark"
-              />
-              <template #fallback>
-                <div class="w-8 h-8" />
-              </template>
-            </ClientOnly>
-          </div>
-          <div :class="uiNavbar.item">
-            <UDropdown :items="[userMenus]" :popper="{ placement: 'bottom-end', strategy: 'fixed' }">
-              <UAvatar icon="i-heroicons-user-circle" :ui="uiAvatar" size="sm" />
-            </UDropdown>
-          </div>
-        </div>
-      </nav>
-
-      <!-- Content -->
-      <div class="relative w-full">
-        <slot></slot>
-      </div>
-    </main>
-
-    <UModal v-model="openLogout">
-      <div class="w-full px-4 py-7">
-        <div class="text-xl font-semibold text-center mb-6">Logout</div>
-        <p class="text-center mb-8">Are you sure you want to logout?</p>
-        <div class="flex justify-center gap-x-4">
-          <UButton @click="openLogout = false">Cancel</UButton>
-          <UButton :loading="loading" color="red" @click="doLogout">Logout</UButton>
-        </div>
-      </div>
-    </UModal>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { useMutationObserver } from '@vueuse/core';
-import appConfig from '#build/app.config.mjs';
+import AppSidebar from '~/components/AppSidebar.vue';
 
-const isOpenSidebar = ref(false);
-const isMiniSidebar = useCookie('sidebarmini', { default: () => false, watch: true });
+const sidebarOpen = ref(false);
+const sidebarMini = useCookie('sidebarmini', { default: () => false });
 const title = ref('');
 const openLogout = ref(false);
+const loadingLogout = ref(false);
 
-const userMenus = [
+const accountActions = shallowRef([
   {
     label: 'Profile',
-    icon: 'i-heroicons-user-circle'
+    icon: 'lucide:user'
   },
   {
     label: 'Logout',
-    icon: 'i-heroicons-arrow-right-start-on-rectangle-solid',
-    click: () => (openLogout.value = true)
-  }
-];
-const loading = ref(false);
-
-const uiSidebar = computed(() => appConfig.ui.sidebar);
-
-const uiNavbar = computed(() => appConfig.ui.navbar);
-const navbarClass = computed(() => [
-  uiNavbar.value.base,
-  uiNavbar.value.background,
-  uiNavbar.value.height,
-  uiNavbar.value.padding,
-  uiNavbar.value.shadow
-]);
-
-const uiAvatar = /* ui */ {
-  background: 'bg-white',
-  icon: {
-    base: 'text-slate-500',
-    size: {
-      sm: 'h-8 w-8'
+    icon: 'lucide:log-out',
+    onSelect: () => {
+      openLogout.value = true;
     }
   }
-};
+]);
 
-const colorMode = useColorMode();
-const isDark = computed({
-  get: () => colorMode.value === 'dark',
-  set: () => (colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark')
-});
+const router = useRouter();
 
 function setTitle() {
-  const txt = document.title;
-  title.value = txt.trim();
+  const _title = document.title;
+  title.value = _title.substring(0, _title.lastIndexOf('|') - 1).trim();
 }
 
-async function doLogout() {
+async function onLogout() {
   try {
-    loading.value = true;
-    await useRequest('/api/logout');
-    window.location.replace('/login');
-  } catch {
-    loading.value = false;
+    loadingLogout.value = true;
+    await useRequest('/logout');
+    location.replace('/login');
+  }
+  catch (err: any) {
+    loadingLogout.value = false;
+    useRequestError(err);
   }
 }
 
+router.beforeEach(() => {
+  sidebarOpen.value = false;
+});
+
 onMounted(() => {
+  const config: MutationObserverInit = {
+    subtree: true,
+    characterData: true,
+    childList: true
+  };
+
   setTitle();
-  useMutationObserver(document.head.querySelector('title'), setTitle, { childList: true });
+  useMutationObserver(document.querySelector('title'), () => {
+    setTitle();
+  }, config);
 });
 </script>
+
+<template>
+  <main
+    class="relative w-full h-svh flex overflow-hidden"
+    style="--sidebar-width: 265px"
+  >
+    <AppSidebar
+      v-model:open="sidebarOpen"
+      v-model:mini="sidebarMini"
+    />
+    <BackDrop
+      v-model="sidebarOpen"
+      class="lg:hidden bg-slate-500/30 backdrop-blur-xs lg:pointer-events-none z-[18] lg:-z-10"
+      :teleport="false"
+      @click.prevent.stop="sidebarOpen = false"
+    />
+    <main
+      class="relative w-full h-full flex flex-col transition-[padding] ease-[cubic-bezier(0.5,1,0.89,1)] duration-200 overflow-x-hidden overflow-y-auto bg-[#f2f7fb]"
+      :class="sidebarMini ? 'lg:pl-[70px]' : 'lg:pl-[var(--sidebar-width)]'"
+    >
+      <nav class="sticky flex grow-0 shrink-0 w-full h-16 bg-white/80 backdrop-blur-xs top-0 shadow-sm px-2 z-10">
+        <div class="flex grow h-full">
+          <div
+            class="inline-flex lg:hidden h-full items-center cursor-pointer select-none p-2"
+            @click="sidebarOpen = true"
+          >
+            <UIcon name="lucide:menu" />
+          </div>
+          <div class="inline-flex h-full items-center select-none p-2">
+            <span class="text-lg font-semibold">{{ title }}</span>
+          </div>
+        </div>
+        <div class="flex grow h-full justify-end gap-x-2">
+          <div class="inline-flex items-center">
+            <AppTheme />
+          </div>
+          <div class="inline-flex items-center">
+            <UDropdownMenu
+              size="lg"
+              :items="accountActions"
+              :content="{
+                align: 'end'
+              }"
+              :ui="{
+                content: 'w-34'
+              }"
+            >
+              <UButton
+                color="neutral"
+                variant="ghost"
+                icon="lucide:circle-user-round"
+                size="xl"
+                class="text-slate-500 p-1"
+              />
+            </UDropdownMenu>
+          </div>
+        </div>
+      </nav>
+      <div class="relative w-full">
+        <slot />
+      </div>
+    </main>
+
+    <AppModal v-model="openLogout">
+      <div class="text-xl text-center font-semibold mb-6">
+        Logout
+      </div>
+      <div class="text-lg text-center mb-6">
+        Are you sure you want to logout?
+      </div>
+      <div class="flex flex-wrap justify-center gap-3">
+        <UButton
+          color="neutral"
+          variant="outline"
+          class="px-5"
+          @click="openLogout = false"
+        >
+          Cancel
+        </UButton>
+
+        <UButton
+          color="error"
+          class="px-5"
+          :loading="loadingLogout"
+          @click="onLogout"
+        >
+          Logout
+        </UButton>
+      </div>
+    </AppModal>
+  </main>
+</template>
