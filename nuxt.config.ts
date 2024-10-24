@@ -1,9 +1,13 @@
-import type { NuxtPage } from 'nuxt/schema';
-
 let reload = 0;
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+
+  modules: ['@nuxt/fonts', '@nuxt/ui'],
+
+  devtools: {
+    enabled: true
+  },
   app: {
     rootId: '__app',
     head: {
@@ -13,20 +17,15 @@ export default defineNuxtConfig({
     buildAssetsDir: '/__assets/'
   },
 
-  hooks: {
-    'pages:extend': (pages) => {
-      const pagesToRemove: NuxtPage[] = [];
-      pages.forEach((page) => {
-        if (page.path.includes('_components')) {
-          pagesToRemove.push(page);
-        }
-      });
-
-      pagesToRemove.forEach((page) => {
-        pages.splice(pages.indexOf(page), 1);
-      });
-    }
+  colorMode: {
+    preference: 'light'
   },
+
+  future: {
+    compatibilityVersion: 4
+  },
+
+  compatibilityDate: '2024-07-28',
 
   nitro: {
     hooks: {
@@ -47,7 +46,9 @@ export default defineNuxtConfig({
     }
   },
 
-  modules: ['@nuxt/fonts', '@nuxt/ui'],
+  vite: {
+    clearScreen: false
+  },
 
   typescript: {
     strict: true,
@@ -61,25 +62,23 @@ export default defineNuxtConfig({
     }
   },
 
-  vite: {
-    clearScreen: false
-  },
-
-  future: {
-    compatibilityVersion: 4
-  },
-
-  compatibilityDate: '2024-07-28',
-
-  colorMode: {
-    preference: 'light'
-  },
-
-  devtools: {
-    enabled: true
-  },
-
   telemetry: {
     enabled: false
+  },
+
+  hooks: {
+    'pages:extend': (pages) => {
+      const pagesToRemove = pages.filter((page) => page.path.includes('_components'));
+
+      pagesToRemove.forEach((page) => {
+        pages.splice(pages.indexOf(page), 1);
+      });
+    }
+  },
+
+  icon: {
+    serverBundle: {
+      collections: ['heroicons']
+    }
   }
 });
