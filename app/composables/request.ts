@@ -10,6 +10,12 @@ interface Options extends Omit<FetchOptions, 'headers' | 'method' | 'body' | 'qu
   isRawResponse?: boolean;
 }
 
+/**
+ * Fetch API request
+ * @param url - API path
+ * @param options - ofetch options
+ * @returns object
+ */
 export async function useRequest<T = any>(url: string, options?: Options) {
   const instance = $fetch.create({
     method: 'GET',
@@ -39,14 +45,14 @@ export function useRequestError(err: any, formRef?: Ref) {
 
   if (err.response?._data) {
     const description = typeof err.response._data.message === 'string' ? err.response._data.message : err.response.statusText;
-    toast.add({ description, color: 'error' });
+    toast.add({ description, color: 'danger' });
     return;
   }
 
   if (typeof err === 'string') {
-    toast.add({ description: err, color: 'error' });
+    toast.add({ description: err, color: 'danger' });
     return;
   }
 
-  toast.add({ description: typeof err.message === 'string' ? err.message : 'Something went wrong', color: 'error' });
+  toast.add({ description: typeof err.message === 'string' ? err.message : 'Something went wrong', color: 'danger' });
 }

@@ -139,7 +139,7 @@ onMounted(() => {
         </UButton>
 
         <UButton
-          color="error"
+          color="danger"
           class="px-5"
           :loading="loadingLogout"
           @click="onLogout"

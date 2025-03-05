@@ -7,7 +7,9 @@
     "dev": "nuxt dev --dotenv ./config/.env",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "npx simple-git-hooks && nuxt prepare",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix ."
   },
   "dependencies": {
     "@faker-js/faker": "^9.5.1",
@@ -47,12 +49,23 @@
   },
   "packageManager": "pnpm@9.9.0",
   "devDependencies": {
+    "@commitlint/cli": "^19.7.1",
+    "@commitlint/config-conventional": "^19.7.1",
     "@iconify-json/lucide": "^1.2.28",
     "@iconify-json/ph": "^1.2.2",
     "@nuxt/eslint": "^1.1.0",
     "@types/culori": "^2.1.1",
     "eslint": "^9.21.0",
     "eslint-plugin-format": "^1.0.1",
+    "lint-staged": "^15.4.3",
+    "simple-git-hooks": "^2.11.1",
     "typescript": "^5.8.2"
+  },
+  "lint-staged": {
+    "*.{js,ts,vue}": "eslint --fix"
+  },
+  "simple-git-hooks": {
+    "commit-msg": "npx commitlint --edit $1",
+    "pre-commit": "npx lint-staged"
   }
 }
