@@ -23,15 +23,15 @@ const PayloadMethods: HTTPMethod[] = ['POST', 'PUT', 'DELETE', 'PATCH'];
 /**
  * Check if value is file
  * @param value - Value to check
- * @param parsed - Check all file properties
+ * @param isAfterParsed - Check value after parsed
  * @returns boolean
  */
-export function isFormDataFile(value: any, parsed: boolean = true): value is FormDataFile {
+export function isFormDataFile(value: any, isAfterParsed: boolean = true): value is FormDataFile {
   if (!isObjectType(value, 'object')) {
     return false;
   }
 
-  const keys = ['name', 'filename', 'type', 'data', ...(!parsed ? ['size'] : [])];
+  const keys = ['name', 'filename', 'type', 'data', ...(isAfterParsed ? ['size'] : [])];
   const isValidKeys = Object.keys(value).filter((key) => keys.includes(key)).length === keys.length;
 
   if (!isValidKeys) {

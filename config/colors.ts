@@ -37,7 +37,7 @@ function getThemeColors(color: string, variant: string) {
  */
 export const createAssetColors = (): void => {
   try {
-    const comment = '/* This files is generated from /config/colors.ts */';
+    const comment = '/* Don\'t modify this file */\n/* This file is generated from /config/colors.ts */\n';
     const _colors = Object.entries(colors).map(([variant, color]) => getThemeColors(color, variant));
     const content = `${comment}\n@theme static {\n${_colors.join('\n\n')}\n}\n`;
     const filePath = '../app/assets/css/colors.css';

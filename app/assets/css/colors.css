@@ -1,4 +1,6 @@
-/* This files is generated from /config/colors.ts */
+/* Don't modify this file */
+/* This file is generated from /config/colors.ts */
+
 @theme static {
   --color-primary: oklch(0.514 0.19 269.385);
   --color-primary-50: oklch(0.976 0.008 271.33);
