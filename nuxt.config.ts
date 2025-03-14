@@ -16,7 +16,7 @@ export default defineNuxtConfig({
   ui: {
     colorMode: false,
     theme: {
-      colors: Object.keys(colors)
+      colors: [...Object.keys(colors), 'error']
     }
   },
 

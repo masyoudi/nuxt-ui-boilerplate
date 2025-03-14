@@ -7,6 +7,7 @@ export default defineAppConfig({
       success: 'success',
       warning: 'warning',
       danger: 'danger',
+      error: 'danger',
       neutral: 'slate'
     },
     icons: {

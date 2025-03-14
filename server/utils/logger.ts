@@ -13,12 +13,19 @@ function parseMetadata(metadata?: Record<string, any>) {
     return result;
   }
 
-  const event = (metadata as any)?.event;
+  const event = metadata?.event;
   if (isEvent(event)) {
     result = {
       path: event.node.req.originalUrl?.split('?')[0],
       method: event.node.req.method,
       ...(Object.hasOwn(event.node.req.headers, 'user-agent') && { ua: event.node.req.headers['user-agent'] })
+    };
+  }
+
+  if (typeof metadata.meta === 'object') {
+    result = {
+      ...result,
+      ...metadata.meta
     };
   }
 
