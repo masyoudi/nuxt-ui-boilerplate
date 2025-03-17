@@ -20,6 +20,8 @@ interface Props {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   paginated?: boolean;
   debounce?: number;
+  dismissable?: boolean;
+  teleport?: boolean;
   disabled?: boolean;
 }
 
@@ -33,6 +35,8 @@ const props = withDefaults(defineProps<Props>(), {
   transformFetchQuery: (params: FetchQuery) => params,
   paginated: true,
   debounce: 350,
+  dismissable: true,
+  teleport: true,
   disabled: false
 });
 const emits = defineEmits<{
@@ -160,6 +164,8 @@ watchEffect(() => {
     <UPopover
       v-model:open="open"
       :ui="{ content: `${isDisabled ? 'hidden': ''} z-[55]` }"
+      :dismissible="props.dismissable"
+      :portal="props.teleport"
       @update:open="setLisboxWidth"
     >
       <div

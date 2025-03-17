@@ -15,6 +15,8 @@ interface Props {
   creator?: (value: Date) => DatepickerValue;
   formatter?: (value: Date) => string;
   placeholder?: string;
+  dismissable?: boolean;
+  teleport?: boolean;
   disabled?: boolean;
 }
 
@@ -22,6 +24,8 @@ const props = withDefaults(defineProps<Props>(), {
   placeholder: 'Pick a date',
   icon: 'i-lucide-calendar',
   creator: (value: Date) => value as DatepickerValue,
+  dismissable: true,
+  teleport: true,
   disabled: false
 });
 
@@ -110,6 +114,8 @@ function onUpdateTime(val: Date) {
   <UPopover
     v-model:open="open"
     :content="{ align: 'start' }"
+    :dismissible="props.dismissable"
+    :portal="props.teleport"
   >
     <UButton
       color="neutral"

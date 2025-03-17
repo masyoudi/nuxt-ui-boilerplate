@@ -5,7 +5,10 @@ useHead({
 </script>
 
 <template>
-  <UApp :toaster="{ position: 'top-right' }">
+  <UApp
+    :toaster="{ position: 'top-right', expand: false }"
+    :tooltip="{ delayDuration: 150, skipDelayDuration: 100 }"
+  >
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>

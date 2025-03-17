@@ -29,6 +29,7 @@ interface Props {
   numberingLabel?: string;
   numberingOrder?: number;
   searchable?: boolean;
+  searchFilter?: (currentItem: Record<string, any>, searchTerm: string) => boolean;
   multiSort?: boolean;
   placeholderSearch?: string;
 }
@@ -43,6 +44,9 @@ const props = withDefaults(defineProps<Props>(), {
   numberingLabel: 'No.',
   numberingOrder: 0,
   searchable: true,
+  searchFilter: (currentItem: Record<string, any>, searchTerm: string) => {
+    return Object.values(currentItem).some((val) => String(val).toLowerCase().includes(searchTerm.toLowerCase()));
+  },
   multiSort: false,
   placeholderSearch: 'Search...'
 });
@@ -96,11 +100,7 @@ const sortingCols = computed({
   }
 });
 
-const filteredData = computed(() => {
-  return data.value.filter((obj) => {
-    return Object.values(obj).some((val) => String(val).toLowerCase().includes(search.value.toLowerCase()));
-  });
-});
+const filteredData = computed(() => data.value.filter((val) => props.searchFilter(val, search.value)));
 
 const visibleData = computed(() => {
   if (isServerPagination.value) {

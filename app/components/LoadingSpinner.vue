@@ -12,7 +12,7 @@ defineOptions({
 const props = withDefaults(defineProps<Props>(), {});
 
 const ui = tv({
-  base: 'inline-flex size-10 animate-spin rounded-full border-5 border-x-slate-300 border-b-slate-300 border-t-[var(--ui-color-primary-500)]'
+  base: 'inline-flex size-10 animate-spin rounded-full border-5 border-x-slate-300 border-b-slate-300 border-t-(--ui-color-primary-500)'
 });
 
 const attrs: Record<string, any> = useAttrs();

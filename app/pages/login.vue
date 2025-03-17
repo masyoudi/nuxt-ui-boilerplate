@@ -56,11 +56,12 @@ async function onSubmit() {
             v-model="formModel.email"
             placeholder="Enter your email"
             :ui="{
-              base: 'ring-white bg-white/10 shadow'
+              base: 'bg-white/10 shadow'
             }"
             class="w-full"
             autocomplete="on"
             size="lg"
+            style="--ui-border-accented: #fff"
           />
         </UFormField>
 
@@ -72,10 +73,11 @@ async function onSubmit() {
             v-model="formModel.password"
             placeholder="Enter your password"
             :ui="{
-              base: 'ring-white bg-white/10 shadow'
+              base: 'bg-white/10 shadow'
             }"
             class="w-full"
             size="lg"
+            style="--ui-border-accented: #fff"
           />
         </UFormField>
 
@@ -100,7 +102,7 @@ async function onSubmit() {
 
 <style lang="css" scoped>
 .wrapper {
-  background: linear-gradient(315deg, rgb(0, 154, 249) 78%, rgb(3, 252, 235) 98%);
+  background: linear-gradient(315deg, oklch(66.76% 0.1757 247.04) 78%, oklch(89.19% 0.1561 186.15) 98%);
   background-size: 400% 400%;
   background-attachment: fixed;
 }

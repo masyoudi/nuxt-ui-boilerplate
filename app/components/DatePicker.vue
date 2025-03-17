@@ -25,6 +25,8 @@ interface Props<R extends boolean> {
   creator?: (value: Date) => TModel<R>;
   formatter?: (value: Date) => string;
   placeholder?: string;
+  dismissable?: boolean;
+  teleport?: boolean;
   disabled?: boolean;
 }
 
@@ -32,6 +34,8 @@ const props = withDefaults(defineProps<Props<IsRange>>(), {
   placeholder: 'Pick a date',
   icon: 'lucide:calendar',
   creator: (value: Date) => value as TModel<IsRange>,
+  dismissable: true,
+  teleport: true,
   disabled: false
 });
 
@@ -154,6 +158,8 @@ watch(() => props.modelValue, () => {
     v-model:open="open"
     :ui="{ content: 'z-50' }"
     :content="{ align: 'start' }"
+    :dismissible="props.dismissable"
+    :portal="props.teleport"
   >
     <UButton
       color="neutral"
