@@ -5,11 +5,10 @@ interface Props {
   modelValue?: File | File[];
   multiple?: boolean;
   accept?: string;
-  native?: boolean;
   dragDrop?: boolean;
   class?: string;
   dropClass?: string;
-  checkType?: (file: File, accept?: string) => boolean;
+  validateType?: (file: File, accept?: string) => boolean;
   disabled?: boolean;
 }
 
@@ -19,15 +18,14 @@ defineOptions({
 
 const props = withDefaults(defineProps<Props>(), {
   multiple: false,
-  native: true,
   dragDrop: false,
-  checkType: (file: File, accept?: string) => {
+  validateType: (file: File, accept?: string) => {
+    // Allow all file types if `accept` not provided
     if (!accept) {
-      return false;
+      return true;
     }
 
-    const accepts = accept.split(',');
-
+    const accepts = accept.split(',').filter((v) => v !== '');
     if (!accepts.length) {
       return true;
     }
@@ -67,7 +65,7 @@ const inputAttrs = computed(() => {
 const theme = tv({
   slots: {
     root: 'relative',
-    drop: 'border border-dashed border-slate-300 rounded-md data-dragover:border-[var(--ui-color-primary-500)]'
+    drop: 'border border-dashed border-slate-300 rounded-md data-dragover:border-(--ui-primary) focus:border-(--ui-primary)'
   }
 });
 const ui = theme();
@@ -75,6 +73,10 @@ const ui = theme();
 const isDragDropFocus = ref(false);
 const inputRef = useTemplateRef('inputRef');
 
+/**
+ * Handle click input
+ * @param event - Event
+ */
 function onClick(event: Event) {
   if (props.disabled) {
     return;
@@ -84,7 +86,11 @@ function onClick(event: Event) {
   inputRef.value?.click();
 }
 
-function onFileChange(event: Event | DragEvent) {
+/**
+ * Handle file changed
+ * @param e - Event
+ */
+function onFileChange(e: Event | DragEvent) {
   if (props.disabled) {
     return;
   }
@@ -93,57 +99,44 @@ function onFileChange(event: Event | DragEvent) {
     onDragDropFocus(false);
   }
 
-  const value = (
-    (event.target as HTMLInputElement)?.files
-    || (event as DragEvent)?.dataTransfer?.files
-    || []
-  );
-
-  if (value.length === 0) {
-    if (!vmodel.value) {
-      return;
-    }
+  const fileList = ((e.target as HTMLInputElement)?.files || (e as DragEvent)?.dataTransfer?.files);
+  const files = fileList ? [...fileList] : undefined;
+  if (!files) {
+    return;
   }
 
   if (props.multiple) {
-    const values = props.native || !vmodel.value || !Array.isArray(vmodel.value) ? [] : [...vmodel.value];
-    for (let i = 0; i < value.length; i++) {
-      const file = value[i]!;
-
-      if (props.checkType(file, props.accept)) {
-        values.push(file);
-      }
-    }
-
-    vmodel.value = values;
-    return;
-  }
-
-  if (props.dragDrop && value.length !== 1) {
-    return;
-  }
-
-  const file = value[0]!;
-  if (props.checkType(file, props.accept)) {
-    vmodel.value = file;
-  }
-  else if (vmodel.value) {
-    vmodel.value = undefined;
-    clearInput();
+    const values = files.filter((file) => props.validateType(file, props.accept));
+    vmodel.value = [...(Array.isArray(vmodel.value) ? vmodel.value : []), ...values];
   }
   else {
-    clearInput();
+    const [file] = files;
+    vmodel.value = file && props.validateType(file, props.accept) ? file : undefined;
   }
+
+  clearInput();
 }
 
+/**
+ * Handle on focus
+ * @param event - Focus event
+ */
 function onFocus(event: Event) {
   emits('focus', event);
 }
 
+/**
+ * Handle on blur
+ * @param event - Focus event
+ */
 function onBlur(event: Event) {
   emits('blur', event);
 }
 
+/**
+ * Handle drag and drop
+ * @param event - Focus event
+ */
 function onDragDropFocus(isFocus: boolean) {
   if (props.disabled) {
     return;
@@ -160,12 +153,6 @@ function clearInput() {
 
   inputRef.value.value = '';
 }
-
-watch(vmodel, (value) => {
-  if ((!value || (Array.isArray(value) && value.length <= 0)) && inputRef.value) {
-    clearInput();
-  }
-});
 </script>
 
 <template>
@@ -177,7 +164,7 @@ watch(vmodel, (value) => {
     <div
       v-if="props.dragDrop"
       role="button"
-      tabindex="0"
+      :tabindex="-1"
       :class="ui.drop({ class: props.dropClass })"
       :data-dragover="isDragDropFocus ? true : null"
       @mouseenter="onDragDropFocus(true)"
@@ -186,6 +173,7 @@ watch(vmodel, (value) => {
       @dragleave.prevent="onDragDropFocus(false)"
       @dragenter.prevent="onDragDropFocus(true)"
       @drop.prevent="onFileChange"
+      @click.stop.prevent="onClick"
     >
       <slot :onclick="onClick" />
     </div>

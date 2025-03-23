@@ -14,9 +14,12 @@ type RangeValue = {
 type TModel<R extends boolean = false> = R extends true ? DatepickerValue[] : DatepickerValue;
 
 interface Props<R extends boolean> {
+  id?: string;
   modelValue?: TModel<R>;
   range?: R & boolean;
   size?: ButtonProps['size'];
+  color?: ButtonProps['color'];
+  variant?: ButtonProps['variant'];
   calendarSize?: CalendarProps<any, any>['size'];
   icon?: string;
   iconRight?: string;
@@ -31,6 +34,8 @@ interface Props<R extends boolean> {
 }
 
 const props = withDefaults(defineProps<Props<IsRange>>(), {
+  color: 'neutral',
+  variant: 'outline',
   placeholder: 'Pick a date',
   icon: 'lucide:calendar',
   creator: (value: Date) => value as TModel<IsRange>,
@@ -41,10 +46,21 @@ const props = withDefaults(defineProps<Props<IsRange>>(), {
 
 const emits = defineEmits<{
   (e: 'update:modelValue', value: DatepickerValue | DatepickerValue[]): void;
+  (e: 'blur', event: FocusEvent): void;
 }>();
 
 const open = ref(false);
 const hasModel = ref(!props.range ? typeof props.modelValue !== 'undefined' : Array.isArray(props.modelValue));
+const {
+  emitFormBlur,
+  emitFormFocus,
+  id,
+  size: formGroupSize,
+  color,
+  disabled } = useFormField<Props<IsRange>>(props, { deferInputValidation: true });
+const { size: buttonGroupSize } = useButtonGroup<Props<IsRange>>(props);
+
+const buttonSize = computed(() => buttonGroupSize.value || formGroupSize.value);
 
 const _model = ref();
 const vmodel = computed({
@@ -143,6 +159,11 @@ function close() {
   open.value = false;
 }
 
+function onBlur(event: FocusEvent) {
+  emitFormBlur();
+  emits('blur', event);
+}
+
 watch(() => props.modelValue, () => {
   if (
     (props.range && Array.isArray(props.modelValue))
@@ -162,15 +183,20 @@ watch(() => props.modelValue, () => {
     :portal="props.teleport"
   >
     <UButton
-      color="neutral"
-      variant="outline"
-      class="justify-start font-normal group hover:bg-white hover:ring-slate-400"
-      :ui="{ leadingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700' }"
+      :id="id"
+      :color="color"
+      :variant="props.variant"
+      class="justify-start font-normal group hover:bg-white"
+      :ui="{
+        leadingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700'
+      }"
       block
       :icon="props.icon"
       :trailing-icon="props.iconRight"
-      :size="props.size"
-      :disabled="props.disabled"
+      :size="buttonSize"
+      :disabled="disabled"
+      @blur="onBlur"
+      @focus="emitFormFocus"
     >
       <span :class="{ 'text-slate-400': !displayDate }">{{ displayDate ? displayDate : props.placeholder }}</span>
     </UButton>

@@ -8,7 +8,10 @@ const validation = z.object({
     .string()
     .min(1, 'Choose your gender')
     .refine((v) => ['male', 'female'].includes(v), 'Invalid gender'),
-  address: z.string().trim().min(1, 'Enter your address')
+  address: z.string().trim().min(1, 'Enter your address'),
+  phone: z.string().trim().min(1, 'Enter your phone number'),
+  dob: z.string().min(1, 'Please enter date of birth'),
+  hobbies: z.string().array().min(1, 'Please select hobby')
 });
 
 export default defineEventHandler(async (event) => {

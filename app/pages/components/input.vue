@@ -16,6 +16,7 @@ const formModel = reactive({
   gender: '',
   address: '',
   phone: '',
+  dob: '',
   hobbies: [] as string[]
 });
 const formRef = ref();
@@ -89,6 +90,13 @@ async function onSubmit() {
         </UFormField>
 
         <UFormField
+          label="Date of Birth"
+          name="dob"
+        >
+          <DatePicker v-model="formModel.dob" />
+        </UFormField>
+
+        <UFormField
           label="Address"
           name="address"
         >
@@ -118,7 +126,6 @@ async function onSubmit() {
           <MultiSelect
             url="/todos"
             paginated
-            class="mb-7"
             color="neutral"
             item-color="primary"
             item-variant="subtle"

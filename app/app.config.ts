@@ -13,6 +13,15 @@ export default defineAppConfig({
     icons: {
       loading: 'lucide:loader'
     },
+    button: {
+      compoundVariants: [
+        {
+          variant: 'outline',
+          color: 'error',
+          class: 'ring-(--ui-error)'
+        }
+      ]
+    },
     formField: {
       slots: {
         error: 'mt-0.5 text-xs form-field-error'

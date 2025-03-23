@@ -50,7 +50,6 @@ function onDeleteFile(index: number) {
           v-slot="{ onclick }"
           v-model="files"
           multiple
-          native
           drag-drop
           class="mb-5"
           accept=".pdf"

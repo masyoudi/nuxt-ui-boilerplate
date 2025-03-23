@@ -9,7 +9,7 @@ const theme = tv({
   variants: {
     color: {
       primary: {
-        wrapper: 'border border-slate-300 data-focus:border-[var(--ui-color-primary-500)]'
+        wrapper: 'border border-slate-300 data-focus:border-(--ui-primary)'
       },
       neutral: {
         wrapper: 'border border-slate-300 data-focus:border-slate-400'

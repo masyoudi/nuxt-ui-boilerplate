@@ -52,19 +52,40 @@ import { tv, type VariantProps } from 'tailwind-variants';
 import type { AppConfig } from '@nuxt/schema';
 import type { FactoryArg } from 'imask';
 import { IMaskComponent } from 'vue-imask';
+import type { InputHTMLAttributes } from 'vue';
 import _appConfig from '#build/app.config';
 import theme from '#build/ui/input';
-import type { InputProps, InputSlots, InputEmits } from '#ui/components/Input.vue';
+
+import type { PartialString } from '#ui/types/utils';
 
 const appConfig = _appConfig as AppConfig & { ui: { input: Partial<typeof theme> } };
 const input = tv({ extend: tv(theme), ...(appConfig.ui?.input || {}) });
 
 type InputVariants = VariantProps<typeof input>;
 
-interface Props extends Omit<InputProps, 'as' | 'type' | 'avatar' | 'color'> {
+interface Props {
   modelValue?: string | number;
   mask?: Partial<FactoryArg>;
+  name?: string;
+  placeholder?: string;
   color?: InputVariants['color'];
+  variant?: InputVariants['variant'];
+  size?: InputVariants['size'];
+  required?: boolean;
+  autocomplete?: InputHTMLAttributes['autocomplete'];
+  autofocus?: boolean;
+  autofocusDelay?: number;
+  disabled?: boolean;
+  highlight?: boolean;
+  class?: any;
+  icon?: string;
+  leading?: boolean;
+  leadingIcon?: string;
+  trailing?: boolean;
+  trailingIcon?: string;
+  loading?: boolean;
+  loadingIcon?: string;
+  ui?: PartialString<typeof input.slots>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -76,8 +97,16 @@ const props = withDefaults(defineProps<Props>(), {
   disabled: false
 });
 
-const emits = defineEmits<InputEmits>();
-const slots = defineSlots<InputSlots>();
+const emits = defineEmits<{
+  (e: 'update:modelValue', payload: string | number): void;
+  (e: 'blur', event: FocusEvent): void;
+  (e: 'change', event: Event): void;
+}>();
+const slots = defineSlots<{
+  leading(props?: unknown): any;
+  default(props?: unknown): any;
+  trailing(props?: unknown): any;
+}>();
 
 const _value = ref('');
 const modelValue = computed({

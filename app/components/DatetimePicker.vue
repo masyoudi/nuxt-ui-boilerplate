@@ -6,10 +6,14 @@ import type { CalendarProps } from '#ui/components/Calendar.vue';
 import type { DatepickerValue } from '~/types/datepicker';
 
 interface Props {
+  id?: string;
   modelValue?: DatepickerValue;
   size?: ButtonProps['size'];
+  color?: ButtonProps['color'];
+  variant?: ButtonProps['variant'];
   calendarSize?: CalendarProps<any, any>['size'];
   icon?: string;
+  trailingIcon?: string;
   min?: Date;
   max?: Date;
   creator?: (value: Date) => DatepickerValue;
@@ -21,6 +25,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  color: 'neutral',
+  variant: 'outline',
   placeholder: 'Pick a date',
   icon: 'i-lucide-calendar',
   creator: (value: Date) => value as DatepickerValue,
@@ -31,7 +37,19 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emits = defineEmits<{
   (e: 'update:modelValue', value: DatepickerValue): void;
+  (e: 'blur', event: FocusEvent): void;
 }>();
+
+const {
+  emitFormBlur,
+  emitFormFocus,
+  id,
+  size: formGroupSize,
+  color,
+  disabled } = useFormField<Props>(props, { deferInputValidation: true });
+const { size: buttonGroupSize } = useButtonGroup<Props>(props);
+
+const buttonSize = computed(() => buttonGroupSize.value || formGroupSize.value);
 
 const open = ref(false);
 
@@ -108,6 +126,11 @@ function onUpdateTime(val: Date) {
     val.getSeconds()
   );
 }
+
+function onBlur(event: FocusEvent) {
+  emitFormBlur();
+  emits('blur', event);
+}
 </script>
 
 <template>
@@ -118,14 +141,20 @@ function onUpdateTime(val: Date) {
     :portal="props.teleport"
   >
     <UButton
-      color="neutral"
-      variant="outline"
-      class="justify-start font-normal group hover:bg-white hover:ring-slate-400"
-      :ui="{ leadingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700' }"
+      :id="id"
+      :color="color"
+      :variant="props.variant"
+      class="justify-start font-normal group hover:bg-white"
+      :ui="{
+        leadingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700'
+      }"
       block
       :icon="props.icon"
-      :size="props.size"
-      :disabled="props.disabled"
+      :trailing-icon="props.trailingIcon"
+      :size="buttonSize"
+      :disabled="disabled"
+      @blur="onBlur"
+      @focus="emitFormFocus"
     >
       <span :class="{ 'text-slate-400': !displayDate }">{{ displayDate ? displayDate : props.placeholder }}</span>
     </UButton>
