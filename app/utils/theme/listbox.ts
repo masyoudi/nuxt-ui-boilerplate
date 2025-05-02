@@ -7,9 +7,9 @@ const theme = tv({
     input: [
       'w-full',
       'border-0',
-      'placeholder:text-[var(--ui-text-dimmed)]',
+      'placeholder:text-(--ui-text-dimmed)',
       'focus:outline-none',
-      'text-[var(--ui-text-highlighted)]',
+      'text-(--ui-text-highlighted)',
       'text-sm',
       'bg-transparent',
       'px-2.5',

@@ -1,3 +1,10 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const radioIndicator = [
+  'start',
+  'end',
+  'hidden'
+] as const;
+
 export default defineAppConfig({
   ui: {
     colors: {
@@ -42,47 +49,47 @@ export default defineAppConfig({
     },
     radioGroup: {
       slots: {
-        base: 'focus-visible:outline-1 border border-[var(--ui-border-accented)] ring-0'
+        base: 'focus-visible:outline-1 border border-(--ui-border-accented) ring-0'
       },
       variants: {
         color: {
           primary: {
-            indicator: 'after:bg-[var(--ui-primary)] bg-white'
+            indicator: 'after:bg-(--ui-primary) bg-white' as typeof radioIndicator[number]
           },
           secondary: {
-            indicator: 'after:bg-[var(--ui-secondary)] bg-white'
+            indicator: 'after:bg-(--ui-secondary) bg-white' as typeof radioIndicator[number]
           },
           success: {
-            indicator: 'after:bg-[var(--ui-success)] bg-white'
+            indicator: 'after:bg-(--ui-success) bg-white' as typeof radioIndicator[number]
           },
           info: {
-            indicator: 'after:bg-[var(--ui-info)] bg-white'
+            indicator: 'after:bg-(--ui-info) bg-white' as typeof radioIndicator[number]
           },
           warning: {
-            indicator: 'after:bg-[var(--ui-warning)] bg-white'
+            indicator: 'after:bg-(--ui-warning) bg-white' as typeof radioIndicator[number]
           },
           error: {
-            indicator: 'after:bg-[var(--ui-error)] bg-white'
+            indicator: 'after:bg-(--ui-error) bg-white' as typeof radioIndicator[number]
           },
           neutral: {
-            indicator: 'after:bg-[var(--ui-neutral)] bg-white'
+            indicator: 'after:bg-(--ui-neutral) bg-white' as typeof radioIndicator[number]
           }
         },
         size: {
           xs: {
-            indicator: 'after:size-2'
+            indicator: 'after:size-2' as typeof radioIndicator[number]
           },
           sm: {
-            indicator: 'after:size-2'
+            indicator: 'after:size-2' as typeof radioIndicator[number]
           },
           md: {
-            indicator: 'after:size-2.5'
+            indicator: 'after:size-2.5' as typeof radioIndicator[number]
           },
           lg: {
-            indicator: 'after:size-3'
+            indicator: 'after:size-3' as typeof radioIndicator[number]
           },
           xl: {
-            indicator: 'after:size-3'
+            indicator: 'after:size-3' as typeof radioIndicator[number]
           }
         }
       }

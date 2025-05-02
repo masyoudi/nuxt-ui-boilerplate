@@ -26,22 +26,22 @@ const theme = tv({
     },
     size: {
       xs: {
-        base: 'p-[0.1rem]',
+        base: 'p-[0.075rem]',
         text: 'text-[10px] px-1',
-        close: 'p-[0.115rem]',
-        closeIcon: 'w-[0.675rem] h-[0.675rem]'
+        close: 'p-[0.1rem]',
+        closeIcon: 'size-[0.675rem]'
       },
       sm: {
-        base: 'p-0.5',
+        base: 'p-[0.095rem]',
         text: 'text-xs px-1',
-        close: 'p-0.5',
-        closeIcon: 'w-[0.85rem] h-[0.85rem]'
+        close: 'p-[0.1rem]',
+        closeIcon: 'size-[0.775rem]'
       },
       md: {
         base: 'p-0.5',
         text: 'text-sm px-1',
         close: 'p-0.5',
-        closeIcon: 'w-4 h-4'
+        closeIcon: 'size-4'
       },
       lg: {
         base: 'p-0.5',
@@ -53,7 +53,7 @@ const theme = tv({
         base: 'p-0.5',
         text: 'text-lg px-2',
         close: 'p-0.5',
-        closeIcon: 'w-5 h-5'
+        closeIcon: 'size-5'
       }
     }
   },
@@ -61,42 +61,66 @@ const theme = tv({
     {
       color: 'primary',
       variant: 'solid',
-      class: 'bg-[var(--ui-color-primary-500)] text-white'
+      class: {
+        base: 'bg-(--ui-color-primary-500) text-white',
+        close: 'hover:bg-(--ui-color-primary-600)'
+      }
     },
     {
       color: 'primary',
       variant: 'outlined',
-      class: 'border border-[var(--ui-color-primary-500)] bg-[var(--ui-bg)] text-[var(--ui-color-primary-500)]'
+      class: {
+        base: 'ring ring-(--ui-color-primary-500) bg-(--ui-bg) text-(--ui-color-primary-500)',
+        close: 'hover:bg-(--ui-color-primary-100)'
+      }
     },
     {
       color: 'primary',
       variant: 'soft',
-      class: 'bg-[var(--ui-color-primary-100)] text-[var(--ui-color-primary-500)]'
+      class: {
+        base: 'bg-(--ui-color-primary-100) text-(--ui-color-primary-500)',
+        close: 'hover:bg-(--ui-color-primary-200)'
+      }
     },
     {
       color: 'primary',
       variant: 'subtle',
-      class: 'border border-[var(--ui-color-primary-500)] bg-[var(--ui-color-primary-100)] text-[var(--ui-color-primary-500)]'
+      class: {
+        base: 'ring ring-(--ui-color-primary-500) bg-(--ui-color-primary-100) text-(--ui-color-primary-500)',
+        close: 'hover:bg-(--ui-color-primary-200)'
+      }
     },
     {
       color: 'neutral',
       variant: 'solid',
-      class: 'bg-slate-200 text-slate-600'
+      class: {
+        base: 'bg-slate-200 text-slate-600',
+        close: 'hover:bg-slate-300'
+      }
     },
     {
       color: 'neutral',
       variant: 'outlined',
-      class: 'border border-slate-300 bg-[var(--ui-bg)] text-slate-600'
+      class: {
+        base: 'ring ring-slate-300 bg-(--ui-bg) text-slate-600',
+        close: 'hover:bg-slate-100'
+      }
     },
     {
       color: 'neutral',
       variant: 'soft',
-      class: 'bg-slate-100 text-slate-600'
+      class: {
+        base: 'bg-slate-100 text-slate-600',
+        close: 'hover:bg-slate-200'
+      }
     },
     {
       color: 'neutral',
       variant: 'subtle',
-      class: 'border border-slate-300 bg-slate-50 text-slate-600'
+      class: {
+        base: 'ring ring-slate-300 bg-slate-50 text-slate-600',
+        close: 'hover:bg-slate-200'
+      }
     }
   ],
   defaultVariants: {

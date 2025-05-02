@@ -27,8 +27,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   color: 'neutral',
   variant: 'outline',
-  placeholder: 'Pick a date',
-  icon: 'i-lucide-calendar',
+  placeholder: 'Select date',
   creator: (value: Date) => value as DatepickerValue,
   dismissable: true,
   teleport: true,
@@ -37,19 +36,28 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emits = defineEmits<{
   (e: 'update:modelValue', value: DatepickerValue): void;
+  (e: 'focus', event: FocusEvent): void;
+  // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'blur', event: FocusEvent): void;
+  (e: 'change', event: Event): void;
 }>();
 
 const {
+  emitFormChange,
+  emitFormInput,
   emitFormBlur,
   emitFormFocus,
   id,
   size: formGroupSize,
   color,
-  disabled } = useFormField<Props>(props, { deferInputValidation: true });
+  ariaAttrs,
+  disabled
+} = useFormField<Props>(props, { deferInputValidation: true });
 const { size: buttonGroupSize } = useButtonGroup<Props>(props);
 
 const buttonSize = computed(() => buttonGroupSize.value || formGroupSize.value);
+const buttonId = ref(id.value ?? useId());
+const buttonElement = ref<HTMLButtonElement>();
 
 const open = ref(false);
 
@@ -108,6 +116,10 @@ const displayDate = computed(() => {
   return format(val.toDate(getLocalTimeZone()));
 });
 
+/**
+ * Format display date
+ * @param date - Date value
+ */
 function format(date: Date) {
   if (!props.formatter || (props.formatter && typeof props.formatter !== 'function')) {
     return formatDate(date, 'DD/MM/YYYY h:mm A');
@@ -116,6 +128,10 @@ function format(date: Date) {
   return props.formatter(date);
 }
 
+/**
+ * Update v-model for time value
+ * @param val - Date value
+ */
 function onUpdateTime(val: Date) {
   vmodel.value = new CalendarDateTime(
     val.getFullYear(),
@@ -125,12 +141,66 @@ function onUpdateTime(val: Date) {
     val.getMinutes(),
     val.getSeconds()
   );
+
+  onUpdate(val);
 }
 
+/**
+ * Handle blur event
+ * @param event - Focus event
+ */
 function onBlur(event: FocusEvent) {
   emitFormBlur();
   emits('blur', event);
 }
+
+/**
+ * Listener on update open popover
+ */
+function onUpdateOpen(isOpen: boolean) {
+  if (!isOpen) {
+    const blurEvent = new FocusEvent('blur', {
+      relatedTarget: buttonElement.value
+    });
+    onBlur(blurEvent);
+    return;
+  }
+
+  const focusEvent = new FocusEvent('focus', {
+    relatedTarget: buttonElement.value
+  });
+  emits('focus', focusEvent);
+  emitFormFocus();
+}
+
+/**
+ * Handler on update value calendar
+ * @param value - Calendar value
+ */
+function onUpdate(value: any) {
+  const eventInit = {
+    target: {
+      value
+    }
+  };
+
+  const event = new CustomEvent('change', eventInit as any);
+  emits('change', event);
+
+  emitFormChange();
+  emitFormInput();
+}
+
+/**
+ * Close popover
+ */
+function close() {
+  open.value = false;
+}
+
+onMounted(() => {
+  buttonElement.value = document.getElementById(buttonId.value) as HTMLButtonElement;
+});
 </script>
 
 <template>
@@ -139,25 +209,37 @@ function onBlur(event: FocusEvent) {
     :content="{ align: 'start' }"
     :dismissible="props.dismissable"
     :portal="props.teleport"
+    @update:open="onUpdateOpen"
   >
-    <UButton
-      :id="id"
-      :color="color"
-      :variant="props.variant"
-      class="justify-start font-normal group hover:bg-white"
-      :ui="{
-        leadingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700'
-      }"
-      block
-      :icon="props.icon"
-      :trailing-icon="props.trailingIcon"
-      :size="buttonSize"
+    <slot
+      :open="open"
+      :display-date="displayDate"
       :disabled="disabled"
-      @blur="onBlur"
-      @focus="emitFormFocus"
     >
-      <span :class="{ 'text-slate-400': !displayDate }">{{ displayDate ? displayDate : props.placeholder }}</span>
-    </UButton>
+      <UButton
+        v-bind="{ ...$attrs, ...ariaAttrs }"
+        :id="buttonId"
+        :color="color"
+        :variant="props.variant"
+        class="justify-start font-normal group hover:bg-white"
+        :ui="{
+          leadingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700',
+          trailingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700'
+        }"
+        block
+        :icon="props.icon"
+        :trailing-icon="props.trailingIcon"
+        :size="buttonSize"
+        :disabled="disabled"
+      >
+        <span
+          class="overflow-hidden whitespace-nowrap"
+          :class="{ 'text-slate-400': !displayDate }"
+        >
+          {{ displayDate ? displayDate : props.placeholder }}
+        </span>
+      </UButton>
+    </slot>
 
     <template #content>
       <UCalendar
@@ -166,6 +248,7 @@ function onBlur(event: FocusEvent) {
         :min-value="minDate"
         :max-value="maxDate"
         :size="props.calendarSize"
+        @update:model-value="onUpdate"
       />
       <div class="w-full flex justify-center px-2 pt-2 pb-4">
         <TimePicker
@@ -173,6 +256,11 @@ function onBlur(event: FocusEvent) {
           @update:model-value="(val) => onUpdateTime(val as Date)"
         />
       </div>
+
+      <slot
+        name="footer"
+        :onclose="close"
+      />
     </template>
   </UPopover>
 </template>

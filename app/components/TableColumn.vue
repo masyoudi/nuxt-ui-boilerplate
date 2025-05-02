@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import type { CellContext, HeaderContext } from '@tanstack/vue-table';
+import type { Cell, CellContext, Header, HeaderContext } from '@tanstack/vue-table';
+
+interface ColumnMeta {
+  class?: {
+    th?: string | ((cell: Header<any, any>) => string);
+    td?: string | ((cell: Cell<any, any>) => string);
+  };
+}
 
 interface Props {
   label?: string;
   accessor?: string;
   visible?: boolean;
   sortable?: boolean;
+  meta?: ColumnMeta;
 }
 
 defineOptions({
@@ -24,5 +32,5 @@ defineSlots<{
 </script>
 
 <template>
-  <span class="sr-only" />
+  <span />
 </template>

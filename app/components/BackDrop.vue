@@ -15,7 +15,6 @@ interface TransitionClass {
 }
 
 interface Props {
-  modelValue?: boolean;
   teleport?: boolean;
   class?: string;
   wrapper?: string;
@@ -38,7 +37,6 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emits = defineEmits<{
-  (e: 'update:modelValue', val: boolean): void;
   (e: 'beforeEnter'): void;
   // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'beforeLeave'): void;
@@ -48,14 +46,7 @@ const emits = defineEmits<{
   (e: 'afterLeave'): void;
 }>();
 
-const _open = ref(false);
-const open = computed({
-  get: () => props.modelValue ?? _open.value,
-  set: (val) => {
-    _open.value = val;
-    emits('update:modelValue', val);
-  }
-});
+const open = defineModel<boolean>({ default: false, required: false });
 
 const displayIf = computed(() => open.value || props.displayDirective !== 'if');
 const displayShow = computed(() => open.value || props.displayDirective !== 'show');

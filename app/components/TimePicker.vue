@@ -108,13 +108,16 @@ const maxDate = computed(() => {
     v-model="vmodel"
     :min-value="minDate"
     :max-value="maxDate"
+    :data-state="focus ? 'true' : 'false'"
     :class="classes.root({ class: props.class, focus: focus })"
   >
     <div :class="classes.iconWrapper({ class: props.ui?.iconWrapper })">
-      <UIcon
-        :name="props.icon"
-        :class="classes.icon({ class: props.ui?.icon })"
-      />
+      <slot name="icon">
+        <UIcon
+          :name="props.icon"
+          :class="classes.icon({ class: props.ui?.icon })"
+        />
+      </slot>
     </div>
 
     <template

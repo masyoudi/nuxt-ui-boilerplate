@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { promiseTimeout, useResizeObserver } from '@vueuse/core';
+import { useResizeObserver } from '@vueuse/core';
+import type { ButtonProps } from '#ui/components/Button.vue';
 import { omit, toArray } from '~~/shared/utils';
 import type { ListBoxItem } from '~/types/listbox';
 
@@ -11,13 +12,16 @@ interface FetchQuery {
 
 interface Props {
   url: string;
-  selected?: ListBoxItem;
   limit?: number;
   placeholder?: string;
   placeholderSearch?: string;
   transformFetchData?: (result: any) => ListBoxItem[];
   transformFetchQuery?: (params: FetchQuery) => Record<string, any>;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  size?: ButtonProps['size'];
+  color?: ButtonProps['color'];
+  variant?: ButtonProps['variant'];
+  icon?: string;
+  trailingIcon?: string;
   paginated?: boolean;
   debounce?: number;
   dismissable?: boolean;
@@ -26,6 +30,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  color: 'neutral',
+  variant: 'outline',
   limit: 10,
   transformFetchData: (result: any) => toArray(result).map((val) => ({
     id: val.id,
@@ -33,26 +39,45 @@ const props = withDefaults(defineProps<Props>(), {
     ...omit(val, ['id', 'name'])
   })),
   transformFetchQuery: (params: FetchQuery) => params,
+  trailingIcon: 'lucide:chevron-down',
   paginated: true,
   debounce: 350,
   dismissable: true,
   teleport: true,
   disabled: false
 });
+
 const emits = defineEmits<{
-  (e: 'update:selected', val?: ListBoxItem): void;
+  (e: 'focus', event: FocusEvent): void;
+  // eslint-disable-next-line @typescript-eslint/unified-signatures
+  (e: 'blur', event: FocusEvent): void;
+  (e: 'change', event: Event): void;
 }>();
+
+const {
+  emitFormChange,
+  emitFormInput,
+  emitFormBlur,
+  emitFormFocus,
+  id,
+  size: formGroupSize,
+  color,
+  ariaAttrs,
+  disabled
+} = useFormField<Props>(props, { deferInputValidation: true });
+const { size: buttonGroupSize } = useButtonGroup<Props>(props);
+
+const buttonSize = computed(() => buttonGroupSize.value || formGroupSize.value);
+const buttonId = ref(id.value ?? useId());
+const buttonElement = ref<HTMLButtonElement>();
 
 const open = ref(false);
 
-const _selectedItem = ref<ListBoxItem>();
-const selectedItem = computed({
-  get: () => props.selected ?? _selectedItem.value,
-  set: (val) => {
-    _selectedItem.value = val;
-    emits('update:selected', val);
-  }
+const selectedItem = defineModel<ListBoxItem>('selected', {
+  default: undefined,
+  required: false
 });
+
 const search = ref('');
 const options = ref<ListBoxItem[]>([]);
 const items = computed(() => {
@@ -70,20 +95,7 @@ const page = ref(1);
 const hasMoreItems = ref(false);
 const isDisabled = computed(() => props.disabled);
 
-const wrapperRef = useTemplateRef('wrapperRef');
-const srOnlyRef = useTemplateRef('srOnlyRef');
-
 const width = ref('max-content');
-
-async function onFocus() {
-  await promiseTimeout(50);
-  setLisboxWidth();
-  if (open.value) {
-    return;
-  }
-
-  open.value = true;
-}
 
 async function fetchData() {
   try {
@@ -114,25 +126,49 @@ async function fetchData() {
   }
 }
 
-async function onSelected(_item?: ListBoxItem) {
+/**
+ * Handler selected item listbox
+ * @param _item - Selected item
+ */
+async function onSelected(item?: ListBoxItem) {
+  const eventInit = {
+    target: {
+      ...buttonElement.value,
+      value: item
+    }
+  };
+
+  const event = new Event('change', eventInit as any);
+  emits('change', event);
+  emitFormChange();
+  emitFormInput();
+
   await nextTick();
   open.value = false;
-  setTimeout(() => srOnlyRef.value?.focus?.(), 150);
 }
 
+/**
+ * Handler infinity scroll listbox
+ */
 function onScrollEnd() {
   if (!loading.value && hasMoreItems.value && props.paginated) {
     fetchData();
   }
 }
 
+/**
+ * Set listbox width
+ */
 function setLisboxWidth() {
-  if (wrapperRef.value) {
-    const { width: _width } = wrapperRef.value.getBoundingClientRect();
-    width.value = `${_width}px`;
+  if (buttonElement.value) {
+    const { width: _width } = buttonElement.value.getBoundingClientRect();
+    width.value = String(_width).concat('px');
   }
 }
 
+/**
+ * Handler input listbox
+ */
 function onInput() {
   if (!props.paginated) {
     return;
@@ -144,7 +180,32 @@ function onInput() {
   nextTick(fetchData);
 }
 
-useResizeObserver(wrapperRef, ([entry]) => {
+/**
+ * Handler update open popover
+ * @param isOpen - Popover open/close
+ */
+function onUpdateOpen(isOpen: boolean) {
+  setLisboxWidth();
+
+  if (isOpen) {
+    const blurEvent = new FocusEvent('blur', {
+      relatedTarget: buttonElement.value
+    });
+
+    emits('blur', blurEvent);
+    emitFormBlur();
+    return;
+  }
+
+  const focusEvent = new FocusEvent('focus', {
+    relatedTarget: buttonElement.value
+  });
+
+  emits('focus', focusEvent);
+  emitFormFocus();
+}
+
+useResizeObserver(buttonElement, ([entry]) => {
   if (!entry) {
     return;
   }
@@ -157,6 +218,10 @@ watchEffect(() => {
     setTimeout(fetchData, 150);
   }
 });
+
+onMounted(() => {
+  buttonElement.value = document.getElementById(buttonId.value) as HTMLButtonElement;
+});
 </script>
 
 <template>
@@ -166,33 +231,31 @@ watchEffect(() => {
       :ui="{ content: `${isDisabled ? 'hidden': ''} z-[55]` }"
       :dismissible="props.dismissable"
       :portal="props.teleport"
-      @update:open="setLisboxWidth"
+      @update:open="onUpdateOpen"
     >
-      <div
-        ref="wrapperRef"
-        class="relative block w-full"
-        :class="{ 'pointer-events-none': isDisabled }"
-        role="button"
-        @click.stop.prevent
+      <UButton
+        v-bind="{ ...$attrs, ...ariaAttrs }"
+        :id="buttonId"
+        :color="color"
+        :variant="props.variant"
+        class="justify-start font-normal group hover:bg-white"
+        :ui="{
+          leadingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700',
+          trailingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700'
+        }"
+        block
+        :icon="props.icon"
+        :trailing-icon="props.trailingIcon"
+        :size="buttonSize"
+        :disabled="disabled"
       >
-        <UInput
-          :model-value="inputValue"
-          class="w-full"
-          :size="props.size"
-          readonly
-          :placeholder="props.placeholder"
-          :disabled="isDisabled"
-          @focus="onFocus"
-          @click.stop
+        <span
+          class="overflow-hidden whitespace-nowrap"
+          :class="{ 'text-slate-400': !inputValue || inputValue === '' }"
         >
-          <template #trailing>
-            <UIcon
-              name="lucide:chevron-right"
-              :class="`w-5 h-5 transition duration-300 text-slate-400 ${open ? 'rotate-90': ''}`"
-            />
-          </template>
-        </UInput>
-      </div>
+          {{ inputValue ? inputValue : props.placeholder }}
+        </span>
+      </UButton>
 
       <template #content>
         <ListBox
@@ -209,13 +272,5 @@ watchEffect(() => {
         />
       </template>
     </UPopover>
-
-    <div
-      ref="srOnlyRef"
-      class="sr-only"
-      :tabindex="-1"
-    >
-      Focusable element after selection
-    </div>
   </div>
 </template>

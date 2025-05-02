@@ -8,11 +8,9 @@ interface UIElements {
   inner?: string;
   content?: string;
   close?: string;
-  closeIcon?: string;
 }
 
 interface Props {
-  modelValue?: boolean;
   teleport?: boolean;
   class?: string;
   displayDirective?: 'if' | 'show';
@@ -32,21 +30,10 @@ const props = withDefaults(defineProps<Props>(), {
   close: true
 });
 
-const emits = defineEmits<{
-  (e: 'update:modelValue', val: boolean): void;
-}>();
-
-const _open = ref(false);
-const open = computed({
-  get: () => props.modelValue ?? _open.value,
-  set: (val) => {
-    _open.value = val;
-    emits('update:modelValue', val);
-  }
-});
+const open = defineModel<boolean>({ default: false, required: false });
 
 const contentRef = ref<HTMLElement>();
-const id = `modal-${useId()}`;
+const id = ref(`modal-${useId()}`);
 
 const theme = tv({
   slots: {
@@ -54,8 +41,7 @@ const theme = tv({
     wrapper: 'overflow-y-auto',
     inner: 'relative flex w-full min-h-screen justify-center items-center py-3 px-4',
     content: 'relative w-full max-w-xl bg-white rounded-xl shadow shadow-black/8 outline-none p-5',
-    close: 'absolute inline-flex justify-center items-center top-2 right-2 rounded-sm cursor-pointer select-none p-1 hover:bg-slate-100',
-    closeIcon: 'size-4 text-slate-600'
+    close: 'absolute inline-flex justify-center items-center top-2 right-2'
   }
 });
 
@@ -152,20 +138,20 @@ onMounted(() => {
         :tabindex="-1"
         @focus.stop
       >
-        <slot
+        <div
           v-if="props.close"
-          name="close"
+          :class="classes.close({ class: props.ui?.close })"
         >
-          <button
-            :class="classes.close({ class: props.ui?.close })"
-            @click="open = false"
-          >
-            <UIcon
-              name="lucide:x"
-              :class="classes.closeIcon({ class: props.ui?.closeIcon })"
+          <slot name="close">
+            <UButton
+              color="error"
+              variant="ghost"
+              size="sm"
+              icon="lucide:x"
+              @click="open = false"
             />
-          </button>
-        </slot>
+          </slot>
+        </div>
 
         <slot />
       </div>

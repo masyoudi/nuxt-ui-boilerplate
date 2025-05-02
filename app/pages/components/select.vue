@@ -42,6 +42,14 @@ const multiselect = ref([]);
           :debounce="500"
         />
       </UFormField>
+
+      <UFormField label="Input">
+        <UInput
+          size="md"
+          placeholder="Input text..."
+          class="w-full"
+        />
+      </UFormField>
     </div>
   </div>
 </template>

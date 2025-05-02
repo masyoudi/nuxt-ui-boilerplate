@@ -34,7 +34,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emits = defineEmits<{
   (e: 'update:search', value: string): void;
-  (e: 'update:selected', value?: ListBoxItem | ListBoxItem[]): void;
   // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'input', val: string): void;
   (e: 'scroll-end'): void;
@@ -43,14 +42,7 @@ const emits = defineEmits<{
 const ui = computed(() => theme({ size: props.size }));
 
 const data = computed(() => props.items);
-const _selected = ref<ListBoxItem | ListBoxItem[]>();
-const selectedValue = computed({
-  get: () => props.selected ?? _selected.value,
-  set: (val) => {
-    _selected.value = val;
-    emits('update:selected', val);
-  }
-});
+const selectedValue = defineModel<ListBoxItem | ListBoxItem[]>('selected', { default: undefined, required: false });
 
 const _search = ref('');
 const searchTerm = computed({

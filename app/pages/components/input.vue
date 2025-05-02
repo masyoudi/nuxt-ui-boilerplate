@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formDataBuilder } from '~/utils/helpers';
 import { toArray } from '~~/shared/utils';
 
 definePageMeta({
@@ -17,6 +18,7 @@ const formModel = reactive({
   address: '',
   phone: '',
   dob: '',
+  file: undefined as File | undefined,
   hobbies: [] as string[]
 });
 const formRef = ref();
@@ -25,12 +27,10 @@ const loading = ref(false);
 async function onSubmit() {
   try {
     loading.value = true;
+
     await useRequest('/profile', {
       method: 'POST',
-      query: {
-        test: 'value'
-      },
-      body: formModel
+      body: formDataBuilder(formModel)
     });
     loading.value = false;
   }
@@ -138,6 +138,34 @@ async function onSubmit() {
 
         <UFormField label="Note">
           <TextEditor />
+        </UFormField>
+
+        <UFormField
+          label="Resume"
+          name="file"
+        >
+          <FormUpload
+            v-slot="{ onclick }"
+            v-model="formModel.file"
+            class="mb-5"
+          >
+            <UButtonGroup
+              class="w-full"
+              size="lg"
+            >
+              <UButton
+                label="Choose file"
+                @click="onclick"
+              />
+              <UInput
+                :model-value="formModel.file?.name"
+                placeholder="Upload file here"
+                readonly
+                class="grow shrink"
+                @click="onclick"
+              />
+            </UButtonGroup>
+          </FormUpload>
         </UFormField>
 
         <div class="flex justify-end">

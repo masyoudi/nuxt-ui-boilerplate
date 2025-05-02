@@ -5,6 +5,9 @@ interface Props {
   label?: string;
   column: Column<any>;
   multiple?: boolean;
+  iconSortAsc?: string;
+  iconSortDesc?: string;
+  iconUnsort?: string;
 }
 
 defineOptions({
@@ -12,9 +15,16 @@ defineOptions({
   inheritAttrs: false
 });
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  iconSortAsc: 'lucide:arrow-up-narrow-wide',
+  iconSortDesc: 'lucide:arrow-down-wide-narrow',
+  iconUnsort: 'lucide:arrow-up-down'
+});
 const isSorted = computed(() => props.column?.getIsSorted?.() ?? false);
 
+/**
+ * Handle click event
+ */
 function onSorting() {
   if (!isSorted.value) {
     props.column?.toggleSorting?.(false, props.multiple);
@@ -37,7 +47,7 @@ function onSorting() {
   >
     <UButton
       :label="props.label"
-      :icon="isSorted ? isSorted === 'asc' ? 'lucide:arrow-up-narrow-wide' : 'lucide:arrow-down-wide-narrow' : 'lucide:arrow-up-down'"
+      :icon="isSorted ? isSorted === 'asc' ? props.iconSortAsc : props.iconSortDesc : props.iconUnsort"
       color="neutral"
       variant="ghost"
       class="-mx-2.5"

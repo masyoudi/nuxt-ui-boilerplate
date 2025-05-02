@@ -1,4 +1,5 @@
 import { Fragment, type Component, type VNode } from 'vue-demi';
+import { serialize as serializeFormData, type Options as FormDataBuilderOptions } from 'object-to-formdata';
 
 /**
  * Find childrend nodes
@@ -22,6 +23,22 @@ export function findNodeChildrens(vnodes: VNode[], ...names: string[]) {
   }
 
   return result;
+}
+
+/**
+ * Get current active element
+ */
+export function getActiveElement(): Element | null {
+  let activeElement = document.activeElement;
+  if (activeElement == null) {
+    return null;
+  }
+
+  while (activeElement != null && activeElement.shadowRoot != null && activeElement.shadowRoot.activeElement != null) {
+    activeElement = activeElement.shadowRoot.activeElement;
+  }
+
+  return activeElement;
 }
 
 /**
@@ -51,13 +68,13 @@ export function trapFocus(element: HTMLElement) {
     }
 
     if (e.shiftKey) {
-      if (document.activeElement === focusableNodeFirst) {
+      if (getActiveElement() === focusableNodeFirst) {
         focusableNodeLast.focus();
         e.preventDefault();
       }
     }
     else {
-      if (document.activeElement === focusableNodeLast) {
+      if (getActiveElement() === focusableNodeLast) {
         focusableNodeFirst.focus();
         e.preventDefault();
       }
@@ -65,4 +82,13 @@ export function trapFocus(element: HTMLElement) {
   });
 
   return focusableNodeFirst;
+}
+
+/**
+ * Build form data
+ * @param body - Raw body
+ * @param options - Options
+ */
+export function formDataBuilder(body: Record<string, any>, options?: FormDataBuilderOptions) {
+  return serializeFormData(body, options ?? { indices: true });
 }

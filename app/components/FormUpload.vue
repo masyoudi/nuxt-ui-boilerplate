@@ -3,12 +3,15 @@ import { tv } from 'tailwind-variants';
 
 interface Props {
   modelValue?: File | File[];
+  id?: string;
+  name?: string;
   multiple?: boolean;
   accept?: string;
   dragDrop?: boolean;
   class?: string;
   dropClass?: string;
   validateType?: (file: File, accept?: string) => boolean;
+  validateSize?: (fileSize: number) => boolean;
   disabled?: boolean;
 }
 
@@ -50,6 +53,7 @@ const emits = defineEmits<{
   // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'blur', event: Event): void;
   (e: 'drop', focused: boolean): void;
+  (e: 'invalidSize', files: File[]): void;
 }>();
 
 const vmodel = defineModel<File | File[] | undefined>({ default: undefined });
@@ -61,6 +65,17 @@ const inputAttrs = computed(() => {
 
   return parts;
 });
+
+const {
+  name,
+  emitFormChange,
+  emitFormInput,
+  emitFormBlur,
+  emitFormFocus,
+  id,
+  ariaAttrs,
+  disabled: isDisabled
+} = useFormField<Props>(props, { deferInputValidation: true });
 
 const theme = tv({
   slots: {
@@ -78,7 +93,7 @@ const inputRef = useTemplateRef('inputRef');
  * @param event - Event
  */
 function onClick(event: Event) {
-  if (props.disabled) {
+  if (isDisabled.value) {
     return;
   }
 
@@ -91,7 +106,7 @@ function onClick(event: Event) {
  * @param e - Event
  */
 function onFileChange(e: Event | DragEvent) {
-  if (props.disabled) {
+  if (isDisabled.value) {
     return;
   }
 
@@ -100,19 +115,28 @@ function onFileChange(e: Event | DragEvent) {
   }
 
   const fileList = ((e.target as HTMLInputElement)?.files || (e as DragEvent)?.dataTransfer?.files);
-  const files = fileList ? [...fileList] : undefined;
+  const files = fileList ? [...fileList].filter((file) => props.validateType(file, props.accept)) : undefined;
   if (!files) {
     return;
   }
 
+  const hasValidationSize = typeof props.validateSize === 'function';
+  const _files = files.filter((file) => hasValidationSize ? props.validateSize(file.size) : true);
+
+  if (hasValidationSize && _files.length !== files.length) {
+    emits('invalidSize', files.filter((file) => !props.validateSize!(file.size)));
+  }
+
   if (props.multiple) {
-    const values = files.filter((file) => props.validateType(file, props.accept));
-    vmodel.value = [...(Array.isArray(vmodel.value) ? vmodel.value : []), ...values];
+    vmodel.value = [...(Array.isArray(vmodel.value) ? vmodel.value : []), ..._files];
   }
   else {
-    const [file] = files;
-    vmodel.value = file && props.validateType(file, props.accept) ? file : undefined;
+    const [file] = _files;
+    vmodel.value = file;
   }
+
+  emitFormChange();
+  emitFormInput();
 
   clearInput();
 }
@@ -123,6 +147,7 @@ function onFileChange(e: Event | DragEvent) {
  */
 function onFocus(event: Event) {
   emits('focus', event);
+  emitFormFocus();
 }
 
 /**
@@ -131,6 +156,7 @@ function onFocus(event: Event) {
  */
 function onBlur(event: Event) {
   emits('blur', event);
+  emitFormBlur();
 }
 
 /**
@@ -138,7 +164,7 @@ function onBlur(event: Event) {
  * @param event - Focus event
  */
 function onDragDropFocus(isFocus: boolean) {
-  if (props.disabled) {
+  if (isDisabled.value) {
     return;
   }
 
@@ -179,13 +205,15 @@ function clearInput() {
     </div>
 
     <input
+      v-bind="{ ...inputAttrs, ...ariaAttrs }"
+      :id="id"
       ref="inputRef"
-      v-bind="inputAttrs"
+      :name="name"
       type="file"
-      class="absolute inset-0 appearance-none -z-[1]"
+      class="absolute inset-0 appearance-none opacity-0 -z-[1]"
       :multiple="props.multiple"
       :accept="props.accept"
-      :disabled="props.disabled"
+      :disabled="isDisabled"
       @change="onFileChange"
       @focus="onFocus"
       @blur="onBlur"

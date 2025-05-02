@@ -2,41 +2,20 @@
 import { useThrottleFn } from '@vueuse/core';
 import theme from '~/utils/theme/sidebar';
 
-interface Props {
-  open?: boolean;
-  mini?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {});
-
-const emits = defineEmits<{
-  (e: 'update:open', val: boolean): void;
-  // eslint-disable-next-line @typescript-eslint/unified-signatures
-  (e: 'update:mini', val: boolean): void;
-}>();
-
-const _open = ref(false);
-const isOpen = computed({
-  get: () => props.open ?? _open.value,
-  set: (val) => {
-    _open.value = val;
-    emits('update:open', val);
-  }
+const open = defineModel<boolean>('open', {
+  default: false,
+  required: false
 });
 
-const _mini = ref(false);
-const isMini = computed({
-  get: () => props.mini ?? _mini.value,
-  set: (val) => {
-    _mini.value = val;
-    emits('update:mini', val);
-  }
+const mini = defineModel<boolean>('mini', {
+  default: false,
+  required: false
 });
 
 const isHovered = ref(false);
-const isMinified = computed(() => isMini.value && !isHovered.value);
-const _isChildVisible = ref(!(props.mini ?? _mini.value));
-const isChildVisible = computed(() => isMini.value ? _isChildVisible.value : true);
+const isMinified = computed(() => mini.value && !isHovered.value);
+const _isChildVisible = ref(!mini.value);
+const isChildVisible = computed(() => mini.value ? _isChildVisible.value : true);
 
 const menus = [
   {
@@ -101,9 +80,9 @@ const onHovered = useThrottleFn((hovered: boolean) => {
 }, 200);
 
 async function onMinify() {
-  const value = !isMini.value;
+  const value = !mini.value;
   await nextTick();
-  isMini.value = value;
+  mini.value = value;
   isHovered.value = false;
   _isChildVisible.value = false;
 }
@@ -125,7 +104,7 @@ function isMenuActive(ids: string | string[]) {
 
 <template>
   <aside
-    :class="ui.root({ open: isOpen, mini: isMinified })"
+    :class="ui.root({ open: open, mini: isMinified })"
     @mouseenter="() => onHovered(true)"
     @mouseleave="() => onHovered(false)"
   >
@@ -135,7 +114,7 @@ function isMenuActive(ids: string | string[]) {
     >
       <UIcon
         name="lucide:arrow-left-to-line"
-        :class="[ui.toggleIcon(), { 'rotate-180': isMini }]"
+        :class="[ui.toggleIcon(), { 'rotate-180': mini }]"
       />
     </div>
     <div class="flex h-16 grow-0 items-center shrink-0 px-3">

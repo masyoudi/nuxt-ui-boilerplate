@@ -34,6 +34,9 @@ const isCheckedAll = computed(() => {
   });
 });
 
+/**
+ * Handle change value
+ */
 function onChange() {
   if (isCheckedAll.value) {
     emits('change', []);

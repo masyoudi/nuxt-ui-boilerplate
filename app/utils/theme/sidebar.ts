@@ -6,9 +6,9 @@ const theme = tv({
       'absolute',
       'flex',
       'flex-col',
-      'w-[var(--sidebar-width)]',
+      'w-(--sidebar-width)',
       'inset-y-0',
-      '-left-[var(--sidebar-width)]',
+      '-left-(--sidebar-width)',
       'lg:left-0',
       'bg-white',
       'shadow-md',
@@ -66,7 +66,7 @@ const theme = tv({
     },
     menuActive: {
       true: {
-        menu: 'bg-slate-50 text-[var(--ui-color-primary-500)]'
+        menu: 'bg-slate-50 text-(--ui-color-primary-500)'
       }
     },
     childVisible: {

@@ -13,6 +13,7 @@
       :autocomplete="autocomplete"
       v-bind="attributes"
       @accept="onAccept"
+      @focus="onFocus"
       @blur="onBlur"
       @change="onChange"
     />
@@ -56,8 +57,6 @@ import type { InputHTMLAttributes } from 'vue';
 import _appConfig from '#build/app.config';
 import theme from '#build/ui/input';
 
-import type { PartialString } from '#ui/types/utils';
-
 const appConfig = _appConfig as AppConfig & { ui: { input: Partial<typeof theme> } };
 const input = tv({ extend: tv(theme), ...(appConfig.ui?.input || {}) });
 
@@ -85,7 +84,7 @@ interface Props {
   trailingIcon?: string;
   loading?: boolean;
   loadingIcon?: string;
-  ui?: PartialString<typeof input.slots>;
+  ui?: Partial<typeof input.slots>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -98,7 +97,9 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emits = defineEmits<{
-  (e: 'update:modelValue', payload: string | number): void;
+  (e: 'update:modelValue', value: string | number): void;
+  (e: 'focus', event: FocusEvent): void;
+  // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'blur', event: FocusEvent): void;
   (e: 'change', event: Event): void;
 }>();
@@ -118,6 +119,7 @@ const modelValue = computed({
 });
 
 const {
+  emitFormFocus,
   emitFormBlur,
   emitFormInput,
   emitFormChange,
@@ -126,6 +128,7 @@ const {
   id,
   name,
   highlight,
+  ariaAttrs,
   disabled
 } = useFormField<Props>(props, {
   deferInputValidation: true
@@ -149,14 +152,22 @@ const classes = computed(() => input({
 const inputRef = ref<HTMLInputElement | null>(null);
 const attrs: Record<string, any> = useAttrs();
 
-const attributes = computed(() => ({ ...attrs, ...(typeof props.mask === 'object' && props.mask) }));
+const attributes = computed(() => ({ ...attrs, ...ariaAttrs, ...(typeof props.mask === 'object' && props.mask) }));
 
+/**
+ * Set autofocus
+ */
 function autoFocus() {
   if (props.autofocus) {
     inputRef.value?.focus();
   }
 }
 
+/**
+ * Handler accept event
+ * @param _value - Unmasked value
+ * @param event - Event
+ */
 function onAccept(_value?: string, event?: Event) {
   emitFormInput();
 
@@ -165,14 +176,31 @@ function onAccept(_value?: string, event?: Event) {
   }
 }
 
+/**
+ * Handler change event
+ * @param event - Event
+ */
 function onChange(event: Event) {
-  emitFormChange();
   emits('change', event);
+  emitFormChange();
 }
 
+/**
+ * Handler focus event
+ * @param event - Focus event value
+ */
+function onFocus(event: FocusEvent) {
+  emits('focus', event);
+  emitFormFocus();
+}
+
+/**
+ * Handler blur event
+ * @param event - Blur event value
+ */
 function onBlur(event: FocusEvent) {
-  emitFormBlur();
   emits('blur', event);
+  emitFormBlur();
 }
 
 defineExpose({

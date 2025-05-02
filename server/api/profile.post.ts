@@ -11,7 +11,8 @@ const validation = z.object({
   address: z.string().trim().min(1, 'Enter your address'),
   phone: z.string().trim().min(1, 'Enter your phone number'),
   dob: z.string().min(1, 'Please enter date of birth'),
-  hobbies: z.string().array().min(1, 'Please select hobby')
+  hobbies: z.string().array().min(1, 'Please select hobby'),
+  file: z.any()
 });
 
 export default defineEventHandler(async (event) => {

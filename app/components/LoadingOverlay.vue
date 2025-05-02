@@ -7,7 +7,6 @@ interface UIElements {
 }
 
 interface Props {
-  modelValue?: boolean;
   teleport?: boolean;
   class?: string;
   ui?: UIElements;
@@ -21,18 +20,7 @@ const props = withDefaults(defineProps<Props>(), {
   teleport: true
 });
 
-const emits = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void;
-}>();
-
-const _open = ref(false);
-const open = computed({
-  get: () => props.modelValue ?? _open.value,
-  set: (val) => {
-    _open.value = val;
-    emits('update:modelValue', val);
-  }
-});
+const open = defineModel<boolean>({ default: false, required: false });
 
 const theme = tv({
   slots: {

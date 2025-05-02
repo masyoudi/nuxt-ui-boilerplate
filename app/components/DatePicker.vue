@@ -22,7 +22,7 @@ interface Props<R extends boolean> {
   variant?: ButtonProps['variant'];
   calendarSize?: CalendarProps<any, any>['size'];
   icon?: string;
-  iconRight?: string;
+  trailingIcon?: string;
   min?: Date;
   max?: Date;
   creator?: (value: Date) => TModel<R>;
@@ -36,8 +36,7 @@ interface Props<R extends boolean> {
 const props = withDefaults(defineProps<Props<IsRange>>(), {
   color: 'neutral',
   variant: 'outline',
-  placeholder: 'Pick a date',
-  icon: 'lucide:calendar',
+  placeholder: 'Select date',
   creator: (value: Date) => value as TModel<IsRange>,
   dismissable: true,
   teleport: true,
@@ -46,21 +45,30 @@ const props = withDefaults(defineProps<Props<IsRange>>(), {
 
 const emits = defineEmits<{
   (e: 'update:modelValue', value: DatepickerValue | DatepickerValue[]): void;
+  (e: 'focus', event: FocusEvent): void;
+  // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'blur', event: FocusEvent): void;
+  (e: 'change', event: Event): void;
 }>();
 
 const open = ref(false);
 const hasModel = ref(!props.range ? typeof props.modelValue !== 'undefined' : Array.isArray(props.modelValue));
 const {
+  emitFormChange,
+  emitFormInput,
   emitFormBlur,
   emitFormFocus,
   id,
   size: formGroupSize,
   color,
-  disabled } = useFormField<Props<IsRange>>(props, { deferInputValidation: true });
+  ariaAttrs,
+  disabled
+} = useFormField<Props<IsRange>>(props, { deferInputValidation: true });
 const { size: buttonGroupSize } = useButtonGroup<Props<IsRange>>(props);
 
 const buttonSize = computed(() => buttonGroupSize.value || formGroupSize.value);
+const buttonId = ref(id.value ?? useId());
+const buttonElement = ref<HTMLButtonElement>();
 
 const _model = ref();
 const vmodel = computed({
@@ -138,6 +146,10 @@ const displayDate = computed(() => {
   return format(val.toDate(getLocalTimeZone()));
 });
 
+/**
+ * Format display date
+ * @param date - Date value
+ */
 function format(date: Date) {
   if (!props.formatter || (props.formatter && typeof props.formatter !== 'function')) {
     return formatDate(date, 'DD/MM/YYYY');
@@ -146,6 +158,10 @@ function format(date: Date) {
   return props.formatter(date);
 }
 
+/**
+ * Check is range date
+ * @param value - Range date value
+ */
 function isValueRange(value: RangeValue) {
   return (
     Object.keys(value).length === 2
@@ -155,13 +171,57 @@ function isValueRange(value: RangeValue) {
   );
 }
 
+/**
+ * Close popover
+ */
 function close() {
   open.value = false;
 }
 
+/**
+ * Handle blur event
+ * @param event - Focus event
+ */
 function onBlur(event: FocusEvent) {
-  emitFormBlur();
   emits('blur', event);
+  emitFormBlur();
+}
+
+/**
+ * Listener on update open popover
+ */
+function onUpdateOpen(isOpen: boolean) {
+  if (!isOpen) {
+    const blurEvent = new FocusEvent('blur', {
+      relatedTarget: buttonElement.value
+    });
+    onBlur(blurEvent);
+    return;
+  }
+
+  const focusEvent = new FocusEvent('focus', {
+    relatedTarget: buttonElement.value
+  });
+  emits('focus', focusEvent);
+  emitFormFocus();
+}
+
+/**
+ * Handler on update value calendar
+ * @param value - Calendar value
+ */
+function onUpdate(value: any) {
+  const eventInit = {
+    target: {
+      value
+    }
+  };
+
+  const event = new Event('change', eventInit as any);
+  emits('change', event);
+
+  emitFormChange();
+  emitFormInput();
 }
 
 watch(() => props.modelValue, () => {
@@ -172,6 +232,10 @@ watch(() => props.modelValue, () => {
     hasModel.value = true;
   }
 });
+
+onMounted(() => {
+  buttonElement.value = document.getElementById(buttonId.value) as HTMLButtonElement;
+});
 </script>
 
 <template>
@@ -181,25 +245,37 @@ watch(() => props.modelValue, () => {
     :content="{ align: 'start' }"
     :dismissible="props.dismissable"
     :portal="props.teleport"
+    @update:open="onUpdateOpen"
   >
-    <UButton
-      :id="id"
-      :color="color"
-      :variant="props.variant"
-      class="justify-start font-normal group hover:bg-white"
-      :ui="{
-        leadingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700'
-      }"
-      block
-      :icon="props.icon"
-      :trailing-icon="props.iconRight"
-      :size="buttonSize"
+    <slot
+      :open="open"
+      :display-date="displayDate"
       :disabled="disabled"
-      @blur="onBlur"
-      @focus="emitFormFocus"
     >
-      <span :class="{ 'text-slate-400': !displayDate }">{{ displayDate ? displayDate : props.placeholder }}</span>
-    </UButton>
+      <UButton
+        v-bind="{ ...$attrs, ...ariaAttrs }"
+        :id="buttonId"
+        :color="color"
+        :variant="props.variant"
+        class="justify-start font-normal group hover:bg-white"
+        :ui="{
+          leadingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700',
+          trailingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700'
+        }"
+        block
+        :icon="props.icon"
+        :trailing-icon="props.trailingIcon"
+        :size="buttonSize"
+        :disabled="disabled"
+      >
+        <span
+          class="overflow-hidden whitespace-nowrap"
+          :class="{ 'text-slate-400': !displayDate }"
+        >
+          {{ displayDate ? displayDate : props.placeholder }}
+        </span>
+      </UButton>
+    </slot>
 
     <template #content>
       <UCalendar
@@ -209,10 +285,12 @@ watch(() => props.modelValue, () => {
         :max-value="maxDate"
         :range="props.range"
         :size="props.calendarSize"
+        @update:model-value="onUpdate"
       />
+
       <slot
         name="footer"
-        :close="close"
+        :onclose="close"
       />
     </template>
   </UPopover>

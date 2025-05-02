@@ -44,14 +44,12 @@ const props = withDefaults(defineProps<Props>(), {
     ...omit(val, ['id', 'name'])
   })),
   transformFetchQuery: (params: FetchQuery) => params,
+  itemVariant: 'soft',
   debounce: 350,
   dismissable: true,
   teleport: true,
   disabled: false
 });
-const emits = defineEmits<{
-  (e: 'update:selected', val: ListBoxItem[]): void;
-}>();
 
 const multiSelect = tv(theme);
 const classes = computed(() => multiSelect({
@@ -61,13 +59,10 @@ const classes = computed(() => multiSelect({
 }));
 
 const search = ref('');
-const _selected = ref<ListBoxItem[]>([]);
-const selectedItems = computed({
-  get: () => props.selected ?? _selected.value,
-  set: (val) => {
-    _selected.value = val;
-    emits('update:selected', val);
-  }
+
+const selectedItems = defineModel<ListBoxItem[]>('selected', {
+  default: () => [],
+  required: false
 });
 const loading = ref(false);
 const items = ref<ListBoxItem[]>([]);
@@ -183,7 +178,7 @@ function onScrollEnd() {
 function setLisboxWidth() {
   if (wrapperRef.value) {
     const { width: _width } = wrapperRef.value.getBoundingClientRect();
-    width.value = `${_width}px`;
+    width.value = String(_width).concat('px');
   }
 }
 
@@ -217,7 +212,7 @@ watchEffect(() => {
         ref="wrapperRef"
         :class="classes.wrapper({ disabled: isDisabled })"
         role="button"
-        :data-focus="open ? 'true': null"
+        :data-open="open ? 'true': 'false'"
         @click.stop.prevent
       >
         <TagItem
