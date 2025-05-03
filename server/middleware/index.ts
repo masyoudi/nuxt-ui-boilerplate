@@ -25,7 +25,8 @@ const waf = useWAF({
     '/api/profile': {
       ignoreModules: ['xml-injection'],
       method: 'POST'
-    }
+    },
+    '/__nuxt_error': false
   }
 });
 
@@ -40,8 +41,14 @@ export default defineEventHandler(async (event) => {
     event.context.auth = createAuthClient(authSession.data);
   }
 
-  const { success: isRequestSafe } = await waf.check(event);
+  const { success: isRequestSafe, results: wafResult } = await waf.check(event);
   if (!isRequestSafe) {
+    const meta = {
+      waf: wafResult
+    };
+
+    logger.warn('[WAF] malicious request detected', { event, meta });
+
     throw createError({
       statusCode: 400,
       message: 'Malicious request detected. Please contact administrator'

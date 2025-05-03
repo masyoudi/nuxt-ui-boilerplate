@@ -1,13 +1,14 @@
-@import "tailwindcss" theme(static);
-@import "@nuxt/ui";
+@import "tailwindcss";
 
 @import "./colors";
+
+@import "@nuxt/ui";
 
 @plugin "@tailwindcss/typography";
 
 @config "../../../tailwind.config.ts";
 
-@theme static {
+@theme {
   --shadow-2xs: 0 0 4px 1px rgba(0, 0, 0, .05);
   --shadow-xs: 0 0 5px 1px rgba(0, 0, 0, .05);
   --shadow: 0 0 5px 1px rgba(0, 0, 0, .05);

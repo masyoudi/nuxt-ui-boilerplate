@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 
-export default defineEventHandler((event) => {
+export default authSessionHandler((event) => {
   const q = getQuery(event);
   const perPage = (Number.parseInt(String(q.perpage)));
   const data = [...Array(!Number.isNaN(perPage) ? perPage : 10)].map(() => ({

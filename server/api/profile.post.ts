@@ -15,7 +15,7 @@ const validation = z.object({
   file: z.any()
 });
 
-export default defineEventHandler(async (event) => {
+export default authSessionHandler(async (event) => {
   try {
     await useValidateBody(event, { schema: validation });
 

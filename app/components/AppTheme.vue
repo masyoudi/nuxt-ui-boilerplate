@@ -44,8 +44,9 @@ const colors = [
 const cookieTheme = useCookie('__themecolor');
 
 async function onChangeColor(value: string) {
+  document.documentElement.style.setProperty(`--color-primary`, `${getCssColorOklch(value)}`);
   Object.entries(getColors(value)).forEach(([key, color]) => {
-    document.documentElement.style.setProperty(`--ui-color-primary-${key}`, `${getCssColorOklch(color)}`);
+    document.documentElement.style.setProperty(`--color-primary-${key}`, `${getCssColorOklch(color)}`);
   });
 
   cookieTheme.value = value;

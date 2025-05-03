@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 
-export default defineEventHandler((event) => {
+export default authSessionHandler((event) => {
   const q = getQuery(event);
   const page = Number.parseInt(String(q.page)) || 1;
   const perPage = Number.parseInt(String(q.perpage)) || 10;
