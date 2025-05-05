@@ -140,6 +140,10 @@ async function onSubmit() {
           <TextEditor />
         </UFormField>
 
+        <UFormField label="Tag Input">
+          <TagInput color="error" />
+        </UFormField>
+
         <UFormField
           label="Resume"
           name="file"

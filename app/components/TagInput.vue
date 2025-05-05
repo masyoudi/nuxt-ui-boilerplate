@@ -66,6 +66,10 @@ function onDeleteItem(item: string) {
   items.value = items.value.filter((val) => val !== item);
 }
 
+/**
+ * Handler keystroke input
+ * @param evt - Keyboard event
+ */
 function onKeyStroke(evt: KeyboardEvent) {
   const _addKeys = Array.isArray(props.addKeys) ? props.addKeys : [props.addKeys];
   if (_addKeys.includes(evt.key)) {
@@ -123,6 +127,7 @@ function onInput() {
         :placeholder="props.placeholder"
         :class="classes.input()"
         :disabled="isDisabled"
+        @keydown.enter.prevent="onKeyStroke"
         @input="onInput"
         @focus="() => isFocused = true"
         @blur="() => isFocused = false"

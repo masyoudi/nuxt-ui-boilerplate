@@ -11,6 +11,9 @@ const theme = tv({
       primary: {
         wrapper: 'border border-slate-300 data-focus:border-(--ui-primary)'
       },
+      error: {
+        wrapper: 'border border-slate-300 data-focus:border-(--ui-error)'
+      },
       neutral: {
         wrapper: 'border border-slate-300 data-focus:border-slate-400'
       }

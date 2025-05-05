@@ -30,6 +30,16 @@ const props = withDefaults(defineProps<Props>(), {
   close: true
 });
 
+const emits = defineEmits<{
+  (e: 'beforeEnter'): void;
+  // eslint-disable-next-line @typescript-eslint/unified-signatures
+  (e: 'beforeLeave'): void;
+  // eslint-disable-next-line @typescript-eslint/unified-signatures
+  (e: 'afterEnter'): void;
+  // eslint-disable-next-line @typescript-eslint/unified-signatures
+  (e: 'afterLeave'): void;
+}>();
+
 const open = defineModel<boolean>({ default: false, required: false });
 
 const contentRef = ref<HTMLElement>();
@@ -70,14 +80,45 @@ const { apply: applyMotionContent } = useMotion(contentRef, {
   }
 });
 
-function onOpen() {
+/**
+ * Handler click outside modal content
+ */
+function onClickOutside() {
+  if (!props.dismissable) {
+    contentRef.value?.focus({ preventScroll: true });
+    return;
+  }
+
+  open.value = false;
+}
+
+/**
+ * Handler escape keyboard
+ */
+function onEscape() {
+  if (props.dismissable && open.value) {
+    open.value = false;
+  }
+}
+
+/**
+ * Handler after modal enter
+ */
+function onAfterEnter() {
+  emits('afterEnter');
+
   applyMotionContent('enter');
   if (import.meta.client) {
     setTimeout(() => trapFocus(contentRef.value!), 150);
   }
 }
 
-function onClosed() {
+/**
+ * Handler before modal leave
+ */
+function onBeforeLeave() {
+  emits('beforeLeave');
+
   applyMotionContent('close');
   if (!import.meta.client) {
     return;
@@ -88,21 +129,6 @@ function onClosed() {
   (lastModal as HTMLDivElement)?.focus({ preventScroll: true });
 
   nextTick(() => applyMotionContent('init'));
-}
-
-function onClickOutside() {
-  if (!props.dismissable) {
-    contentRef.value?.focus({ preventScroll: true });
-    return;
-  }
-
-  open.value = false;
-}
-
-function onEscape() {
-  if (props.dismissable && open.value) {
-    open.value = false;
-  }
 }
 
 onMounted(() => {
@@ -122,8 +148,10 @@ onMounted(() => {
     :class="classes.base({ class: props.class })"
     :duration="{ enter: 0, leave: 150 }"
     :data-modal="open"
-    @after-enter="onOpen"
-    @before-leave="onClosed"
+    @after-enter="onAfterEnter"
+    @after-leave="emits('afterLeave')"
+    @before-enter="emits('beforeEnter')"
+    @before-leave="onBeforeLeave"
   >
     <div
       :class="classes.inner({ class: props.ui?.inner })"

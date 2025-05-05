@@ -175,6 +175,12 @@ function onScrollEnd() {
   }
 }
 
+async function onClickWrapper() {
+  if (!open.value) {
+    inputRef.value?.focus();
+  }
+}
+
 function setLisboxWidth() {
   if (wrapperRef.value) {
     const { width: _width } = wrapperRef.value.getBoundingClientRect();
@@ -213,7 +219,7 @@ watchEffect(() => {
         :class="classes.wrapper({ disabled: isDisabled })"
         role="button"
         :data-open="open ? 'true': 'false'"
-        @click.stop.prevent
+        @click.stop.prevent="onClickWrapper"
       >
         <TagItem
           v-for="(item, i) in selectedItems"
@@ -254,6 +260,7 @@ watchEffect(() => {
           :items="computedItems"
           :width="width"
           :searchable="false"
+          :auto-focus="false"
           multiple
           @scroll-end="onScrollEnd"
         />

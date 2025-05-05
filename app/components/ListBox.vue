@@ -19,6 +19,7 @@ interface Props {
   debounce?: number;
   searchable?: boolean;
   multiple?: boolean;
+  autoFocus?: boolean;
   checkSelection?: (item: ListBoxItem, selected: ListBoxItem) => boolean;
 }
 
@@ -27,6 +28,7 @@ const props = withDefaults(defineProps<Props>(), {
   width: 'max-content',
   size: 'md',
   placeholder: 'Search...',
+  autoFocus: true,
   checkSelection: (item, selected) => item.id === selected.id,
   emptyMessage: 'No results found.',
   debounce: 0
@@ -98,6 +100,7 @@ function onIntersectionBottom([entry]: IntersectionObserverEntry[]) {
         v-model:model-value="searchTerm"
         :placeholder="props.placeholder"
         :class="ui.input()"
+        :auto-focus="props.autoFocus"
         @update:model-value="(val) => debouncedInput(String(val))"
       />
     </div>

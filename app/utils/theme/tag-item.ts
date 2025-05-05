@@ -13,6 +13,10 @@ const theme = tv({
         base: '',
         close: 'hover:bg-black/10'
       },
+      error: {
+        base: '',
+        close: 'hover:bg-black/10'
+      },
       neutral: {
         base: '',
         close: 'hover:bg-slate-500/20'
@@ -88,6 +92,38 @@ const theme = tv({
       class: {
         base: 'ring ring-(--ui-color-primary-500) bg-(--ui-color-primary-100) text-(--ui-color-primary-500)',
         close: 'hover:bg-(--ui-color-primary-200)'
+      }
+    },
+    {
+      color: 'error',
+      variant: 'solid',
+      class: {
+        base: 'bg-(--ui-color-error-500) text-white',
+        close: 'hover:bg-(--ui-color-error-600)'
+      }
+    },
+    {
+      color: 'error',
+      variant: 'outlined',
+      class: {
+        base: 'ring ring-(--ui-color-error-500) bg-(--ui-bg) text-(--ui-color-error-500)',
+        close: 'hover:bg-(--ui-color-error-100)'
+      }
+    },
+    {
+      color: 'error',
+      variant: 'soft',
+      class: {
+        base: 'bg-(--ui-color-error-100) text-(--ui-color-error-500)',
+        close: 'hover:bg-(--ui-color-error-200)'
+      }
+    },
+    {
+      color: 'error',
+      variant: 'subtle',
+      class: {
+        base: 'ring ring-(--ui-color-error-500) bg-(--ui-color-error-100) text-(--ui-color-error-500)',
+        close: 'hover:bg-(--ui-color-error-200)'
       }
     },
     {
