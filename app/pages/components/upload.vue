@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { PopoverArrow, PopoverClose, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui';
+
 definePageMeta({
   middleware: 'auth',
   activeMenu: ['components', 'upload']
@@ -10,6 +12,7 @@ useHead({
 
 const file = ref<File>();
 const files = ref<File[]>([]);
+const show = ref(false);
 
 function onDeleteFile(index: number) {
   files.value = files.value.filter((_, idx) => idx !== index);
@@ -97,6 +100,56 @@ function onDeleteFile(index: number) {
           </div>
         </FormUpload>
       </UFormField>
+
+      <PopoverRoot>
+        <PopoverTrigger
+          class="inline-flex "
+          aria-label="Update dimensions"
+        >
+          <UButton
+            label="Popover"
+            @click="show = true"
+          />
+        </PopoverTrigger>
+        <PopoverPortal>
+          <PopoverContent
+            v-show="show"
+            side="bottom"
+            :side-offset="5"
+            force-mount
+            class="rounded-lg p-5 w-[260px] bg-white shadow-sm border border-slate-300 will-change-[transform,opacity] data-[state=open]:data-[side=top]:animate-slideDownAndFade data-[state=open]:data-[side=right]:animate-slideLeftAndFade data-[state=open]:data-[side=bottom]:animate-slideUpAndFade data-[state=open]:data-[side=left]:animate-slideRightAndFade"
+          >
+            <div class="flex flex-col gap-2.5">
+              <p class="text-mauve12 text-sm leading-[19px] font-semibold mb-2.5">
+                Dimensions
+              </p>
+
+              <UFormField
+                label="Hobbies"
+                name="hobbies"
+              >
+                <MultiSelect
+                  url="/todos"
+                  paginated
+                  color="neutral"
+                  item-color="primary"
+                  item-variant="subtle"
+                  placeholder="Search anything..."
+                  :transform-fetch-data="(res) => toArray(res).map((val) => ({ value: val.id, label: val.task }))"
+                  :debounce="500"
+                />
+              </UFormField>
+            </div>
+            <PopoverClose
+              class="rounded-full h-[25px] w-[25px] inline-flex items-center justify-center text-grass11 absolute top-[8px] right-[8px] hover:bg-green4 focus:shadow-[0_0_0_2px] focus:shadow-green7 outline-none cursor-default"
+              aria-label="Close"
+            >
+              <UIcon name="lucide:x" />
+            </PopoverClose>
+            <PopoverArrow class="fill-white stroke-gray-200" />
+          </PopoverContent>
+        </PopoverPortal>
+      </PopoverRoot>
     </div>
   </div>
 </template>

@@ -130,7 +130,7 @@ async function onSubmit() {
             item-color="primary"
             item-variant="subtle"
             placeholder="Search anything..."
-            :transform-fetch-data="(res) => toArray(res).map((val) => ({ id: val.id, label: val.task }))"
+            :transform-fetch-data="(res) => toArray(res).map((val) => ({ value: val.id, label: val.task }))"
             :debounce="500"
             @update:selected="(val) => formModel.hobbies = val.map((v) => String(v.id))"
           />

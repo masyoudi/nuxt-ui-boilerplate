@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useResizeObserver } from '@vueuse/core';
+import { ComboboxAnchor, ComboboxTrigger } from 'reka-ui';
 import type { ButtonProps } from '#ui/components/Button.vue';
 import { omit, toArray } from '~~/shared/utils';
-import type { ListBoxItem } from '~/types/listbox';
+import type { ComboBoxItem } from '~/types/combobox';
 
 interface FetchQuery {
   page: number;
@@ -11,20 +11,21 @@ interface FetchQuery {
 }
 
 interface Props {
+  selected?: ComboBoxItem;
   url: string;
   limit?: number;
   placeholder?: string;
   placeholderSearch?: string;
-  transformFetchData?: (result: any) => ListBoxItem[];
+  transformFetchData?: (result: any) => ComboBoxItem[];
   transformFetchQuery?: (params: FetchQuery) => Record<string, any>;
   size?: ButtonProps['size'];
   color?: ButtonProps['color'];
   variant?: ButtonProps['variant'];
+  filter?: (item: ComboBoxItem, searchTerm: string, isChild: boolean) => boolean;
   icon?: string;
   trailingIcon?: string;
   paginated?: boolean;
   debounce?: number;
-  dismissable?: boolean;
   teleport?: boolean;
   disabled?: boolean;
 }
@@ -34,20 +35,21 @@ const props = withDefaults(defineProps<Props>(), {
   variant: 'outline',
   limit: 10,
   transformFetchData: (result: any) => toArray(result).map((val) => ({
-    id: val.id,
+    value: val.id,
     label: val.name,
-    ...omit(val, ['id', 'name'])
+    ...omit(val, ['value', 'label'])
   })),
+  filter: (item, text) => item.label.toLowerCase().includes(text.toLowerCase()),
   transformFetchQuery: (params: FetchQuery) => params,
   trailingIcon: 'lucide:chevron-down',
   paginated: true,
   debounce: 350,
-  dismissable: true,
   teleport: true,
   disabled: false
 });
 
 const emits = defineEmits<{
+  (e: 'update:selected', val?: ComboBoxItem): void;
   (e: 'focus', event: FocusEvent): void;
   // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'blur', event: FocusEvent): void;
@@ -69,33 +71,43 @@ const { size: buttonGroupSize } = useButtonGroup<Props>(props);
 
 const buttonSize = computed(() => buttonGroupSize.value || formGroupSize.value);
 const buttonId = ref(id.value ?? useId());
-const buttonElement = ref<HTMLButtonElement>();
 
 const open = ref(false);
 
-const selectedItem = defineModel<ListBoxItem>('selected', {
-  default: undefined,
-  required: false
+const _selected = ref<ComboBoxItem>();
+const selectedItem = computed({
+  get: () => props.selected ?? _selected.value,
+  set: (val) => {
+    _selected.value = val;
+    emits('update:selected', val);
+  }
 });
 
 const search = ref('');
-const options = ref<ListBoxItem[]>([]);
+const options = ref<ComboBoxItem[]>([]);
 const items = computed(() => {
-  if (!props.paginated) {
-    return (options.value ?? []).filter((v) => v.label.toLowerCase().includes(search.value.toLowerCase()));
+  if (props.paginated) {
+    return options.value;
   }
 
-  return options.value;
+  return (options.value ?? []).reduce((prev, curr) => {
+    const hasChilds = Array.isArray(curr._children);
+    const childrens = hasChilds ? curr._children!.filter((child) => props.filter(child, search.value, true)) : [];
+
+    if (childrens.length > 0 || props.filter(curr, search.value, false)) {
+      prev.push({ ...curr, ...(hasChilds && { _children: childrens }) });
+    }
+
+    return prev;
+  }, [] as ComboBoxItem[]);
 });
-const inputValue = computed(() => selectedItem.value?.label ?? '');
+const displayLabel = computed(() => selectedItem.value?.label ?? '');
 const loading = ref(false);
 const isFetched = ref(false);
 
 const page = ref(1);
 const hasMoreItems = ref(false);
 const isDisabled = computed(() => props.disabled);
-
-const width = ref('max-content');
 
 async function fetchData() {
   try {
@@ -127,13 +139,12 @@ async function fetchData() {
 }
 
 /**
- * Handler selected item listbox
- * @param _item - Selected item
+ * Handle selected item combobox
+ * @param item - Selected item
  */
-async function onSelected(item?: ListBoxItem) {
+async function onSelected(item?: ComboBoxItem) {
   const eventInit = {
     target: {
-      ...buttonElement.value,
       value: item
     }
   };
@@ -148,7 +159,7 @@ async function onSelected(item?: ListBoxItem) {
 }
 
 /**
- * Handler infinity scroll listbox
+ * Handle infinity scroll combobox
  */
 function onScrollEnd() {
   if (!loading.value && hasMoreItems.value && props.paginated) {
@@ -157,17 +168,7 @@ function onScrollEnd() {
 }
 
 /**
- * Set listbox width
- */
-function setLisboxWidth() {
-  if (buttonElement.value) {
-    const { width: _width } = buttonElement.value.getBoundingClientRect();
-    width.value = String(_width).concat('px');
-  }
-}
-
-/**
- * Handler input listbox
+ * Handle input combobox
  */
 function onInput() {
   if (!props.paginated) {
@@ -185,92 +186,82 @@ function onInput() {
  * @param isOpen - Popover open/close
  */
 function onUpdateOpen(isOpen: boolean) {
-  setLisboxWidth();
-
   if (isOpen) {
-    const blurEvent = new FocusEvent('blur', {
-      relatedTarget: buttonElement.value
-    });
+    const blurEvent = new FocusEvent('blur');
 
     emits('blur', blurEvent);
     emitFormBlur();
     return;
   }
 
-  const focusEvent = new FocusEvent('focus', {
-    relatedTarget: buttonElement.value
-  });
+  const focusEvent = new FocusEvent('focus');
 
   emits('focus', focusEvent);
   emitFormFocus();
 }
 
-useResizeObserver(buttonElement, ([entry]) => {
-  if (!entry) {
-    return;
+/**
+ * Handle keyboard arrow up & down
+ */
+function onKeydownArrowUpAndDown() {
+  if (!open.value) {
+    open.value = true;
   }
-
-  setLisboxWidth();
-});
+}
 
 watchEffect(() => {
   if (open.value && !options.value.length && !isFetched.value) {
     setTimeout(fetchData, 150);
   }
 });
-
-onMounted(() => {
-  buttonElement.value = document.getElementById(buttonId.value) as HTMLButtonElement;
-});
 </script>
 
 <template>
   <div class="relative">
-    <UPopover
+    <ComboBox
+      v-model="selectedItem"
+      v-model:search="search"
       v-model:open="open"
-      :ui="{ content: `${isDisabled ? 'hidden': ''} z-[55]` }"
-      :dismissible="props.dismissable"
+      :items="items"
+      :loading="loading"
+      :disabled="isDisabled"
+      :debounce="props.debounce"
       :portal="props.teleport"
+      @searching="() => onInput()"
+      @update:model-value="(val) => onSelected(val as ComboBoxItem)"
       @update:open="onUpdateOpen"
+      @scroll-end="onScrollEnd"
     >
-      <UButton
-        v-bind="{ ...$attrs, ...ariaAttrs }"
-        :id="buttonId"
-        :color="color"
-        :variant="props.variant"
-        class="justify-start font-normal group hover:bg-white"
-        :ui="{
-          leadingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700',
-          trailingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700'
-        }"
-        block
-        :icon="props.icon"
-        :trailing-icon="props.trailingIcon"
-        :size="buttonSize"
-        :disabled="disabled"
-      >
-        <span
-          class="overflow-hidden whitespace-nowrap"
-          :class="{ 'text-slate-400': !inputValue || inputValue === '' }"
-        >
-          {{ inputValue ? inputValue : props.placeholder }}
-        </span>
-      </UButton>
-
-      <template #content>
-        <ListBox
-          v-if="!isDisabled"
-          v-model:search="search"
-          v-model:selected="selectedItem"
-          :loading="loading"
-          :items="items"
-          :width="width"
-          :placeholder="props.placeholderSearch"
-          @update:selected="(val) => onSelected(val as ListBoxItem)"
-          @input="onInput"
-          @scroll-end="onScrollEnd"
-        />
-      </template>
-    </UPopover>
+      <ComboboxAnchor as-child>
+        <ComboboxTrigger as-child>
+          <UButton
+            v-bind="{ ...$attrs, ...ariaAttrs }"
+            :id="buttonId"
+            :color="color"
+            :variant="props.variant"
+            class="justify-start font-normal group hover:bg-white"
+            :ui="{
+              leadingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700',
+              trailingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700'
+            }"
+            block
+            :icon="props.icon"
+            :trailing-icon="props.trailingIcon"
+            :size="buttonSize"
+            :disabled="disabled"
+            :tabindex="null"
+            @keydown.up.prevent="onKeydownArrowUpAndDown"
+            @keydown.down.prevent="onKeydownArrowUpAndDown"
+          >
+            <span
+              class="overflow-hidden whitespace-nowrap"
+              :class="{ 'text-slate-400': !displayLabel || displayLabel === '' }"
+            >
+              {{ displayLabel ? displayLabel : props.placeholder }}
+            </span>
+          </UButton>
+        </ComboboxTrigger>
+      </ComboboxAnchor>
+    </ComboBox>
   </div>
 </template>

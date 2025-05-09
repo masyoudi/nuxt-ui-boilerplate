@@ -16,16 +16,16 @@ const multiselect = ref([]);
 
 <template>
   <div class="w-full p-5">
-    <div class="w-full shadow rounded-xl bg-white p-5">
+    <div class="w-full shadow rounded-xl bg-white space-y-5 p-5">
       <UFormField
         label="Autocomplete"
-        class="mb-5"
       >
         <AutoComplete
           v-model:selected="autocomplete"
           url="/todos"
           placeholder="Search something great..."
-          :transform-fetch-data="(res) => toArray(res).map((item) => ({ id: item.id, label: item.task }))"
+          :transform-fetch-data="(res) => toArray(res).map((item) => ({ value: item.id, label: item.task }))"
+          :paginated="false"
         />
       </UFormField>
       <UFormField label="Multiselects">
@@ -38,7 +38,7 @@ const multiselect = ref([]);
           item-color="primary"
           item-variant="subtle"
           placeholder="Search anything..."
-          :transform-fetch-data="(res) => toArray(res).map((val) => ({ id: val.id, label: val.task }))"
+          :transform-fetch-data="(res) => toArray(res).map((val) => ({ value: val.id, label: val.task }))"
           :debounce="500"
         />
       </UFormField>

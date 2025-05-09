@@ -65,6 +65,9 @@ importers:
       culori:
         specifier: ^4.0.1
         version: 4.0.1
+      defu:
+        specifier: ^6.1.4
+        version: 6.1.4
       dotenv:
         specifier: ^16.5.0
         version: 16.5.0

@@ -224,6 +224,15 @@ function onUpdate(value: any) {
   emitFormInput();
 }
 
+/**
+ * Handle keyboard arrow up & down
+ */
+function onKeydownArrowUpAndDown() {
+  if (!open.value) {
+    open.value = true;
+  }
+}
+
 watch(() => props.modelValue, () => {
   if (
     (props.range && Array.isArray(props.modelValue))
@@ -267,6 +276,8 @@ onMounted(() => {
         :trailing-icon="props.trailingIcon"
         :size="buttonSize"
         :disabled="disabled"
+        @keydown.up.prevent="onKeydownArrowUpAndDown"
+        @keydown.down.prevent="onKeydownArrowUpAndDown"
       >
         <span
           class="overflow-hidden whitespace-nowrap"

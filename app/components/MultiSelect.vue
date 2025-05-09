@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import { vOnKeyStroke } from '@vueuse/components';
-import { promiseTimeout, useResizeObserver, useDebounceFn } from '@vueuse/core';
-import { tv } from 'tailwind-variants';
-import theme from '~~/app/utils/theme/tag-input';
-import { omit, toArray } from '~~/shared/utils';
+import {
+  ComboboxAnchor,
+  ComboboxInput,
+  TagsInputInput,
+  TagsInputItem,
+  TagsInputItemDelete,
+  TagsInputItemText,
+  TagsInputRoot
+} from 'reka-ui';
+
+import { useDebounceFn } from '@vueuse/core';
+import type { ComboBoxItem } from '~/types/combobox';
+import tagInputTheme from '~~/app/utils/theme/tag-input';
+import tagItemTheme from '~~/app/utils/theme/tag-item';
+
 import type { TagInputColor, TagInputSize, TagInputVariant } from '~~/app/utils/theme/tag-input';
-import type { ListBoxItem } from '~/types/listbox';
 
 interface FetchQuery {
   page: number;
@@ -14,83 +23,95 @@ interface FetchQuery {
 }
 
 interface Props {
-  url?: string;
-  selected?: ListBoxItem[];
-  options?: ListBoxItem[];
+  selected?: ComboBoxItem[];
+  url: string;
+  limit?: number;
+  placeholder?: string;
+  placeholderSearch?: string;
+  transformFetchData?: (result: any) => ComboBoxItem[];
+  transformFetchQuery?: (params: FetchQuery) => Record<string, any>;
   size?: TagInputSize;
   color?: TagInputColor;
   variant?: TagInputVariant;
-  itemColor?: TagInputColor;
-  itemVariant?: TagInputVariant;
-  class?: any;
-  placeholder?: string;
-  transformFetchData?: (result: any) => ListBoxItem[];
-  transformFetchQuery?: (params: FetchQuery) => Record<string, any>;
-  debounce?: number;
+  filter?: (item: ComboBoxItem, searchTerm: string, isChild: boolean) => boolean;
+  icon?: string;
+  trailingIcon?: string;
   paginated?: boolean;
-  limit?: number;
-  dismissable?: boolean;
+  debounce?: number;
   teleport?: boolean;
   disabled?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  size: 'md',
+  color: 'neutral',
   limit: 10,
-  placeholder: 'Search...',
   transformFetchData: (result: any) => toArray(result).map((val) => ({
-    id: val.id,
+    value: val.id,
     label: val.name,
-    ...omit(val, ['id', 'name'])
+    ...omit(val, ['value', 'label'])
   })),
+  filter: (item, text) => item.label.toLowerCase().includes(text.toLowerCase()),
   transformFetchQuery: (params: FetchQuery) => params,
-  itemVariant: 'soft',
+  trailingIcon: 'lucide:chevron-down',
+  paginated: true,
   debounce: 350,
-  dismissable: true,
   teleport: true,
   disabled: false
 });
 
-const multiSelect = tv(theme);
-const classes = computed(() => multiSelect({
+const emits = defineEmits<{
+  (e: 'update:selected', val: ComboBoxItem[]): void;
+}>();
+
+const uiTaginput = computed(() => tagInputTheme({
   size: props.size,
   color: props.color,
   variant: props.variant
 }));
 
-const search = ref('');
+const uiTagItem = computed(() => tagItemTheme());
 
-const selectedItems = defineModel<ListBoxItem[]>('selected', {
-  default: () => [],
-  required: false
-});
-const loading = ref(false);
-const items = ref<ListBoxItem[]>([]);
-const computedItems = computed(() => {
-  if (!props.url) {
-    return (props.options ?? []).filter((val) => val.label.toLowerCase().includes(search.value.toLowerCase()));
-  }
-
-  if (!props.paginated) {
-    return (items.value ?? []).filter((val) => val.label.toLowerCase().includes(search.value.toLowerCase()));
-  }
-
-  return items.value;
-});
-const isEmptySearch = ref(true);
-
-const isFetched = ref(false);
-const page = ref(1);
-const hasMoreItems = ref(false);
-
-const isDisabled = computed(() => props.disabled);
-
-const wrapperRef = ref<HTMLDivElement>();
-const inputRef = ref<HTMLInputElement>();
-const listboxRef = ref();
-const width = ref('max-content');
+const {
+  emitFormChange,
+  emitFormInput,
+  disabled
+} = useFormField<Props>(props, { deferInputValidation: true });
 
 const open = ref(false);
+
+const _selected = ref<ComboBoxItem[]>([]);
+const selectedItem = computed({
+  get: () => props.selected ?? _selected.value,
+  set: (val) => {
+    _selected.value = val;
+    emits('update:selected', val);
+  }
+});
+
+const search = ref('');
+const options = ref<ComboBoxItem[]>([]);
+const items = computed(() => {
+  if (props.paginated) {
+    return options.value;
+  }
+
+  return (options.value ?? []).reduce((prev, curr) => {
+    const hasChilds = Array.isArray(curr._children);
+    const childrens = hasChilds ? curr._children!.filter((child) => props.filter(child, search.value, true)) : [];
+
+    if (childrens.length > 0 || props.filter(curr, search.value, false)) {
+      prev.push({ ...curr, ...(hasChilds && { _children: childrens }) });
+    }
+
+    return prev;
+  }, [] as ComboBoxItem[]);
+});
+const loading = ref(false);
+const isFetched = ref(false);
+
+const page = ref(1);
+const hasMoreItems = ref(false);
+const isDisabled = computed(() => disabled.value);
 
 const debouncedInput = useDebounceFn(() => {
   if (!props.url || !props.paginated) {
@@ -98,47 +119,10 @@ const debouncedInput = useDebounceFn(() => {
   }
 
   page.value = 1;
-  items.value = [];
+  options.value = [];
   hasMoreItems.value = false;
   nextTick(fetchData);
 }, props.debounce);
-
-function onDeleteItem(event: Event, item: ListBoxItem) {
-  event.stopPropagation();
-  selectedItems.value = selectedItems.value.filter((val) => val.id !== item.id);
-}
-
-function onKeystrokeSearch(evt: KeyboardEvent) {
-  if (evt.key === 'Backspace' && isEmptySearch.value && selectedItems.value.length > 0) {
-    const lastItem = selectedItems.value.at(selectedItems.value.length - 1);
-    selectedItems.value = selectedItems.value.filter((val) => val.id !== lastItem?.id);
-    return;
-  }
-
-  const listBoxItemFirst = listboxRef.value?.itemsRef?.at?.(0);
-
-  if (evt.key === 'ArrowDown' && listBoxItemFirst instanceof HTMLElement) {
-    listBoxItemFirst.focus();
-  }
-}
-
-function onInput() {
-  isEmptySearch.value = !search.value.length;
-  debouncedInput();
-}
-
-async function onFocus() {
-  await nextTick();
-  setLisboxWidth();
-  await promiseTimeout(50);
-  setTimeout(() => inputRef.value?.focus(), 25);
-
-  if (open.value) {
-    return;
-  }
-
-  open.value = true;
-}
 
 async function fetchData() {
   try {
@@ -149,7 +133,7 @@ async function fetchData() {
       q: search.value
     });
 
-    const { data: result } = await useRequest(props.url ?? '', {
+    const { data: result } = await useRequest(props.url, {
       method: 'GET',
       query
     });
@@ -157,7 +141,7 @@ async function fetchData() {
     const data = props.transformFetchData(result);
     const hasMore = data.length >= props.limit;
 
-    items.value.push(...data);
+    options.value.push(...data);
     hasMoreItems.value = hasMore;
     page.value = hasMore ? page.value + 1 : page.value;
     isFetched.value = true;
@@ -169,102 +153,92 @@ async function fetchData() {
   }
 }
 
+/**
+ * Handle selected item combobox
+ * @param item - Selected item
+ */
+async function onSelected(_item?: ComboBoxItem) {
+  emitFormChange();
+  emitFormInput();
+
+  await nextTick();
+  open.value = false;
+}
+
+/**
+ * Handle infinity scroll combobox
+ */
 function onScrollEnd() {
   if (!loading.value && hasMoreItems.value && props.paginated) {
     fetchData();
   }
 }
 
-async function onClickWrapper() {
-  if (!open.value) {
-    inputRef.value?.focus();
-  }
+function onInput() {
+  debouncedInput();
 }
-
-function setLisboxWidth() {
-  if (wrapperRef.value) {
-    const { width: _width } = wrapperRef.value.getBoundingClientRect();
-    width.value = String(_width).concat('px');
-  }
-}
-
-useResizeObserver(wrapperRef, ([entry]) => {
-  if (!entry) {
-    return;
-  }
-
-  setLisboxWidth();
-});
 
 watchEffect(() => {
-  if (open.value && !items.value.length && !isFetched.value) {
+  if (open.value && !options.value.length && !isFetched.value) {
     setTimeout(fetchData, 150);
   }
 });
 </script>
 
 <template>
-  <div
-    :class="classes.root({ class: props.class })"
+  <ComboBox
+    v-model="selectedItem"
+    v-model:open="open"
+    :items="items"
+    multiple
+    :loading="loading"
+    :disabled="isDisabled"
+    :portal="props.teleport"
+    :search-input="false"
+    keep-open-on-select
+    @update:model-value="(val) => onSelected(val as ComboBoxItem)"
+    @scroll-end="onScrollEnd"
   >
-    <UPopover
-      v-model:open="open"
-      :ui="{ content: `${isDisabled ? 'hidden' : ''} z-[55]` }"
-      :dismissible="props.dismissable"
-      :portal="props.teleport"
-      @update:open="setLisboxWidth"
-    >
-      <div
-        ref="wrapperRef"
-        :class="classes.wrapper({ disabled: isDisabled })"
-        role="button"
-        :data-open="open ? 'true': 'false'"
-        @click.stop.prevent="onClickWrapper"
+    <ComboboxAnchor as-child>
+      <TagsInputRoot
+        v-model="selectedItem"
+        :class="uiTaginput.wrapper({ disabled: isDisabled })"
       >
-        <TagItem
-          v-for="(item, i) in selectedItems"
-          :key="i"
-          :size="props.size"
-          :color="props.itemColor ?? props.color"
-          :variant="props.itemVariant ?? props.variant"
-          :closable="!isDisabled"
-          @click.stop
-          @close="(evt) => onDeleteItem(evt, item)"
+        <TagsInputItem
+          v-for="(item, index) in selectedItem"
+          :key="`${item.value}-${index}`"
+          :value="item"
+          :class="uiTagItem.base()"
         >
-          {{ item.label }}
-        </TagItem>
+          <TagsInputItemText :class="uiTagItem.text()">
+            <slot
+              name="item-text"
+              :item="item"
+              :index="index"
+            >
+              {{ item.label }}
+            </slot>
+          </TagsInputItemText>
+          <TagsInputItemDelete :class="uiTagItem.close()">
+            <UIcon
+              name="lucide:x"
+              :class="uiTagItem.closeIcon()"
+            />
+          </TagsInputItemDelete>
+        </TagsInputItem>
 
-        <input
-          ref="inputRef"
+        <ComboboxInput
           v-model="search"
-          v-on-key-stroke="onKeystrokeSearch"
-          type="text"
-          autocomplete="off"
-          autocorrect="off"
-          autocapitalize="off"
-          :placeholder="props.placeholder"
-          :class="classes.input()"
-          :disabled="isDisabled"
-          @click.stop
-          @focus="onFocus"
-          @input="onInput"
+          as-child
         >
-      </div>
-
-      <template #content>
-        <ListBox
-          v-if="!disabled"
-          ref="listboxRef"
-          v-model:selected="selectedItems"
-          :loading="loading"
-          :items="computedItems"
-          :width="width"
-          :searchable="false"
-          :auto-focus="false"
-          multiple
-          @scroll-end="onScrollEnd"
-        />
-      </template>
-    </UPopover>
-  </div>
+          <TagsInputInput
+            :placeholder="props.placeholder"
+            :class="uiTaginput.input()"
+            @input="onInput"
+            @keydown.enter.prevent
+          />
+        </ComboboxInput>
+      </TagsInputRoot>
+    </ComboboxAnchor>
+  </ComboBox>
 </template>

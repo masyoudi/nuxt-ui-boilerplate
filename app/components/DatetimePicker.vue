@@ -192,6 +192,15 @@ function onUpdate(value: any) {
 }
 
 /**
+ * Handle keyboard arrow up & down
+ */
+function onKeydownArrowUpAndDown() {
+  if (!open.value) {
+    open.value = true;
+  }
+}
+
+/**
  * Close popover
  */
 function close() {
@@ -231,6 +240,8 @@ onMounted(() => {
         :trailing-icon="props.trailingIcon"
         :size="buttonSize"
         :disabled="disabled"
+        @keydown.up.prevent="onKeydownArrowUpAndDown"
+        @keydown.down.prevent="onKeydownArrowUpAndDown"
       >
         <span
           class="overflow-hidden whitespace-nowrap"
