@@ -1,137 +1,180 @@
 <script setup lang="ts">
-import { vOnKeyStroke } from '@vueuse/components';
-import { tv } from 'tailwind-variants';
-import theme from '~~/app/utils/theme/tag-input';
-import type { TagInputColor, TagInputSize, TagInputVariant } from '~~/app/utils/theme/tag-input';
+import {
+  TagsInputInput,
+  TagsInputItem,
+  TagsInputItemDelete,
+  TagsInputItemText,
+  TagsInputRoot
+} from 'reka-ui';
+import theme from '~/utils/theme/tag-input';
+import type { TagInputColor, TagInputSize, TagInputVariant } from '~/utils/theme/tag-input';
+
+type Theme = typeof theme;
 
 interface Props {
+  id?: string;
+  name?: string;
+  required?: boolean;
   modelValue?: string[];
-  size?: TagInputSize;
+  addOnBlur?: boolean;
+  addOnPaste?: boolean;
+  addOnTab?: boolean;
+  convertValue?: (value: string) => string;
+  delimiter?: string | RegExp;
+  duplicate?: boolean;
+  max?: number;
+  class?: string;
+  highlight?: boolean;
   color?: TagInputColor;
+  size?: TagInputSize;
   variant?: TagInputVariant;
-  itemColor?: TagInputColor;
-  itemVariant?: TagInputVariant;
-  class?: any;
   placeholder?: string;
-  addKeys?: string | string[];
-  deleteKeys?: string | string[];
-  canAdd?: (item: string, existingItems: string[]) => boolean;
-  filterDelete?: (items: string[]) => string[];
-  clearOnInvalid?: boolean;
+  icon?: string;
+  deleteIcon?: string;
   disabled?: boolean;
+  ui?: Partial<Record<keyof ReturnType<Theme>, 'string'>>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  size: 'md',
-  color: 'primary',
-  variant: 'subtle',
-  placeholder: 'Enter multiple value...',
-  addKeys: () => ['Enter'],
-  deleteKeys: () => 'Backspace',
-  canAdd: (item: string, existingItems: string[]) => {
-    return !existingItems.includes(item) && item.trim() !== '';
-  },
-  filterDelete: (items: string[]) => {
-    return items.filter((val) => val !== items.at(items.length - 1));
-  },
-  clearOnInvalid: false,
-  disabled: false
+  deleteIcon: 'lucide:x',
+  icon: 'lucide:tag'
 });
+
 const emits = defineEmits<{
-  (e: 'update:model-value', val: string[]): void;
+  (e: 'update:modelValue', value: string[]): void;
+  (e: 'invalid', value: string): void;
+  // eslint-disable-next-line @typescript-eslint/unified-signatures
+  (e: 'addTag', value: string): void;
+  // eslint-disable-next-line @typescript-eslint/unified-signatures
+  (e: 'removeTag', value: string): void;
+  (e: 'change', event: Event): void;
+  (e: 'focus', event: FocusEvent): void;
+  // eslint-disable-next-line @typescript-eslint/unified-signatures
+  (e: 'blur', event: FocusEvent): void;
 }>();
 
-const tagInput = tv(theme);
-const classes = computed(() => tagInput({
-  size: props.size,
-  color: props.color,
-  variant: props.variant
+const slots = useSlots();
+
+const {
+  emitFormBlur,
+  emitFormFocus,
+  emitFormChange,
+  emitFormInput,
+  size: formGroupSize,
+  color,
+  id,
+  name,
+  disabled: isDisabled,
+  ariaAttrs
+} = useFormField<Props>(props);
+
+const {
+  orientation,
+  size: buttonGroupSize
+} = useButtonGroup<Props>(props);
+
+const inputSize = computed(() => buttonGroupSize.value || formGroupSize.value);
+
+const classes = computed(() => theme({
+  color: color.value,
+  size: inputSize.value,
+  variant: props.variant,
+  buttonGroup: orientation.value,
+  leading: typeof props.icon === 'string'
 }));
 
-const input = ref('');
-const _items = ref<string[]>([]);
-const items = computed({
-  get: () => props.modelValue ?? _items.value,
-  set: (val) => {
-    _items.value = val;
-    emits('update:model-value', val);
+const _tags = ref<string[]>([]);
+const tags = computed({
+  get: () => props.modelValue ?? _tags.value,
+  set: (value) => {
+    _tags.value = value;
+    emits('update:modelValue', value);
   }
 });
 
-const isEmptyInput = ref(true);
-const isFocused = ref(false);
-const isDisabled = computed(() => props.disabled);
-
-function onDeleteItem(item: string) {
-  items.value = items.value.filter((val) => val !== item);
-}
-
 /**
- * Handler keystroke input
- * @param evt - Keyboard event
+ * Handle update model value
  */
-function onKeyStroke(evt: KeyboardEvent) {
-  const _addKeys = Array.isArray(props.addKeys) ? props.addKeys : [props.addKeys];
-  if (_addKeys.includes(evt.key)) {
-    const canAdd = props.canAdd(input.value, items.value);
-
-    if (canAdd) {
-      items.value.push(input.value);
-      input.value = '';
-      isEmptyInput.value = true;
+function onUpdate(value: any) {
+  const eventInit: Record<string, any> = {
+    detail: {
+      value
     }
-
-    if (!canAdd && props.clearOnInvalid) {
-      input.value = '';
-      isEmptyInput.value = true;
-    }
-  }
-
-  const _deleteKeys = Array.isArray(props.deleteKeys) ? props.deleteKeys : [props.deleteKeys];
-  if (_deleteKeys.includes(evt.key) && isEmptyInput.value && items.value.length > 0) {
-    items.value = props.filterDelete(items.value);
-  }
+  };
+  const event = new Event('change', eventInit);
+  emits('change', event);
+  emitFormChange();
+  emitFormInput();
 }
 
-function onInput() {
-  isEmptyInput.value = !input.value.length;
+function onFocus(event: FocusEvent) {
+  emits('focus', event);
+  emitFormFocus();
+}
+
+function onblur(event: FocusEvent) {
+  emits('blur', event);
+  emitFormBlur();
 }
 </script>
 
 <template>
-  <div :class="classes.root({ class: props.class })">
-    <div
-      :class="classes.wrapper({ disabled: isDisabled })"
-      :data-focus="isFocused ? 'true' : null"
+  <TagsInputRoot
+    :id="id"
+    v-model="tags"
+    :name="name"
+    :add-on-blur="props.addOnBlur"
+    :add-on-paste="props.addOnPaste"
+    :add-on-tab="props.addOnTab"
+    :convert-value="props.convertValue"
+    :delimiter="props.delimiter"
+    :duplicate="props.duplicate"
+    :disabled="isDisabled"
+    :class="classes.base({ class: [props.ui?.base, props.class] })"
+    @update:model-value="onUpdate"
+    @add-tag="emits('addTag', $event)"
+    @invalid="emits('invalid', $event)"
+    @remove-tag="emits('removeTag', $event)"
+    @keydown.enter.prevent
+  >
+    <TagsInputItem
+      v-for="item in tags"
+      :key="item"
+      :value="item"
+      :class="classes.item({ class: props.ui?.item })"
     >
-      <TagItem
-        v-for="(item, i) in items"
-        :key="i"
-        :color="props.itemColor ?? props.color"
-        :variant="props.itemVariant ?? props.variant"
-        :size="props.size"
-        :closable="!isDisabled"
-        @click.stop
-        @close="onDeleteItem(item)"
-      >
-        {{ item }}
-      </TagItem>
+      <TagsInputItemText :class="classes.itemText({ class: props.ui?.itemText })" />
+      <TagsInputItemDelete :class="classes.itemDelete({ class: props.ui?.itemDelete })">
+        <UIcon
+          :name="props.deleteIcon"
+          :class="classes.itemDeleteIcon({ class: props.ui?.itemDeleteIcon })"
+        />
+      </TagsInputItemDelete>
+    </TagsInputItem>
 
-      <input
-        v-model="input"
-        v-on-key-stroke="onKeyStroke"
-        type="text"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
-        :placeholder="props.placeholder"
-        :class="classes.input()"
-        :disabled="isDisabled"
-        @keydown.enter.prevent="onKeyStroke"
-        @input="onInput"
-        @focus="() => isFocused = true"
-        @blur="() => isFocused = false"
+    <div :class="classes.wrapper({ class: props.ui?.wrapper })">
+      <span
+        v-if="typeof props.icon === 'string' || !!slots.icon"
+        :class="classes.leading({ class: props.ui?.leading })"
       >
+        <slot
+          name="icon"
+          :ui="ui"
+        >
+          <UIcon
+            v-if="typeof props.icon === 'string'"
+            :name="props.icon"
+            :class="classes.leadingIcon({ class: props.ui?.leadingIcon })"
+          />
+        </slot>
+      </span>
+      <TagsInputInput
+        v-bind="{ ...$attrs, ...ariaAttrs }"
+        :placeholder="props.placeholder"
+        :class="classes.input({ class: props.ui?.input })"
+        @focus="onFocus"
+        @blur="onblur"
+      />
     </div>
-  </div>
+  </TagsInputRoot>
 </template>

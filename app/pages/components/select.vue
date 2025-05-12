@@ -11,32 +11,34 @@ useHead({
 });
 
 const autocomplete = ref();
-const multiselect = ref([]);
+const multiselects = ref<any[]>([]);
 </script>
 
 <template>
   <div class="w-full p-5">
     <div class="w-full shadow rounded-xl bg-white space-y-5 p-5">
-      <UFormField
-        label="Autocomplete"
-      >
-        <AutoComplete
-          v-model:selected="autocomplete"
-          url="/todos"
-          placeholder="Search something great..."
-          :transform-fetch-data="(res) => toArray(res).map((item) => ({ value: item.id, label: item.task }))"
-          :paginated="false"
-        />
+      <UFormField label="Autocomplete">
+        <UButtonGroup
+          class="w-full"
+        >
+          <UButton>Group</UButton>
+          <MultiSelect
+            v-model="autocomplete"
+            url="/todos"
+            paginated
+            placeholder="Search anything..."
+            :transform-fetch-data="(res) => toArray(res).map((val) => ({ value: val.id, label: val.task }))"
+            :debounce="500"
+          />
+        </UButtonGroup>
       </UFormField>
-      <UFormField label="Multiselects">
+
+      <UFormField label="Multiselect">
         <MultiSelect
-          v-model:selected="multiselect"
+          v-model="multiselects"
+          multiple
           url="/todos"
           paginated
-          class="mb-7"
-          color="neutral"
-          item-color="primary"
-          item-variant="subtle"
           placeholder="Search anything..."
           :transform-fetch-data="(res) => toArray(res).map((val) => ({ value: val.id, label: val.task }))"
           :debounce="500"

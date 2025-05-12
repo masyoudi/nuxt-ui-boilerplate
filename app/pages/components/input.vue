@@ -125,6 +125,7 @@ async function onSubmit() {
         >
           <MultiSelect
             url="/todos"
+            multiple
             paginated
             color="neutral"
             item-color="primary"
@@ -132,7 +133,7 @@ async function onSubmit() {
             placeholder="Search anything..."
             :transform-fetch-data="(res) => toArray(res).map((val) => ({ value: val.id, label: val.task }))"
             :debounce="500"
-            @update:selected="(val) => formModel.hobbies = val.map((v) => String(v.id))"
+            @update:model-value="(val) => formModel.hobbies = toArray(val!).map((v) => String(v.value))"
           />
         </UFormField>
 
@@ -141,7 +142,7 @@ async function onSubmit() {
         </UFormField>
 
         <UFormField label="Tag Input">
-          <TagInput color="error" />
+          <TagInput placeholder="Input some item..." />
         </UFormField>
 
         <UFormField
