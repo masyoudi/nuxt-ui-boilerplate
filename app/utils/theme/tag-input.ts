@@ -114,6 +114,10 @@ const theme = tv({
       class: 'focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary'
     },
     {
+      color: 'error',
+      class: 'ring ring-inset ring-error'
+    },
+    {
       color: 'neutral',
       variant: [
         'outline',

@@ -223,10 +223,8 @@ const theme = tv({
       class: 'ring ring-inset ring-primary'
     },
     {
-      color: 'primary',
-      class: {
-        tagsItem: 'data-[state=active]:ring-(--ui-primary)'
-      }
+      color: 'error',
+      class: 'ring ring-inset ring-error'
     },
     {
       color: 'neutral',

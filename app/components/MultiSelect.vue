@@ -304,9 +304,10 @@ function onUpdateOpen(value: boolean) {
  */
 function onRemoveTag(value: MultiSelectItem) {
   if (props.multiple) {
-    const modelValue = toArray(props.modelValue as MultiSelectItem[]);
-    const filtered = modelValue.filter((item) => props.filterRemoveTag(item, value));
+    const currentValue = toArray(selected.value as MultiSelectItem[]);
+    const filtered = currentValue.filter((item) => props.filterRemoveTag(item, value));
 
+    _selected.value = filtered as ModelValue<M>;
     emits('update:modelValue', filtered as ModelValue<M>);
   }
 }
