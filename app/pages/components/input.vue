@@ -128,8 +128,6 @@ async function onSubmit() {
             multiple
             paginated
             color="neutral"
-            item-color="primary"
-            item-variant="subtle"
             placeholder="Search anything..."
             :transform-fetch-data="(res) => toArray(res).map((val) => ({ value: val.id, label: val.task }))"
             :debounce="500"

@@ -20,9 +20,9 @@ const theme = tv({
     ],
     itemDeleteIcon: '',
     wrapper: 'relative inline-flex grow shrink',
-    input: 'grow shrink border-0 bg-transparent placeholder:text-dimmed focus:outline-none disabled:cursor-not-allowed disabled:opacity-75',
-    leading: 'absolute inset-y-0 start-0 flex items-center',
-    leadingIcon: 'text-dimmed'
+    input: 'grow shrink border-0 bg-transparent peer placeholder:text-dimmed focus:outline-none disabled:cursor-not-allowed disabled:opacity-75',
+    leading: 'absolute inset-y-0 start-0 flex items-center text-dimmed',
+    leadingIcon: ''
   },
   variants: {
     buttonGroup: {
@@ -89,41 +89,24 @@ const theme = tv({
   compoundVariants: [
     {
       color: 'primary',
-      multiple: true,
-      variant: [
-        'outline',
-        'subtle'
-      ],
-      class: 'has-focus-visible:ring-1 has-focus-visible:ring-primary'
-    },
-    {
-      color: 'neutral',
-      multiple: true,
-      variant: [
-        'outline',
-        'subtle'
-      ],
-      class: 'has-focus-visible:ring-1 has-focus-visible:ring-inverted'
-    },
-    {
-      color: 'primary',
-      variant: [
-        'outline',
-        'subtle'
-      ],
-      class: 'focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary'
+      class: {
+        base: 'focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary',
+        leading: 'peer-[:focus]:text-primary'
+      }
     },
     {
       color: 'error',
-      class: 'ring ring-inset ring-error'
+      class: {
+        base: 'ring ring-inset ring-error',
+        leading: 'peer-[:focus]:text-error'
+      }
     },
     {
       color: 'neutral',
-      variant: [
-        'outline',
-        'subtle'
-      ],
-      class: 'focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-inverted'
+      class: {
+        base: 'focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-inverted',
+        leading: 'peer-[:focus]:text-(--ui-border-inverted)'
+      }
     },
     {
       leading: true,

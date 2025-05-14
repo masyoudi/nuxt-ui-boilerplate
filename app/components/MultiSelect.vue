@@ -21,7 +21,7 @@ import {
 } from 'reka-ui';
 import type { ComboboxContentProps } from 'reka-ui';
 import type { FetchResponse } from 'ofetch';
-import { useDebounceFn } from '@vueuse/core';
+import { useDebounceFn, createReusableTemplate } from '@vueuse/core';
 import { vIntersectionObserver } from '@vueuse/components';
 import defu from 'defu';
 import theme from '~/utils/theme/multi-select';
@@ -215,6 +215,8 @@ const classes = computed(() => theme({
   tagsInputIcon: typeof props.tagsInputIcon === 'string'
 }));
 
+const [DefineLeadingTrailing, ReuseLeadingTrailing] = createReusableTemplate();
+
 const debouncedInput = useDebounceFn(() => {
   if (!props.url || !props.paginated || !open.value) {
     return;
@@ -370,11 +372,56 @@ function onIntersectionBottom([entry]: IntersectionObserverEntry[]) {
     onScrollEnd();
   }
 }
+
+function onOpenContent() {
+  open.value = true;
+  nextTick(() => onUpdateOpen(true));
+}
 </script>
 
 <template>
+  <DefineLeadingTrailing>
+    <span
+      v-if="isLeading || !!slots.leading"
+      :class="classes.leading({ class: props.ui?.leading })"
+    >
+      <slot
+        name="leading"
+        :model-value="modelValue"
+        :open="open"
+        :ui="ui"
+      >
+        <UIcon
+          v-if="isLeading && leadingIconName"
+          :name="leadingIconName"
+          :class="classes.leadingIcon({ class: props.ui?.leadingIcon })"
+        />
+      </slot>
+    </span>
+
+    <component
+      :is="props.multiple ? ComboboxTrigger : 'span'"
+      v-if="isTrailing || !!slots.trailing"
+      :class="classes.trailing({ class: props.ui?.trailing })"
+    >
+      <slot
+        name="trailing"
+        :model-value="modelValue"
+        :open="open"
+        :ui="ui"
+      >
+        <UIcon
+          v-if="trailingIconName"
+          :name="trailingIconName"
+          :class="classes.trailingIcon({ class: props.ui?.trailingIcon })"
+        />
+      </slot>
+    </component>
+  </DefineLeadingTrailing>
+
   <ComboboxRoot
     :id="id"
+    ref="rootRef"
     v-model="selected"
     v-model:open="open"
     :name="name"
@@ -437,23 +484,6 @@ function onIntersectionBottom([entry]: IntersectionObserverEntry[]) {
         </TagsInputItem>
 
         <div :class="classes.tagsInput({ class: props.ui?.tagsInput })">
-          <span
-            v-if="typeof props.tagsInputIcon === 'string' || !!slots['tags-input-icon']"
-            :class="classes.tagsInputLeading({ class: props.ui?.tagsInputLeading })"
-          >
-            <slot
-              name="tags-input-icon"
-              :open="open"
-              :ui="ui"
-            >
-              <UIcon
-                v-if="typeof props.tagsInputIcon === 'string'"
-                :name="props.tagsInputIcon"
-                :class="classes.tagsInputLeadingIcon({ class: props.ui?.tagsInputLeadingIcon })"
-              />
-            </slot>
-          </span>
-
           <ComboboxInput
             v-model="search"
             as-child
@@ -473,13 +503,32 @@ function onIntersectionBottom([entry]: IntersectionObserverEntry[]) {
               />
             </ComboboxTrigger>
           </ComboboxInput>
+
+          <span
+            v-if="typeof props.tagsInputIcon === 'string' || !!slots['tags-input-icon']"
+            :class="classes.tagsInputLeading({ class: props.ui?.tagsInputLeading })"
+          >
+            <slot
+              name="tags-input-icon"
+              :open="open"
+              :ui="ui"
+            >
+              <UIcon
+                v-if="typeof props.tagsInputIcon === 'string'"
+                :name="props.tagsInputIcon"
+                :class="classes.tagsInputLeadingIcon({ class: props.ui?.tagsInputLeadingIcon })"
+              />
+            </slot>
+          </span>
         </div>
+
+        <ReuseLeadingTrailing />
       </TagsInputRoot>
       <ComboboxTrigger
         v-else
         :class="classes.base({ class: props.ui?.base })"
-        tabindex="0"
-        @keydown.up.down.prevent="open = true"
+        :tabindex="0"
+        @keydown.up.down.enter.prevent="onOpenContent"
       >
         <slot
           :model-value="selected"
@@ -498,43 +547,9 @@ function onIntersectionBottom([entry]: IntersectionObserverEntry[]) {
             {{ placeholder ?? '&nbsp;' }}
           </span>
         </slot>
+
+        <ReuseLeadingTrailing />
       </ComboboxTrigger>
-
-      <span
-        v-if="isLeading || !!slots.leading"
-        :class="classes.leading({ class: props.ui?.leading })"
-      >
-        <slot
-          name="leading"
-          :model-value="modelValue"
-          :open="open"
-          :ui="ui"
-        >
-          <UIcon
-            v-if="isLeading && leadingIconName"
-            :name="leadingIconName"
-            :class="classes.leadingIcon({ class: props.ui?.leadingIcon })"
-          />
-        </slot>
-      </span>
-
-      <span
-        v-if="isTrailing || !!slots.trailing"
-        :class="classes.trailing({ class: props.ui?.trailing })"
-      >
-        <slot
-          name="trailing"
-          :model-value="modelValue"
-          :open="open"
-          :ui="ui"
-        >
-          <UIcon
-            v-if="trailingIconName"
-            :name="trailingIconName"
-            :class="classes.trailingIcon({ class: props.ui?.trailingIcon })"
-          />
-        </slot>
-      </span>
     </ComboboxAnchor>
 
     <ComboboxPortal v-bind="portalProps">

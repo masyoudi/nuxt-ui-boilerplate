@@ -153,6 +153,14 @@ function onblur(event: FocusEvent) {
     </TagsInputItem>
 
     <div :class="classes.wrapper({ class: props.ui?.wrapper })">
+      <TagsInputInput
+        v-bind="{ ...$attrs, ...ariaAttrs }"
+        :placeholder="props.placeholder"
+        :class="classes.input({ class: props.ui?.input })"
+        @focus="onFocus"
+        @blur="onblur"
+      />
+
       <span
         v-if="typeof props.icon === 'string' || !!slots.icon"
         :class="classes.leading({ class: props.ui?.leading })"
@@ -168,13 +176,6 @@ function onblur(event: FocusEvent) {
           />
         </slot>
       </span>
-      <TagsInputInput
-        v-bind="{ ...$attrs, ...ariaAttrs }"
-        :placeholder="props.placeholder"
-        :class="classes.input({ class: props.ui?.input })"
-        @focus="onFocus"
-        @blur="onblur"
-      />
     </div>
   </TagsInputRoot>
 </template>

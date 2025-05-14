@@ -55,9 +55,9 @@ const theme = tv({
     ],
     tagsItemDeleteIcon: '',
     tagsInput: 'relative inline-flex grow shrink',
-    tagsInputInput: 'grow shrink',
-    tagsInputLeading: 'absolute inset-y-0 start-0 flex items-center',
-    tagsInputLeadingIcon: 'text-dimmed',
+    tagsInputInput: 'grow shrink peer',
+    tagsInputLeading: 'absolute inset-y-0 start-0 flex items-center text-dimmed',
+    tagsInputLeadingIcon: '',
     empty: 'py-2 text-center text-sm text-muted',
     searchInput: 'border-default border-t-transparent border-x-transparent border-b',
     loading: 'relative w-full flex justify-center items-center gap-x-1.5 p-2',
@@ -193,24 +193,6 @@ const theme = tv({
   compoundVariants: [
     {
       color: 'primary',
-      multiple: true,
-      variant: [
-        'outline',
-        'subtle'
-      ],
-      class: 'has-focus-visible:ring-1 has-focus-visible:ring-primary'
-    },
-    {
-      color: 'neutral',
-      multiple: true,
-      variant: [
-        'outline',
-        'subtle'
-      ],
-      class: 'has-focus-visible:ring-1 has-focus-visible:ring-inverted'
-    },
-    {
-      color: 'primary',
       variant: [
         'outline',
         'subtle'
@@ -219,12 +201,30 @@ const theme = tv({
     },
     {
       color: 'primary',
+      multiple: true,
+      variant: [
+        'outline',
+        'subtle'
+      ],
+      class: 'has-focus-visible:ring-1 has-focus-visible:ring-primary'
+    },
+    {
+      color: 'primary',
       highlight: true,
       class: 'ring ring-inset ring-primary'
     },
     {
+      color: 'primary',
+      class: {
+        tagsInputLeading: 'peer-[:focus]:text-primary'
+      }
+    },
+    {
       color: 'error',
-      class: 'ring ring-inset ring-error'
+      class: {
+        base: 'ring ring-inset ring-error',
+        tagsInputLeading: 'peer-[:focus]:text-error'
+      }
     },
     {
       color: 'neutral',
@@ -236,8 +236,23 @@ const theme = tv({
     },
     {
       color: 'neutral',
+      multiple: true,
+      variant: [
+        'outline',
+        'subtle'
+      ],
+      class: 'has-focus-visible:ring-1 has-focus-visible:ring-inverted'
+    },
+    {
+      color: 'neutral',
       highlight: true,
       class: 'ring ring-inset ring-inverted'
+    },
+    {
+      color: 'neutral',
+      class: {
+        tagsInputLeading: 'peer-[:focus]:text-(--ui-border-inverted)'
+      }
     },
     {
       leading: true,
