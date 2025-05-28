@@ -1,9 +1,9 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import type { H3Error } from 'h3';
 
 const validation = z.object({
   name: z.string().trim().min(1, 'Enter your name'),
-  email: z.string().trim().min(1, 'Enter your email address').email('Invalid email address'),
+  email: z.email('Invalid email address'),
   gender: z
     .string()
     .min(1, 'Choose your gender')

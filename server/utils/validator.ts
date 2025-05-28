@@ -1,5 +1,5 @@
-import type { z } from 'zod';
-import { ZodError } from 'zod';
+import { ZodError } from 'zod/v4';
+import type { z } from 'zod/v4';
 import type { H3Error, H3Event } from 'h3';
 import { parseBody } from './body';
 import type { ParseBodyOptions } from './body';
@@ -20,7 +20,7 @@ interface ValidateBodyOptions extends Omit<Options, 'source'> {
  * @param value - Array of error path
  * @returns object
  */
-function createPath(value: (string | number)[]) {
+function createPath(value: (string | number | symbol)[]) {
   const parsed = value.map((path, i) => {
     if (typeof path === 'number') {
       return `[${path}]`;
@@ -42,8 +42,8 @@ function createPath(value: (string | number)[]) {
  * @param options.errors - Zod errors value
  * @returns array
  */
-function parseError({ errors }: ZodError) {
-  const arr = errors.map((err) => ({ name: createPath(err.path), message: err.message }));
+function parseError({ issues }: ZodError<any>) {
+  const arr = issues.map((err) => ({ name: createPath(err.path), message: err.message }));
 
   return arr.filter((value, index, self) => index === self.findIndex((t) => t.name === value.name));
 }

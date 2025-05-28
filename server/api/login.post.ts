@@ -1,10 +1,10 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import type { H3Error } from 'h3';
 import { authSessionConfig, authSessionRoles } from '~~/server/utils/session';
 import type { AuthSessionData } from '~~/server/types/session';
 
 const validation = z.object({
-  email: z.string().trim().min(1, 'Enter your email address').email('Invalid email address'),
+  email: z.email('Invalid email address'),
   password: z.string().trim().min(1, 'Enter your password')
 });
 

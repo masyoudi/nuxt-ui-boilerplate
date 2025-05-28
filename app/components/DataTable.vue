@@ -330,7 +330,7 @@ const uiToolbar = computed(() => {
     left: _ui.left({ class: props.uiToolbar?.left }),
     leftWrapper: _ui.leftWrapper({ class: props.uiToolbar?.leftWrapper }),
     right: _ui.right({ class: props.uiToolbar?.right }),
-    rightWrapper: _ui.rightWrapper({ class: props.uiToolbar?.root })
+    rightWrapper: _ui.rightWrapper({ class: props.uiToolbar?.rightWrapper })
   };
 });
 
@@ -566,6 +566,7 @@ onMounted(() => {
         v-model:page="page"
         active-color="primary"
         :total="totalPagination"
+        :items-per-page="perPage"
         show-edges
         :sibling-count="1"
         @update:page="onPageChange"

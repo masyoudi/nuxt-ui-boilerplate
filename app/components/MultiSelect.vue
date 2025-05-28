@@ -53,6 +53,8 @@ interface Props<Multiple extends boolean> {
   transformFetchQuery?: (params: FetchQuery) => Record<string, any>;
   filterSearch?: (item: MultiSelectItem, searchTerm: string, isChild: boolean) => boolean;
   filterRemoveTag?: (currentItem: MultiSelectItem, itemToRemove: MultiSelectItem) => boolean;
+  checkSelection?: (item: MultiSelectItem, selected?: MultiSelectItem) => boolean;
+  toggle?: boolean;
   class?: string;
   highlight?: boolean;
   color?: MultiSelectColor;
@@ -85,6 +87,8 @@ const props = withDefaults(defineProps<Props<M>>(), {
   filterSearch: (item, text) => item.label.toLowerCase().includes(text.toLowerCase()),
   transformFetchQuery: (params: FetchQuery) => params,
   filterRemoveTag: (currentItem, itemToRemove) => currentItem.value !== itemToRemove.value,
+  checkSelection: (item, selected) => item.value === selected?.value,
+  toggle: true,
   searchInput: true,
   portal: true,
   placeholder: 'Search...',
@@ -352,6 +356,10 @@ function onSelect(event: Event, item: MultiSelectItem) {
     return;
   }
 
+  if (!props.multiple && props.toggle && props.checkSelection(item, selected.value as MultiSelectItem)) {
+    selected.value = undefined;
+  }
+
   item.onSelect?.(event);
 }
 
@@ -432,6 +440,7 @@ function onOpenContent() {
     :multiple="props.multiple"
     :reset-search-term-on-blur="false"
     :reset-search-term-on-select="false"
+    :by="(a, b) => props.checkSelection(a, b)"
     :disabled="isDisabled"
     @update:model-value="onUpdate"
     @update:open="onUpdateOpen"
