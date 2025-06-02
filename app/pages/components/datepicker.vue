@@ -36,13 +36,23 @@ const timepicker = ref('');
         label="Datetimepicker"
         class="mb-5"
       >
-        <DatetimePicker v-model="datetimepicker" />
+        <DatetimePicker
+          v-model="datetimepicker"
+          icon="lucide:calendar"
+        />
       </UFormField>
       <UFormField
         label="Timepicker"
         class="mb-5"
       >
-        <TimePicker v-model="timepicker" />
+        <UButtonGroup class="w-full">
+          <UButton label="Timepicker" />
+          <TimePicker
+            v-model="timepicker"
+            class="grow shrink"
+            color="error"
+          />
+        </UButtonGroup>
       </UFormField>
     </div>
   </div>

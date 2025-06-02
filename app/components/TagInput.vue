@@ -112,7 +112,7 @@ function onFocus(event: FocusEvent) {
   emitFormFocus();
 }
 
-function onblur(event: FocusEvent) {
+function onBlur(event: FocusEvent) {
   emits('blur', event);
   emitFormBlur();
 }
@@ -158,7 +158,7 @@ function onblur(event: FocusEvent) {
         :placeholder="props.placeholder"
         :class="classes.input({ class: props.ui?.input })"
         @focus="onFocus"
-        @blur="onblur"
+        @blur="onBlur"
       />
 
       <span

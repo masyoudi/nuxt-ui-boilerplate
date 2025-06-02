@@ -3,7 +3,7 @@ import { tv, type VariantProps } from 'tailwind-variants';
 const theme = tv({
   slots: {
     base: [
-      'w-full inline-flex rounded-md transition-colors bg-default ring ring-inset ring-accented border-0',
+      'w-full inline-flex rounded-md transition-colors bg-default',
       'text-sm text-highlighted px-2.5 py-1.5 gap-1.5',
       'placeholder:text-dimmed disabled:cursor-not-allowed disabled:opacity-75',
       'focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary'
@@ -20,17 +20,17 @@ const theme = tv({
     ],
     itemDeleteIcon: '',
     wrapper: 'relative inline-flex grow shrink',
-    input: 'grow shrink border-0 bg-transparent peer placeholder:text-dimmed focus:outline-none disabled:cursor-not-allowed disabled:opacity-75',
+    input: 'grow shrink bg-transparent peer placeholder:text-dimmed focus:outline-none disabled:cursor-not-allowed disabled:opacity-75',
     leading: 'absolute inset-y-0 start-0 flex items-center text-dimmed',
     leadingIcon: ''
   },
   variants: {
     buttonGroup: {
       horizontal: {
-        base: 'group-not-only:group-first:rounded-e-none group-not-only:group-last:rounded-s-none group-not-last:group-not-first:rounded-none'
+        base: 'not-only:first:rounded-e-none not-only:last:rounded-s-none not-last:not-first:rounded-none focus-visible:z-[1]'
       },
       vertical: {
-        base: 'group-not-only:group-first:rounded-b-none group-not-only:group-last:rounded-t-none group-not-last:group-not-first:rounded-none'
+        base: 'not-only:first:rounded-b-none not-only:last:rounded-t-none not-last:not-first:rounded-none focus-visible:z-[1]'
       }
     },
     size: {
@@ -69,7 +69,7 @@ const theme = tv({
       outline: 'text-highlighted bg-default ring ring-inset ring-accented',
       soft: 'text-highlighted bg-elevated/50 hover:bg-elevated focus:bg-elevated disabled:bg-elevated/50',
       subtle: 'text-highlighted bg-elevated ring ring-inset ring-accented',
-      ghost: 'text-highlighted bg-transparent hover:bg-elevated focus:bg-elevated disabled:bg-transparent dark:disabled:bg-transparent',
+      ghost: 'text-highlighted bg-transparent hover:bg-elevated focus:bg-elevated disabled:bg-transparent',
       none: 'text-highlighted bg-transparent'
     },
     color: {
