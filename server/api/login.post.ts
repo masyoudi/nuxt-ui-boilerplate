@@ -10,7 +10,7 @@ const validation = z.object({
 
 export default defineEventHandler(async (event) => {
   try {
-    const { data: raw } = await useValidateBody<z.output<typeof validation>>(event, { schema: validation });
+    const { data: raw } = await useValidateBody(event, { schema: validation });
 
     const session = await useSession<AuthSessionData>(event, authSessionConfig);
 

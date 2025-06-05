@@ -1,17 +1,17 @@
-import { ZodError } from 'zod/v4';
 import type { z } from 'zod/v4';
+import { ZodError } from 'zod/v4';
 import type { H3Error, H3Event } from 'h3';
 import { parseBody } from './body';
 import type { ParseBodyOptions } from './body';
 
-interface Options {
+interface Options<T extends z.ZodType> {
   source: Record<string, any>;
-  schema: z.ZodType | ((data: any) => z.ZodType);
+  schema: T | ((data: any) => T);
   error?: Partial<H3Error>;
   throwOnError?: boolean;
 }
 
-interface ValidateBodyOptions extends Omit<Options, 'source'> {
+interface ValidateBodyOptions<T extends z.ZodType> extends Omit<Options<T>, 'source'> {
   parserOptions?: ParseBodyOptions;
 }
 
@@ -56,12 +56,12 @@ function parseError({ issues }: ZodError<any>) {
  * @param options.error - Throw error data
  * @returns - object
  */
-export function useValidator<T = Record<string, any>>({
+export function useValidator<T extends z.ZodType>({
   source,
   schema,
   error,
   throwOnError = true
-}: Options) {
+}: Options<T>) {
   const _schema = typeof schema === 'function' ? schema(source) : schema;
   const result = _schema.safeParse(source);
   const errors = !result.success ? (result.error instanceof ZodError ? parseError(result.error) : []) : [];
@@ -71,7 +71,7 @@ export function useValidator<T = Record<string, any>>({
   }
 
   return {
-    data: (result.success ? result.data : source) as T,
+    data: (result.success ? result.data : source) as z.output<T>,
     errors,
     isValid: !errors.length
   };
@@ -83,7 +83,7 @@ export function useValidator<T = Record<string, any>>({
  * @param options - Options
  * @returns - object
  */
-export async function useValidateBody<T = any>(event: H3Event, options: ValidateBodyOptions) {
+export async function useValidateBody<T extends z.ZodType>(event: H3Event, options: ValidateBodyOptions<T>) {
   let source: Record<string, any> = {};
   const error: Partial<H3Error> = {
     statusCode: 400,
