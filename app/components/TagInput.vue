@@ -91,6 +91,7 @@ const tags = computed({
     emits('update:modelValue', value);
   }
 });
+const isFocus = ref(false);
 
 /**
  * Handle update model value
@@ -110,11 +111,13 @@ function onUpdate(value: any) {
 function onFocus(event: FocusEvent) {
   emits('focus', event);
   emitFormFocus();
+  isFocus.value = true;
 }
 
 function onBlur(event: FocusEvent) {
   emits('blur', event);
   emitFormBlur();
+  isFocus.value = false;
 }
 </script>
 
@@ -130,6 +133,7 @@ function onBlur(event: FocusEvent) {
     :delimiter="props.delimiter"
     :duplicate="props.duplicate"
     :disabled="isDisabled"
+    :data-state="isFocus ? 'focus' : ''"
     :class="classes.base({ class: [props.ui?.base, props.class] })"
     @update:model-value="onUpdate"
     @add-tag="emits('addTag', $event)"

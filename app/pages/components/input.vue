@@ -142,7 +142,8 @@ async function onSubmit() {
         <UFormField label="Tag Input">
           <TagInput
             placeholder="Input some item..."
-            variant="none"
+            color="error"
+            variant="ghost"
           />
         </UFormField>
 

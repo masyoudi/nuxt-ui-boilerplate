@@ -4,16 +4,28 @@ import type { H3Error, H3Event } from 'h3';
 import { parseBody } from './body';
 import type { ParseBodyOptions } from './body';
 
-interface Options<T extends z.ZodType> {
+interface Options<T extends z.ZodType | Promise<z.ZodType>> {
   source: Record<string, any>;
-  schema: T | ((data: any) => T);
+  schema: T | ((data: any, event: H3Event) => T) | ((data: any, event: H3Event) => Promise<T>);
+  event: H3Event;
   error?: Partial<H3Error>;
   throwOnError?: boolean;
 }
 
-interface ValidateBodyOptions<T extends z.ZodType> extends Omit<Options<T>, 'source'> {
+interface ValidateBodyOptions<T extends z.ZodType | Promise<z.ZodType>> extends Omit<Options<T>, 'source' | 'event'> {
   parserOptions?: ParseBodyOptions;
 }
+
+type ErrorResult = {
+  name: string;
+  message: string;
+};
+
+type ReturnValue<T extends z.ZodType | Promise<z.ZodType>> = {
+  data: z.output<Awaited<T>>;
+  errors: ErrorResult[];
+  isValid: boolean;
+};
 
 /**
  * Create error path
@@ -39,7 +51,7 @@ function createPath(value: (string | number | symbol)[]) {
 /**
  * Get error value
  * @param options - Zod Error
- * @param options.errors - Zod errors value
+ * @param options.issues - Zod errors value
  * @returns array
  */
 function parseError({ issues }: ZodError<any>) {
@@ -56,13 +68,16 @@ function parseError({ issues }: ZodError<any>) {
  * @param options.error - Throw error data
  * @returns - object
  */
-export function useValidator<T extends z.ZodType>({
+export async function useValidator<T extends Promise<z.ZodType>>(options: Options<T>): Promise<ReturnValue<T>>;
+
+export async function useValidator<T extends z.ZodType>({
   source,
   schema,
+  event,
   error,
   throwOnError = true
 }: Options<T>) {
-  const _schema = typeof schema === 'function' ? schema(source) : schema;
+  const _schema = typeof schema === 'function' ? await schema(source, event) : schema as z.ZodType;
   const result = _schema.safeParse(source);
   const errors = !result.success ? (result.error instanceof ZodError ? parseError(result.error) : []) : [];
 
@@ -83,7 +98,12 @@ export function useValidator<T extends z.ZodType>({
  * @param options - Options
  * @returns - object
  */
-export async function useValidateBody<T extends z.ZodType>(event: H3Event, options: ValidateBodyOptions<T>) {
+export async function useValidateBody<T extends z.ZodType | Promise<z.ZodType>>(
+  event: H3Event,
+  options: ValidateBodyOptions<T>
+): Promise<ReturnValue<T>>;
+
+export async function useValidateBody<T extends Promise<z.ZodType>>(event: H3Event, options: ValidateBodyOptions<T>) {
   let source: Record<string, any> = {};
   const error: Partial<H3Error> = {
     statusCode: 400,
@@ -98,5 +118,5 @@ export async function useValidateBody<T extends z.ZodType>(event: H3Event, optio
     // noop
   }
 
-  return useValidator<T>({ source, error, ...options });
+  return await useValidator<T>({ source, error, event, ...options });
 }

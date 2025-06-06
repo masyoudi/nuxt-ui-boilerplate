@@ -3,10 +3,9 @@ import { tv, type VariantProps } from 'tailwind-variants';
 const theme = tv({
   slots: {
     base: [
-      'w-full inline-flex rounded-md transition-colors bg-default',
+      'w-full inline-flex flex-wrap rounded-md transition-colors bg-default',
       'text-sm text-highlighted px-2.5 py-1.5 gap-1.5',
-      'placeholder:text-dimmed disabled:cursor-not-allowed disabled:opacity-75',
-      'focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary'
+      'placeholder:text-dimmed disabled:cursor-not-allowed disabled:opacity-75'
     ],
     item: [
       'rounded-sm font-medium inline-flex items-center gap-0.5 ring ring-inset ring-primary bg-primary-100',
@@ -27,10 +26,10 @@ const theme = tv({
   variants: {
     buttonGroup: {
       horizontal: {
-        base: 'not-only:first:rounded-e-none not-only:last:rounded-s-none not-last:not-first:rounded-none focus-visible:z-[1]'
+        base: 'not-only:first:rounded-e-none not-only:last:rounded-s-none not-last:not-first:rounded-none'
       },
       vertical: {
-        base: 'not-only:first:rounded-b-none not-only:last:rounded-t-none not-last:not-first:rounded-none focus-visible:z-[1]'
+        base: 'not-only:first:rounded-b-none not-only:last:rounded-t-none not-last:not-first:rounded-none'
       }
     },
     size: {
@@ -67,9 +66,9 @@ const theme = tv({
     },
     variant: {
       outline: 'text-highlighted bg-default ring ring-inset ring-accented',
-      soft: 'text-highlighted bg-elevated/50 hover:bg-elevated focus:bg-elevated disabled:bg-elevated/50',
+      soft: 'text-highlighted bg-elevated/50 hover:bg-elevated data-[state=focus]:bg-elevated disabled:bg-elevated/50',
       subtle: 'text-highlighted bg-elevated ring ring-inset ring-accented',
-      ghost: 'text-highlighted bg-transparent hover:bg-elevated focus:bg-elevated disabled:bg-transparent',
+      ghost: 'text-highlighted bg-transparent hover:bg-elevated data-[state=focus]:bg-elevated disabled:bg-transparent',
       none: 'text-highlighted bg-transparent'
     },
     color: {
@@ -90,21 +89,32 @@ const theme = tv({
     {
       color: 'primary',
       class: {
-        base: 'focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary',
         leading: 'peer-[:focus]:text-primary'
+      }
+    },
+    {
+      color: 'primary',
+      variant: ['outline', 'subtle'],
+      class: {
+        base: 'data-[state=focus]:ring-primary'
       }
     },
     {
       color: 'error',
       class: {
-        base: 'ring ring-inset ring-error',
         leading: 'peer-[:focus]:text-error'
+      }
+    },
+    {
+      color: 'error',
+      variant: ['outline', 'subtle'],
+      class: {
+        base: 'ring-error'
       }
     },
     {
       color: 'neutral',
       class: {
-        base: 'focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-inverted',
         leading: 'peer-[:focus]:text-(--ui-border-inverted)'
       }
     },
