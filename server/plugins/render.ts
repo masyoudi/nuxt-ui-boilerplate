@@ -1,5 +1,5 @@
 import { getColors } from 'theme-colors';
-import { getCssColorOklch } from '~~/shared/utils/color';
+import chroma from 'chroma-js';
 
 export default defineNitroPlugin((nitro) => {
   nitro.hooks.hook('render:html', async (html, { event }) => {
@@ -10,10 +10,10 @@ export default defineNitroPlugin((nitro) => {
 
     const colors = Object.entries(color).reduce((prev: string[], [key, value]) => {
       if (key === '500') {
-        prev.push(`--color-primary: ${getCssColorOklch(value)};`);
+        prev.push(`--color-primary: ${chroma(value).css('oklch')};`);
       }
 
-      prev.push(`--color-primary-${key}: ${getCssColorOklch(value)};`);
+      prev.push(`--color-primary-${key}: ${chroma(value).css('oklch')};`);
 
       return prev;
     }, []);

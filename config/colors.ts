@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { getColors } from 'theme-colors';
-import { getCssColorOklch } from '../shared/utils/color';
+import chroma from 'chroma-js';
 
 export const colors = {
   primary: '#3e58d2',
@@ -25,8 +25,8 @@ const __dirname = dirname(__filename);
 function getThemeColors(color: string, variant: string) {
   const result = getColors(color);
   const arr = [
-    `--color-${variant}: ${getCssColorOklch(color)};`,
-    ...Object.entries(result).map(([key, val]) => `--color-${variant}-${key}: ${getCssColorOklch(val)};`)
+    `--color-${variant}: ${chroma(color).css('oklch')};`,
+    ...Object.entries(result).map(([key, val]) => `--color-${variant}-${key}: ${chroma(val).css('oklch')};`)
   ];
 
   return arr.map((val) => `  ${val}`).join('\n');

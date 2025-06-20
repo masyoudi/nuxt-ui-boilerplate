@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getColors } from 'theme-colors';
-import { getCssColorOklch } from '~~/shared/utils/color';
+import chroma from 'chroma-js';
 
 const colors = [
   {
@@ -44,9 +44,9 @@ const colors = [
 const cookieTheme = useCookie('__themecolor');
 
 async function onChangeColor(value: string) {
-  document.documentElement.style.setProperty(`--color-primary`, `${getCssColorOklch(value)}`);
+  document.documentElement.style.setProperty(`--color-primary`, `${chroma(value).css('oklch')}`);
   Object.entries(getColors(value)).forEach(([key, color]) => {
-    document.documentElement.style.setProperty(`--color-primary-${key}`, `${getCssColorOklch(color)}`);
+    document.documentElement.style.setProperty(`--color-primary-${key}`, `${chroma(color).css('oklch')}`);
   });
 
   cookieTheme.value = value;
@@ -82,7 +82,7 @@ async function onChangeColor(value: string) {
             >
               <span
                 class="w-2 h-2 rounded-full"
-                :style="`background-color: ${getCssColorOklch(item.value)}`"
+                :style="`background-color: ${chroma(item.value).css('oklch')}`"
               />
               <span>
                 {{ item.label }}
