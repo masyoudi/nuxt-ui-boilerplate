@@ -30,7 +30,7 @@ async function fetchData(params: Record<string, any>) {
 
 <template>
   <div class="w-full p-5">
-    <div class="w-full shadow rounded-xl p-5 bg-white mx-auto mb-5">
+    <UCard class="mb-5">
       <div class="text-lg mb-5">
         Server Side Pagination
       </div>
@@ -60,9 +60,9 @@ async function fetchData(params: Record<string, any>) {
       <div class="w-full overflow-x-auto">
         <pre>{{ checkedRows }}</pre>
       </div>
-    </div>
+    </UCard>
 
-    <div class="w-full shadow rounded-xl p-5 bg-white mx-auto mb-5">
+    <UCard>
       <div class="text-lg mb-5">
         Client Side Pagination
       </div>
@@ -78,6 +78,6 @@ async function fetchData(params: Record<string, any>) {
           accessor="description"
         />
       </DataTable>
-    </div>
+    </UCard>
   </div>
 </template>

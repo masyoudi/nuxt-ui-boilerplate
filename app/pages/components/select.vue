@@ -28,7 +28,7 @@ async function onTogglePopover() {
 
 <template>
   <div class="w-full p-5">
-    <div class="w-full shadow rounded-xl bg-white space-y-5 p-5">
+    <UCard :ui="{ body: 'space-y-5' }">
       <UFormField label="Autocomplete">
         <UButtonGroup
           class="w-full"
@@ -153,6 +153,6 @@ async function onTogglePopover() {
           </template>
         </ClientOnly>
       </UFormField>
-    </div>
+    </UCard>
   </div>
 </template>

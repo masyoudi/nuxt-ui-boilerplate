@@ -15,7 +15,7 @@ const fullscreen = ref(false);
 
 <template>
   <div class="w-full p-5">
-    <div class="w-full shadow rounded-xl bg-white p-5">
+    <UCard>
       <div class="flex flex-wrap gap-4">
         <UButton
           @click="nested = true"
@@ -94,6 +94,6 @@ const fullscreen = ref(false);
           </template>
         </UCard>
       </AppModal>
-    </div>
+    </UCard>
   </div>
 </template>

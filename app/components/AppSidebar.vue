@@ -135,10 +135,10 @@ function isMenuActive(ids: string | string[]) {
           :ui="{ content: `${!isChildVisible ? 'lg:hidden' : ''} py-0.5` }"
         >
           <button :class="ui.menu({ class: 'group px-3', mini: isMinified })">
-            <span :class="ui.menuIcon({ class: 'size-4' })">
+            <span :class="ui.menuIcon({ class: 'size-5' })">
               <UIcon
                 :name="menu.icon"
-                class="size-4"
+                class="size-5"
               />
             </span>
             <span :class="ui.menuLabel({ childVisible: isChildVisible })">{{ menu.label }}</span>
@@ -159,7 +159,7 @@ function isMenuActive(ids: string | string[]) {
               class="w-full mb-0.5"
             >
               <NuxtLink
-                :class="ui.menu({ class: 'pl-9 pr-3', menuActive: isMenuActive([menu.id, sub.id]) })"
+                :class="ui.menu({ class: 'pl-10 pr-3', menuActive: isMenuActive([menu.id, sub.id]) })"
                 :to="sub.link"
               >
                 <span :class="ui.menuLabel({ childVisible: isChildVisible })">{{ sub.label }}</span>
@@ -173,10 +173,10 @@ function isMenuActive(ids: string | string[]) {
           :class="ui.menu({ class: 'px-3', mini: isMinified, menuActive: isMenuActive(menu.id) })"
           :to="menu.link"
         >
-          <span :class="ui.menuIcon({ class: 'size-4' })">
+          <span :class="ui.menuIcon({ class: 'size-5' })">
             <UIcon
               :name="menu.icon"
-              class="size-4"
+              class="size-5"
             />
           </span>
           <span :class="ui.menuLabel({ childVisible: isChildVisible })">{{ menu.label }}</span>

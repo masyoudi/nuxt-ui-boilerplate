@@ -10,14 +10,16 @@ const theme = tv({
       'inset-y-0',
       '-left-(--sidebar-width)',
       'lg:left-0',
-      'bg-white',
+      'bg-(--ui-bg)',
       'shadow-md',
       'transition-[left,width]',
       'ease-[cubic-bezier(0.5,1,0.89,1)]',
       'duration-200',
+      'border-r',
+      'border-r-muted',
       'z-20'
     ],
-    menuWrapper: 'w-full px-2 mb-0.5',
+    menuWrapper: 'w-full px-2 mb-1',
     menu: [
       'relative',
       'flex',
@@ -25,11 +27,10 @@ const theme = tv({
       'min-h-8',
       'items-center',
       'rounded-md',
-      'hover:bg-slate-50',
+      'hover:bg-elevated',
       'cursor-pointer',
       'text-sm',
-      'text-slate-500',
-      'py-1',
+      'py-2',
       'gap-x-1.5'
     ],
     menuLabel: 'inline-flex items-center grow shrink',
@@ -42,12 +43,12 @@ const theme = tv({
       'items-center',
       'cursor-pointer',
       'shadow-xs',
-      'border',
-      'border-slate-200',
+      'ring',
+      'ring-accented',
       'top-5',
       '-right-2.5',
       'rounded',
-      'bg-white',
+      'bg-muted',
       'p-1'
     ],
     toggleIcon: 'size-3 transition-transform duration-150'
@@ -66,7 +67,7 @@ const theme = tv({
     },
     menuActive: {
       true: {
-        menu: 'bg-slate-50 text-(--ui-color-primary-500)'
+        menu: 'bg-elevated text-(--ui-color-primary-500)'
       }
     },
     childVisible: {

@@ -191,7 +191,7 @@ const statistics = [
   <div class="w-full p-5">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 mb-5">
       <div class="relative lg:col-span-2">
-        <div class="shadow bg-white rounded-xl p-5">
+        <UCard>
           <div class="text-xl font-semibold mb-5">
             Statistic
           </div>
@@ -233,10 +233,10 @@ const statistics = [
               />
             </div>
           </div>
-        </div>
+        </UCard>
       </div>
       <div class="relative lg:col-span-3">
-        <div class="shadow bg-white rounded-xl p-5">
+        <UCard>
           <div class="text-xl font-semibold mb-5">
             Topic
           </div>
@@ -244,10 +244,10 @@ const statistics = [
             :options="barChartOptions"
             :height="180"
           />
-        </div>
+        </UCard>
       </div>
       <div class="relative lg:col-span-3">
-        <div class="shadow bg-white rounded-xl p-5">
+        <UCard>
           <div class="text-xl font-semibold mb-5">
             Activity
           </div>
@@ -255,10 +255,10 @@ const statistics = [
             :options="lineChartOptions"
             :height="200"
           />
-        </div>
+        </UCard>
       </div>
       <div class="relative lg:col-span-2">
-        <div class="shadow bg-white rounded-xl p-5">
+        <UCard>
           <div class="text-xl font-semibold mb-5">
             Completed Task
           </div>
@@ -266,7 +266,7 @@ const statistics = [
             :options="doughnutChartOptions"
             :height="200"
           />
-        </div>
+        </UCard>
       </div>
     </div>
   </div>

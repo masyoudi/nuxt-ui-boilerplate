@@ -18,7 +18,7 @@ function onDeleteFile(index: number) {
 
 <template>
   <div class="w-full p-5">
-    <div class="w-full shadow rounded-xl bg-white p-5">
+    <UCard>
       <UFormField label="Input">
         <FormUpload
           v-slot="{ onclick }"
@@ -97,6 +97,6 @@ function onDeleteFile(index: number) {
           </div>
         </FormUpload>
       </UFormField>
-    </div>
+    </UCard>
   </div>
 </template>

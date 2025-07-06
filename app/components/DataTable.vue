@@ -284,13 +284,13 @@ const mounted = ref(true);
 
 const defaultTableTheme = tv({
   slots: {
-    root: 'border-t border-t-slate-200',
+    root: 'border-t border-t-(--ui-border)',
     base: '',
     caption: '',
     thead: '',
     tbody: '',
     tr: 'data-[selected=true]:bg-transparent',
-    th: 'bg-[#F8FAFC] text-[#6B7280]',
+    th: 'bg-muted',
     td: 'whitespace-normal',
     empty: '',
     loading: ''
@@ -559,7 +559,7 @@ onMounted(() => {
 
     <div
       v-if="props.paginated"
-      class="flex border-t border-t-slate-200 py-4"
+      class="flex border-t border-t-(--ui-border) py-4"
     >
       <UPagination
         v-if="!props.paginationSimple"

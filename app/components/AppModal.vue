@@ -50,7 +50,7 @@ const theme = tv({
     base: 'backdrop-blur-sm',
     wrapper: 'overflow-y-auto',
     inner: 'relative flex w-full min-h-screen justify-center items-center py-3 px-4',
-    content: 'relative w-full max-w-xl bg-white rounded-xl shadow shadow-black/8 outline-none p-5',
+    content: 'relative w-full max-w-xl bg-(--ui-bg) ring ring-transparent dark:ring-(--ui-border) rounded-xl shadow shadow-black/8 outline-none p-5',
     close: 'absolute inline-flex justify-center items-center top-2 right-2'
   }
 });

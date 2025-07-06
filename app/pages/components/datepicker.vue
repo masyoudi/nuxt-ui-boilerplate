@@ -16,7 +16,7 @@ const timepicker = ref('');
 
 <template>
   <div class="w-full p-5">
-    <div class="w-full shadow rounded-xl bg-white p-5">
+    <UCard>
       <UFormField
         label="Datepicker"
         class="mb-5"
@@ -54,6 +54,6 @@ const timepicker = ref('');
           />
         </UButtonGroup>
       </UFormField>
-    </div>
+    </UCard>
   </div>
 </template>

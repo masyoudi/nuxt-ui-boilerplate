@@ -338,7 +338,7 @@ function init() {
       isFocused.value = false;
     },
     onUpdate: ({ editor: _editor }) => {
-      content.value = _editor.getHTML();
+      content.value = removeEmptyHtml(_editor.getHTML());
     }
   });
 }
@@ -383,8 +383,14 @@ function onUnsetLink() {
   link.open = false;
 }
 
+function removeEmptyHtml(value: string) {
+  const parsed = value.replace(/(<\/?[^>]+(>|$)|&nbsp;|\s)/g, '');
+
+  return parsed !== '' ? value : '';
+}
+
 watchEffect(() => {
-  const isEqual = editor.value?.getHTML() === content.value;
+  const isEqual = removeEmptyHtml(editor.value?.getHTML() ?? '') === removeEmptyHtml(content.value);
   if (isEqual) {
     return;
   }
@@ -407,10 +413,10 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="relative w-full bg-white border rounded-md tiptap"
+    class="relative w-full bg-(--ui-bg) border rounded-md tiptap"
     :class="isFocused ? 'border-(--ui-color-primary-500)' : 'border-(--ui-border-accented)'"
   >
-    <div class="flex flex-wrap bg-slate-50/40 gap-2 p-2 rounded-t-md border-b border-b-slate-100">
+    <div class="flex flex-wrap bg-muted gap-2 p-2 rounded-t-md border-b border-b-(--ui-border-accented)">
       <UDropdownMenu
         v-if="isEnable('heading')"
         :items="headings"
@@ -424,7 +430,7 @@ onUnmounted(() => {
           block
           class="max-w-[115px] justify-between"
           trailing-icon="lucide:chevron-down"
-          variant="soft"
+          variant="subtle"
         />
 
         <template #heading1-label="{ item }">
@@ -458,7 +464,7 @@ onUnmounted(() => {
           <UButton
             size="sm"
             :color="item.active() ? 'primary' : 'neutral'"
-            variant="soft"
+            variant="subtle"
             :icon="item.icon"
             class="cursor-pointer"
             @click="item.command"
@@ -484,7 +490,7 @@ onUnmounted(() => {
             :icon="textAligns.find((v) => editor?.isActive({ textAlign: v.id }))?.icon ?? 'lucide:align-left'"
             color="neutral"
             size="sm"
-            variant="soft"
+            variant="subtle"
           />
         </UTooltip>
       </UDropdownMenu>
@@ -497,7 +503,7 @@ onUnmounted(() => {
         <UButton
           icon="lucide:link"
           :color="editor?.isActive('link') ? 'primary' : 'neutral'"
-          variant="soft"
+          variant="subtle"
           size="sm"
           @click="onOpenLink"
         />

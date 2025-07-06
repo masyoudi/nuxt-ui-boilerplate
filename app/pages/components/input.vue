@@ -43,7 +43,7 @@ async function onSubmit() {
 
 <template>
   <div class="p-5">
-    <div class="w-full rounded-xl bg-white p-5">
+    <UCard>
       <div class="text-xl font-semibold mb-8">
         Input
       </div>
@@ -184,6 +184,6 @@ async function onSubmit() {
           </UButton>
         </div>
       </FormRoot>
-    </div>
+    </UCard>
   </div>
 </template>

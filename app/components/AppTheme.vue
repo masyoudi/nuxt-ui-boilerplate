@@ -42,6 +42,16 @@ const colors = [
 ];
 
 const cookieTheme = useCookie('__themecolor');
+const colorMode = useColorMode();
+
+const isDark = computed({
+  get() {
+    return colorMode.value === 'dark';
+  },
+  set(_isDark) {
+    colorMode.preference = _isDark ? 'dark' : 'light';
+  }
+});
 
 async function onChangeColor(value: string) {
   document.documentElement.style.setProperty(`--color-primary`, `${chroma(value).css('oklch')}`);
@@ -62,11 +72,11 @@ async function onChangeColor(value: string) {
     />
 
     <template #content>
-      <div class="w-64 p-2">
+      <div class="w-64 p-3.5">
         <div class="text-sm font-bold mb-2">
-          Theme Color
+          Primary Color
         </div>
-        <div class="w-full grid grid-cols-3 gap-2">
+        <div class="w-full grid grid-cols-3 gap-2 mb-3.5">
           <div
             v-for="(item, i) in colors"
             :key="i"
@@ -89,6 +99,36 @@ async function onChangeColor(value: string) {
               </span>
             </UButton>
           </div>
+        </div>
+
+        <div class="h-px bg-(--ui-border) mb-3.5" />
+
+        <div class="text-sm font-bold mb-2">
+          Mode
+        </div>
+
+        <div class="flex gap-2">
+          <UButton
+            icon="lucide:sun"
+            size="xs"
+            class="justify-start"
+            color="neutral"
+            :variant="!isDark ? 'subtle' : 'outline'"
+            @click="isDark = false"
+          >
+            Light
+          </UButton>
+
+          <UButton
+            icon="lucide:moon"
+            size="xs"
+            class="justify-start"
+            color="neutral"
+            :variant="isDark ? 'subtle' : 'outline'"
+            @click="isDark = true"
+          >
+            Dark
+          </UButton>
         </div>
       </div>
     </template>

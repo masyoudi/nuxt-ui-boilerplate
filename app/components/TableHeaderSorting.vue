@@ -48,7 +48,7 @@ function onSorting() {
     <UButton
       :label="props.label"
       :icon="isSorted ? isSorted === 'asc' ? props.iconSortAsc : props.iconSortDesc : props.iconUnsort"
-      color="neutral"
+      :color="isSorted ? 'primary' : 'neutral'"
       :variant="isSorted ? 'soft' : 'ghost'"
       class="-mx-2.5"
       @click="onSorting"

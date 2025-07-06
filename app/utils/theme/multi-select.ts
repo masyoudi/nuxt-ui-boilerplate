@@ -1,4 +1,5 @@
-import { tv, type VariantProps } from 'tailwind-variants';
+import { tv } from 'tailwind-variants';
+import type { VariantProps } from 'tailwind-variants';
 
 const theme = tv({
   slots: {
@@ -44,9 +45,9 @@ const theme = tv({
     itemTrailingIcon: 'shrink-0',
     itemLabel: 'truncate',
     tagsItem: [
-      'rounded-sm font-medium inline-flex items-center gap-0.5 ring ring-inset ring-primary bg-primary-100',
+      'rounded-sm font-medium inline-flex items-center gap-0.5 ring ring-inset ring-primary bg-elevated',
       'text-default px-1.5 py-0.5 data-disabled:cursor-not-allowed data-disabled:opacity-75',
-      'data-[state=active]:bg-primary-200'
+      'data-[state=active]:bg-accented'
     ],
     tagsItemText: 'truncate',
     tagsItemDelete: [

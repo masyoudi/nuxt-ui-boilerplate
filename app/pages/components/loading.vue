@@ -19,7 +19,7 @@ watch(() => loading.value, (open) => {
 
 <template>
   <div class="w-full p-5">
-    <div class="w-full shadow rounded-xl bg-white p-5">
+    <UCard>
       <div class="w-full mb-5">
         <LoadingSpinner />
       </div>
@@ -30,6 +30,6 @@ watch(() => loading.value, (open) => {
       </div>
 
       <LoadingOverlay v-model="loading" />
-    </div>
+    </UCard>
   </div>
 </template>

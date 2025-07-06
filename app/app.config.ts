@@ -49,30 +49,30 @@ export default defineAppConfig({
     },
     radioGroup: {
       slots: {
-        base: 'focus-visible:outline-1 border border-(--ui-border-accented) ring-0'
+        base: 'focus-visible:outline-1 border border-accented ring-0'
       },
       variants: {
         color: {
           primary: {
-            indicator: 'after:bg-(--ui-primary) bg-white' as typeof radioIndicator[number]
+            indicator: 'after:bg-(--ui-primary) bg-default' as typeof radioIndicator[number]
           },
           secondary: {
-            indicator: 'after:bg-(--ui-secondary) bg-white' as typeof radioIndicator[number]
+            indicator: 'after:bg-(--ui-secondary) bg-default' as typeof radioIndicator[number]
           },
           success: {
-            indicator: 'after:bg-(--ui-success) bg-white' as typeof radioIndicator[number]
+            indicator: 'after:bg-(--ui-success) bg-default' as typeof radioIndicator[number]
           },
           info: {
-            indicator: 'after:bg-(--ui-info) bg-white' as typeof radioIndicator[number]
+            indicator: 'after:bg-(--ui-info) bg-default' as typeof radioIndicator[number]
           },
           warning: {
-            indicator: 'after:bg-(--ui-warning) bg-white' as typeof radioIndicator[number]
+            indicator: 'after:bg-(--ui-warning) bg-default' as typeof radioIndicator[number]
           },
           error: {
-            indicator: 'after:bg-(--ui-error) bg-white' as typeof radioIndicator[number]
+            indicator: 'after:bg-(--ui-error) bg-default' as typeof radioIndicator[number]
           },
           neutral: {
-            indicator: 'after:bg-(--ui-neutral) bg-white' as typeof radioIndicator[number]
+            indicator: 'after:bg-(--ui-neutral) bg-default' as typeof radioIndicator[number]
           }
         },
         size: {

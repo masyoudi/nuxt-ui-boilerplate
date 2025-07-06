@@ -75,10 +75,13 @@ onMounted(() => {
       @click.prevent.stop="sidebarOpen = false"
     />
     <div
-      class="relative w-full h-full flex flex-col transition-[padding] ease-[cubic-bezier(0.5,1,0.89,1)] duration-200 overflow-x-hidden overflow-y-auto bg-[#f2f7fb]"
+      class="
+        relative w-full h-full flex flex-col transition-[padding] ease-[cubic-bezier(0.5,1,0.89,1)]
+        duration-200 overflow-x-hidden overflow-y-auto bg-[#f2f7fb] dark:bg-muted
+      "
       :class="sidebarMini ? 'lg:pl-[70px]' : 'lg:pl-(--sidebar-width)'"
     >
-      <header class="sticky flex grow-0 shrink-0 w-full h-16 bg-white/80 backdrop-blur-xs top-0 shadow-sm px-2 z-10">
+      <header class="sticky flex grow-0 shrink-0 w-full h-16 bg-(--ui-bg)/80 backdrop-blur-xs top-0 shadow-sm px-2 z-10">
         <div class="flex grow h-full">
           <div
             class="inline-flex lg:hidden h-full items-center cursor-pointer select-none p-2"
