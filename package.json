@@ -31,7 +31,6 @@
     "@tiptap/vue-3": "^2.24.2",
     "@vueuse/components": "^13.5.0",
     "@vueuse/core": "^13.5.0",
-    "@vueuse/motion": "^3.0.3",
     "chroma-js": "^3.1.2",
     "defu": "^6.1.4",
     "dotenv": "^17.0.1",

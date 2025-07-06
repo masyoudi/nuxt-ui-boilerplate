@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useMotion } from '@vueuse/motion';
 import { vOnKeyStroke } from '@vueuse/components';
 import { tv } from 'tailwind-variants';
+import type { TransitionProps } from 'vue-demi';
 
-interface UIElements {
+interface UISlots {
   wrapper?: string;
   inner?: string;
   content?: string;
@@ -15,8 +15,11 @@ interface Props {
   class?: string;
   displayDirective?: 'if' | 'show';
   dismissable?: boolean;
+  fullscreen?: boolean;
+  transition?: TransitionProps;
+  transitionOverlay?: TransitionProps;
   close?: boolean;
-  ui?: UIElements;
+  ui?: UISlots;
 }
 
 defineOptions({
@@ -27,6 +30,10 @@ const props = withDefaults(defineProps<Props>(), {
   teleport: true,
   displayDirective: 'if',
   dismissable: true,
+  transition: () => ({
+    enterActiveClass: 'animate-[scale-in_200ms_ease-out]',
+    leaveActiveClass: 'animate-[scale-out_200ms_ease-in]'
+  }),
   close: true
 });
 
@@ -42,43 +49,34 @@ const emits = defineEmits<{
 
 const open = defineModel<boolean>({ default: false, required: false });
 
-const contentRef = ref<HTMLElement>();
+const contentRef = useTemplateRef('contentRef');
 const id = ref(`modal-${useId()}`);
 
 const theme = tv({
   slots: {
     base: 'backdrop-blur-sm',
-    wrapper: 'overflow-y-auto',
-    inner: 'relative flex w-full min-h-screen justify-center items-center py-3 px-4',
-    content: 'relative w-full max-w-xl bg-(--ui-bg) ring ring-transparent dark:ring-(--ui-border) rounded-xl shadow shadow-black/8 outline-none p-5',
+    wrapper: '',
+    inner: 'relative flex w-full min-h-screen justify-center items-center',
+    content: 'relative w-full bg-(--ui-bg) ring ring-accented rounded-xl shadow shadow-black/8 outline-none',
     close: 'absolute inline-flex justify-center items-center top-2 right-2'
+  },
+  variants: {
+    fullscreen: {
+      true: {
+        wrapper: 'overflow-y-hidden',
+        inner: 'overflow-hidden px-0 py-0',
+        content: 'max-w-full h-screen rounded-none p-0'
+      },
+      false: {
+        wrapper: 'overflow-y-auto',
+        inner: 'py-3 px-4',
+        content: 'max-w-xl p-5'
+      }
+    }
   }
 });
 
 const classes = theme();
-
-const { apply: applyMotionContent } = useMotion(contentRef, {
-  init: {
-    opacity: 0,
-    scale: 0.95
-  },
-  enter: {
-    opacity: 1,
-    scale: 1,
-    transition: {
-      delay: 0,
-      duration: 200
-    }
-  },
-  close: {
-    opacity: 0,
-    scale: 0.95,
-    transition: {
-      delay: 50,
-      duration: 200
-    }
-  }
-});
 
 /**
  * Handler click outside modal content
@@ -107,7 +105,6 @@ function onEscape() {
 function onAfterEnter() {
   emits('afterEnter');
 
-  applyMotionContent('enter');
   if (import.meta.client) {
     setTimeout(() => trapFocus(contentRef.value!), 150);
   }
@@ -119,7 +116,6 @@ function onAfterEnter() {
 function onBeforeLeave() {
   emits('beforeLeave');
 
-  applyMotionContent('close');
   if (!import.meta.client) {
     return;
   }
@@ -127,26 +123,19 @@ function onBeforeLeave() {
   const modals = Array(...document.querySelectorAll('[data-modal="true"]'));
   const lastModal = modals[modals.length - 1]?.querySelector('[data-modal-content][role="dialog"]:is([tabindex="-1"])');
   (lastModal as HTMLDivElement)?.focus({ preventScroll: true });
-
-  nextTick(() => applyMotionContent('init'));
 }
-
-onMounted(() => {
-  if (!open.value) {
-    applyMotionContent('init');
-  }
-});
 </script>
 
 <template>
   <BackDrop
     :id="id"
+    v-slot="{ entered, isDisplayIf, isDisplayShow }"
     v-model="open"
     :display-directive="props.displayDirective"
+    :transition="props.transitionOverlay"
     :teleport="props.teleport"
     :wrapper="classes.wrapper({ class: props.ui?.wrapper })"
     :class="classes.base({ class: props.class })"
-    :duration="{ enter: 0, leave: 150 }"
     :data-modal="open"
     @after-enter="onAfterEnter"
     @after-leave="emits('afterLeave')"
@@ -157,32 +146,37 @@ onMounted(() => {
       :class="classes.inner({ class: props.ui?.inner })"
       @click.self="onClickOutside"
     >
-      <div
-        ref="contentRef"
-        v-on-key-stroke:Escape="onEscape"
-        :class="classes.content({ class: props.ui?.content })"
-        role="dialog"
-        :data-modal-content="id"
-        :tabindex="-1"
-        @focus.stop
-      >
+      <Transition v-bind="props.transition">
         <div
-          v-if="props.close"
-          :class="classes.close({ class: props.ui?.close })"
+          v-if="isDisplayIf"
+          v-show="isDisplayShow"
+          ref="contentRef"
+          v-on-key-stroke:Escape="onEscape"
+          :class="classes.content({ class: props.ui?.content })"
+          role="dialog"
+          :data-open="entered ? 'true' : 'false'"
+          :data-modal-content="id"
+          :tabindex="-1"
+          @focus.stop
         >
-          <slot name="close">
-            <UButton
-              color="error"
-              variant="ghost"
-              size="sm"
-              icon="lucide:x"
-              @click="open = false"
-            />
-          </slot>
-        </div>
+          <div
+            v-if="props.close"
+            :class="classes.close({ class: props.ui?.close })"
+          >
+            <slot name="close">
+              <UButton
+                color="error"
+                variant="ghost"
+                size="sm"
+                icon="lucide:x"
+                @click="open = false"
+              />
+            </slot>
+          </div>
 
-        <slot />
-      </div>
+          <slot />
+        </div>
+      </Transition>
     </div>
   </BackDrop>
 </template>

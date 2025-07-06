@@ -30,7 +30,10 @@ const fullscreen = ref(false);
         </UButton>
       </div>
 
-      <AppModal v-model="nested">
+      <AppModal
+        v-model="nested"
+        display-directive="show"
+      >
         <div class="w-full flex gap-4">
           <UButton @click="second = true">
             Second

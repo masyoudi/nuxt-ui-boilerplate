@@ -2,25 +2,12 @@
 import { tv } from 'tailwind-variants';
 import type { TransitionProps } from 'vue-demi';
 
-interface TransitionClass {
-  enterFromClass?: string;
-  enterActiveClass?: string;
-  enterToClass?: string;
-  appearFromClass?: string;
-  appearActiveClass?: string;
-  appearToClass?: string;
-  leaveFromClass?: string;
-  leaveActiveClass?: string;
-  leaveToClass?: string;
-}
-
 interface Props {
   teleport?: boolean;
   class?: string;
   wrapper?: string;
   displayDirective?: 'if' | 'show';
-  transition?: TransitionClass;
-  duration?: TransitionProps['duration'];
+  transition?: TransitionProps;
 }
 
 defineOptions({
@@ -47,9 +34,10 @@ const emits = defineEmits<{
 }>();
 
 const open = defineModel<boolean>({ default: false, required: false });
+const isEntered = ref(open.value);
 
-const displayIf = computed(() => open.value || props.displayDirective !== 'if');
-const displayShow = computed(() => open.value || props.displayDirective !== 'show');
+const isDisplayIf = computed(() => open.value || props.displayDirective !== 'if');
+const isDisplayShow = computed(() => open.value || props.displayDirective !== 'show');
 
 const attrs: Record<string, any> = useAttrs();
 const attributes = computed(() => {
@@ -65,6 +53,18 @@ const theme = tv({
   }
 });
 const ui = theme();
+
+function onAfterEnter() {
+  emits('afterEnter');
+  nextTick(() => {
+    isEntered.value = true;
+  });
+}
+
+function onBeforeLeave() {
+  emits('beforeLeave');
+  isEntered.value = false;
+}
 </script>
 
 <template>
@@ -75,18 +75,22 @@ const ui = theme();
     <Transition
       v-bind="props.transition"
       @before-enter="emits('beforeEnter')"
-      @before-leave="emits('beforeLeave')"
-      @after-enter="emits('afterEnter')"
+      @before-leave="onBeforeLeave"
+      @after-enter="onAfterEnter"
       @after-leave="emits('afterLeave')"
     >
       <div
-        v-if="displayIf"
-        v-show="displayShow"
+        v-if="isDisplayIf"
+        v-show="isDisplayShow"
         v-bind="attributes"
         :class="ui.base({ class: props.class })"
       >
         <div :class="ui.wrapper({ class: props.wrapper })">
-          <slot />
+          <slot
+            :entered="isEntered"
+            :is-display-if="isDisplayIf"
+            :is-display-show="isDisplayShow"
+          />
         </div>
       </div>
     </Transition>
