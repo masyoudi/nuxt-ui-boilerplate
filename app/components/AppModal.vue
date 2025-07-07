@@ -111,18 +111,18 @@ function onAfterEnter() {
 }
 
 /**
- * Handler before modal leave
+ * Handler after modal leave
  */
-function onBeforeLeave() {
-  emits('beforeLeave');
+function onAfterLeave() {
+  emits('afterLeave');
 
   if (!import.meta.client) {
     return;
   }
 
   const modals = Array(...document.querySelectorAll('[data-modal="true"]'));
-  const lastModal = modals[modals.length - 1]?.querySelector('[data-modal-content][role="dialog"]:is([tabindex="-1"])');
-  (lastModal as HTMLDivElement)?.focus({ preventScroll: true });
+  const lastModal = modals.at(-1)?.querySelector('[data-modal-content][role="dialog"]:is([tabindex="-1"])') as HTMLDivElement;
+  setTimeout(() => lastModal?.focus({ preventScroll: true }), 150);
 }
 </script>
 
@@ -138,9 +138,9 @@ function onBeforeLeave() {
     :class="classes.base({ class: props.class })"
     :data-modal="open"
     @after-enter="onAfterEnter"
-    @after-leave="emits('afterLeave')"
+    @after-leave="onAfterLeave"
     @before-enter="emits('beforeEnter')"
-    @before-leave="onBeforeLeave"
+    @before-leave="emits('beforeLeave')"
   >
     <div
       :class="classes.inner({ class: props.ui?.inner })"
