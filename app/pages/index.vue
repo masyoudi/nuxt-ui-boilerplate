@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { EChartsOption } from '~/components/EChart.vue';
-
 definePageMeta({
   middleware: 'auth',
   activeMenu: 'home'
@@ -9,149 +7,6 @@ definePageMeta({
 useHead({
   title: 'Home'
 });
-
-const barChartOptions = computed<EChartsOption>(() => ({
-  tooltip: {
-    trigger: 'axis',
-    axisPointer: {
-      type: 'shadow'
-    }
-  },
-  legend: {
-    show: false
-  },
-  grid: {
-    left: '0%',
-    right: '2%',
-    bottom: '0%',
-    top: '4%',
-    containLabel: true
-  },
-  xAxis: {
-    type: 'value',
-    boundaryGap: [0, 0.01]
-  },
-  yAxis: {
-    type: 'category',
-    data: ['UI Design', 'Frontend', 'SEO']
-  },
-  series: [
-    {
-      name: 'Total',
-      type: 'bar',
-      data: [
-        {
-          value: 26,
-          itemStyle: {
-            color: '#0084ff',
-            borderRadius: [0, 7, 7, 0]
-          }
-        },
-        {
-          value: 30,
-          itemStyle: {
-            color: '#03c948',
-            borderRadius: [0, 7, 7, 0]
-          }
-        },
-        {
-          value: 12,
-          itemStyle: {
-            color: '#ffbb00',
-            borderRadius: [0, 7, 7, 0]
-          }
-        }
-      ]
-    }
-  ]
-}));
-
-const doughnutChartOptions = computed<EChartsOption>(() => ({
-  grid: {
-    left: '0%',
-    right: '0%',
-    bottom: '0%',
-    top: '0%',
-    containLabel: false
-  },
-  series: [
-    {
-      name: 'Completed Task',
-      type: 'pie',
-      radius: ['80%', '90%'],
-      avoidLabelOverlap: true,
-      padAngle: -8,
-      label: {
-        show: true,
-        position: 'center',
-        formatter: '70%',
-        fontSize: 20,
-        fontWeight: 600
-      },
-      emphasis: {
-        focus: 'none',
-        scale: false
-      },
-      data: [
-        {
-          value: 300,
-          name: 'Undone',
-          itemStyle: {
-            color: '#f0f0f0',
-            borderRadius: 100
-          }
-        },
-        {
-          value: 700,
-          name: 'Done',
-          itemStyle: {
-            color: '#03c948',
-            borderRadius: 100
-          }
-        }
-      ]
-    }
-  ]
-}));
-
-const lineChartOptions = computed<EChartsOption>(() => ({
-  tooltip: {
-    trigger: 'axis'
-  },
-  grid: {
-    left: '2%',
-    right: '2%',
-    bottom: '2%',
-    top: '3%',
-    containLabel: true
-  },
-  xAxis: {
-    type: 'category',
-    boundaryGap: false,
-    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  },
-  yAxis: {
-    type: 'value'
-  },
-  series: [
-    {
-      name: 'Completed Task',
-      type: 'line',
-      showSymbol: false,
-      clip: true,
-      smooth: true,
-      lineStyle: {
-        color: '#ff6600'
-      },
-      data: [200, 900, 400, 1200, 500, 1400, 900].map((v) => ({
-        value: v,
-        itemStyle: {
-          color: '#ff6600'
-        }
-      }))
-    }
-  ]
-}));
 
 const statistics = [
   {
@@ -240,10 +95,18 @@ const statistics = [
           <div class="text-xl font-semibold mb-5">
             Topic
           </div>
-          <EChart
-            :options="barChartOptions"
-            :height="180"
-          />
+          <div
+            class="relative block min-h-44"
+            :style="[
+              '--vis-tooltip-padding: 5px 7px',
+              ' --vis-axis-tick-color: var(--ui-border)',
+              '--vis-axis-grid-color: var(--ui-border)'
+              // '--vis-crosshair-line-stroke-color: transparent',
+              // '--vis-crosshair-circle-stroke-color: transparent'
+            ]"
+          >
+            <HomeChartTopic />
+          </div>
         </UCard>
       </div>
       <div class="relative lg:col-span-3">
@@ -251,21 +114,31 @@ const statistics = [
           <div class="text-xl font-semibold mb-5">
             Activity
           </div>
-          <EChart
-            :options="lineChartOptions"
-            :height="200"
-          />
+          <div
+            class="relative block min-h-60"
+            :style="[
+              '--vis-tooltip-padding: 5px 7px',
+              ' --vis-axis-tick-color: var(--ui-border)',
+              '--vis-axis-grid-color: var(--ui-border)',
+              '--vis-crosshair-line-stroke-color: transparent',
+              '--vis-crosshair-circle-stroke-color: transparent'
+            ]"
+          >
+            <HomeChartActivity />
+          </div>
         </UCard>
       </div>
       <div class="relative lg:col-span-2">
         <UCard>
-          <div class="text-xl font-semibold mb-5">
+          <div class="text-xl font-semibold mb-8">
             Completed Task
           </div>
-          <EChart
-            :options="doughnutChartOptions"
-            :height="200"
-          />
+          <div
+            class="size-48 mx-auto"
+            style="--vis-donut-central-label-text-color: var(--ui-text)"
+          >
+            <HomeChartCompleteTask />
+          </div>
         </UCard>
       </div>
     </div>

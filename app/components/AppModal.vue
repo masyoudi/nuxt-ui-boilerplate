@@ -3,13 +3,6 @@ import { vOnKeyStroke } from '@vueuse/components';
 import { tv } from 'tailwind-variants';
 import type { TransitionProps } from 'vue-demi';
 
-interface UISlots {
-  wrapper?: string;
-  inner?: string;
-  content?: string;
-  close?: string;
-}
-
 interface Props {
   teleport?: boolean;
   class?: string;
@@ -19,7 +12,7 @@ interface Props {
   transition?: TransitionProps;
   transitionOverlay?: TransitionProps;
   close?: boolean;
-  ui?: UISlots;
+  ui?: Partial<Record<keyof ReturnType<typeof theme>, string>>;
 }
 
 defineOptions({
@@ -34,6 +27,7 @@ const props = withDefaults(defineProps<Props>(), {
     enterActiveClass: 'animate-[scale-in_200ms_ease-out]',
     leaveActiveClass: 'animate-[scale-out_200ms_ease-in]'
   }),
+  fullscreen: false,
   close: true
 });
 
@@ -76,7 +70,9 @@ const theme = tv({
   }
 });
 
-const classes = theme();
+const classes = computed(() => theme({
+  fullscreen: props.fullscreen
+}));
 
 /**
  * Handler click outside modal content

@@ -58,11 +58,7 @@ const fullscreen = ref(false);
 
       <AppModal
         v-model="fullscreen"
-        :ui="{
-          wrapper: 'overflow-y-hidden',
-          inner: 'overflow-hidden px-0 py-0',
-          content: 'max-w-full h-screen rounded-none p-0'
-        }"
+        fullscreen
       >
         <UCard
           :ui="{

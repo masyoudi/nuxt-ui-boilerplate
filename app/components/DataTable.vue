@@ -30,13 +30,7 @@ interface GetDataResult {
 
 type UITable = Partial<Pick<typeof theme, 'slots'>['slots']>;
 
-interface UIToolbar {
-  root?: string;
-  left?: string;
-  leftWrapper?: string;
-  right?: string;
-  rightWrapper?: string;
-}
+type UIToolbar = Partial<Record<keyof ReturnType<typeof toolbarTheme>, string>>;
 
 interface Props {
   items?: Record<string, any>[];
@@ -95,10 +89,9 @@ const slots = defineSlots<{
   'toolbar-left-leading': () => VNode[];
   'toolbar-left-trailing': () => VNode[];
   'toolbar-right': () => VNode[];
-  'top-up': () => VNode[];
-  'top-down': () => VNode[];
-  'bottom-up': () => VNode[];
-  'bottom-down': () => VNode[];
+  'top': () => VNode[];
+  'middle': () => VNode[];
+  'bottom': () => VNode[];
   'loading': () => VNode[];
   'empty': () => VNode[];
 }>();
@@ -306,6 +299,7 @@ const uiTable = computed(() => {
     thead: _ui.thead({ class: props.ui?.thead }),
     tbody: _ui.tbody({ class: props.ui?.tbody }),
     tr: _ui.tr({ class: props.ui?.tr }),
+    separator: 'bg-(--ui-border)',
     th: _ui.th({ class: props.ui?.th }),
     td: _ui.td({ class: props.ui?.td }),
     empty: _ui.empty({ class: props.ui?.empty }),
@@ -446,7 +440,7 @@ onMounted(() => {
 
 <template>
   <div class="w-full">
-    <slot name="top-up" />
+    <slot name="top" />
 
     <div
       v-if="hasToolbar"
@@ -496,7 +490,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <slot name="top-down" />
+    <slot name="middle" />
 
     <UTable
       v-if="mounted"
@@ -555,7 +549,7 @@ onMounted(() => {
       </template>
     </UTable>
 
-    <slot name="bottom-up" />
+    <slot name="bottom" />
 
     <div
       v-if="props.paginated"
@@ -597,7 +591,5 @@ onMounted(() => {
         />
       </div>
     </div>
-
-    <slot name="bottom-down" />
   </div>
 </template>

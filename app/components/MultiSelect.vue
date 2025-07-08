@@ -75,7 +75,7 @@ interface Props<Multiple extends boolean> {
   selectedIcon?: string;
   tagsInputIcon?: string;
   disabled?: boolean;
-  ui?: Partial<Record<keyof ReturnType<Theme>, 'string'>>;
+  ui?: Partial<Record<keyof ReturnType<Theme>, string>>;
 }
 
 const props = withDefaults(defineProps<Props<M>>(), {
