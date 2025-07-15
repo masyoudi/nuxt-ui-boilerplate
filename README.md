@@ -1,7 +1,6 @@
 # Nuxt v3 + Nuxt UI v3 Boilerplate
 
-
-[CSR Version](https://github.com/masyoudi/nuxt-ui-boilerplate/tree/master)
+CSR version in [here](https://github.com/masyoudi/nuxt-ui-boilerplate/tree/master)
 
 ![Screenshot](https://github.com/masyoudi/nuxt-ui-boilerplate/blob/master/screenshot.png?raw=true)
 
