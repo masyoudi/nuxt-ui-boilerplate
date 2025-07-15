@@ -35,7 +35,12 @@ async function onSubmit() {
 
 <template>
   <div class="wrapper w-full flex justify-center items-center min-h-screen p-5">
-    <div class="w-full max-w-[425px] shadow-lg rounded-xl bg-white/20 backdrop-blur-md border border-white py-8 px-6 z-10">
+    <div
+      class="
+        w-full max-w-[425px] shadow-lg rounded-xl bg-white/20 dark:bg-default backdrop-blur-md
+        border border-white dark:border-accented py-8 px-6 z-10
+      "
+    >
       <div class="text-2xl text-center font-semibold mb-1">
         Welcome Back!
       </div>

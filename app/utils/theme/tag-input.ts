@@ -9,9 +9,9 @@ const theme = tv({
       'placeholder:text-dimmed disabled:cursor-not-allowed disabled:opacity-75'
     ],
     item: [
-      'rounded-sm font-medium inline-flex items-center gap-0.5 ring ring-inset ring-primary bg-primary-100',
+      'rounded-sm font-medium inline-flex items-center gap-0.5 ring ring-inset ring-primary bg-elevated',
       'text-default px-1.5 py-0.5 data-disabled:cursor-not-allowed data-disabled:opacity-75',
-      'data-[state=active]:bg-primary-200'
+      'data-[state=active]:bg-accented'
     ],
     itemText: 'truncate',
     itemDelete: [

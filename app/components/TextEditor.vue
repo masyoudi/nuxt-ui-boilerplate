@@ -288,7 +288,7 @@ function init() {
   editor.value = new Editor({
     editorProps: {
       attributes: {
-        class: 'min-h-[150px] max-h-[500px] prose prose-slate prose-sm max-w-none outline-none resize-y overflow-y-auto p-1.5'
+        class: 'min-h-[150px] max-h-[500px] prose prose-slate dark:prose-invert prose-sm max-w-none outline-none resize-y overflow-y-auto p-1.5'
       },
       handleClick: (_view: any, _pos: any, evt: MouseEvent) => {
         const { target } = evt;
@@ -395,7 +395,7 @@ watchEffect(() => {
     return;
   }
 
-  editor.value?.commands.setContent(content.value, false);
+  editor.value?.commands.setContent(content.value);
 });
 
 watchEffect(() => {

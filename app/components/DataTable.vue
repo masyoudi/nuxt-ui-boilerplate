@@ -8,7 +8,7 @@ import TableHeaderSorting from './TableHeaderSorting.vue';
 import type { TableFetchParams } from '~/types/table';
 import { toArray } from '~~/shared/utils';
 import { findNodeChildrens } from '~~/app/utils/helpers';
-import type theme from '#build/ui/table';
+import theme from '#build/ui/table';
 
 interface TableMeta {
   class?: {
@@ -28,7 +28,9 @@ interface GetDataResult {
   total?: number;
 }
 
-type UITable = Partial<Pick<typeof theme, 'slots'>['slots']>;
+type Theme = typeof theme;
+
+type UITable = Partial<Pick<Theme, 'slots'>['slots']>;
 
 type UIToolbar = Partial<Record<keyof ReturnType<typeof toolbarTheme>, string>>;
 
@@ -53,6 +55,11 @@ interface Props {
   iconSortAsc?: string;
   iconSortDesc?: string;
   iconUnsort?: string;
+  sticky?: boolean;
+  // sticky?: boolean | 'header' | 'footer'; // Incoming release
+  loadingColor?: keyof Theme['variants']['loadingColor'];
+  loadingAnimation?: keyof Theme['variants']['loadingAnimation'];
+  toggleColumnVisibility?: boolean;
   meta?: TableMeta;
   placeholderSearch?: string;
   ui?: UITable;
@@ -73,6 +80,7 @@ const props = withDefaults(defineProps<Props>(), {
   searchFilter: (currentItem: Record<string, any>, searchTerm: string) => {
     return Object.values(currentItem).some((val) => String(val).toLowerCase().includes(searchTerm.toLowerCase()));
   },
+  toggleColumnVisibility: true,
   multiSort: false,
   placeholderSearch: 'Search...'
 });
@@ -89,9 +97,24 @@ const slots = defineSlots<{
   'toolbar-left-leading': () => VNode[];
   'toolbar-left-trailing': () => VNode[];
   'toolbar-right': () => VNode[];
+  'body-top': (slotProps: {
+    ui: {
+      tr: string;
+      th: string;
+      td: string;
+    };
+  }) => VNode[];
+  'body-bottom': (slotProps: {
+    ui: {
+      tr: string;
+      th: string;
+      td: string;
+    };
+  }) => VNode[];
   'top': () => VNode[];
   'middle': () => VNode[];
-  'bottom': () => VNode[];
+  'bottom-up': () => VNode[];
+  'bottom-down': () => VNode[];
   'loading': () => VNode[];
   'empty': () => VNode[];
 }>();
@@ -153,7 +176,7 @@ const totalPagination = computed(() => {
   return data.value.length;
 });
 
-const expanded = ref({});
+const expanded = defineModel<Record<string, boolean>>('expanded', { default: () => ({}) });
 const columnVisibility = ref({});
 
 const table = useTemplateRef<{ tableApi: ReturnType<typeof useVueTable> }>('table');
@@ -164,7 +187,6 @@ const selection = defineModel<Record<string, any>[]>('selection', {
 });
 
 const selectionColumn = computed(() => ({
-  id: '__select',
   accessorKey: '__selection',
   label: 'Selection',
   header: ({ table: tbl }: HeaderContext<any, any>) => h(TableHeaderSelection, {
@@ -256,6 +278,22 @@ const columns = computed(() => {
   return result;
 });
 
+const visibleColumns = computed(() => {
+  const items = table.value?.tableApi?.getAllColumns().filter((col) => col.getCanHide()) ?? [];
+
+  return items.map((column) => ({
+    label: columns.value?.find((col) => col.accessorKey === column.id)?.label ?? column.id,
+    type: 'checkbox' as const,
+    checked: column.getIsVisible(),
+    onUpdateChecked: (checked: boolean) => {
+      table.value?.tableApi.getColumn(column.id)?.toggleVisibility(!!checked);
+    },
+    onSelect: (evt?: Event) => {
+      evt?.preventDefault();
+    }
+  }));
+});
+
 const hasPrevPaginationSimple = computed(() => page.value > 1);
 const hasNextPaginationSimple = computed(() => {
   return (isServerPagination.value ? data.value.length : visibleData.value.length) >= perPage.value;
@@ -265,6 +303,7 @@ const hasToolbar = computed(() => {
   const _items = [
     props.showPerPage,
     props.searchable,
+    props.toggleColumnVisibility,
     !!slots['toolbar-left-leading'],
     !!slots['toolbar-left-trailing'],
     !!slots['toolbar-right']
@@ -275,35 +314,49 @@ const hasToolbar = computed(() => {
 
 const mounted = ref(true);
 
-const defaultTableTheme = tv({
+const themeTable = tv({
   slots: {
-    root: 'border-t border-t-(--ui-border)',
+    root: 'border-t border-t-default',
     base: '',
     caption: '',
     thead: '',
     tbody: '',
     tr: 'data-[selected=true]:bg-transparent',
-    th: 'bg-muted',
+    th: 'bg-muted dark:bg-(--ui-color-neutral-950)',
     td: 'whitespace-normal',
     empty: '',
     loading: ''
   }
 });
+
 const uiTable = computed(() => {
-  const _ui = defaultTableTheme();
+  const themeCustom = themeTable();
+  return {
+    root: themeCustom.root({ class: props.ui?.root }),
+    base: themeCustom.base({ class: props.ui?.base }),
+    caption: themeCustom.caption({ class: props.ui?.caption }),
+    thead: themeCustom.thead({ class: props.ui?.thead }),
+    tbody: themeCustom.tbody({ class: props.ui?.tbody }),
+    tr: themeCustom.tr({ class: props.ui?.tr }),
+    th: themeCustom.th({ class: props.ui?.th }),
+    td: themeCustom.td({ class: props.ui?.td }),
+    empty: themeCustom.empty({ class: props.ui?.empty }),
+    loading: themeCustom.loading({ class: props.ui?.loading })
+  };
+});
+
+const uiTableBodySlots = computed(() => {
+  const _theme = tv(theme)({
+    sticky: props.sticky,
+    loading: loading.value,
+    loadingColor: props.loadingColor,
+    loadingAnimation: props.loadingAnimation
+  });
 
   return {
-    root: _ui.root({ class: props.ui?.root }),
-    base: _ui.base({ class: props.ui?.base }),
-    caption: _ui.caption({ class: props.ui?.caption }),
-    thead: _ui.thead({ class: props.ui?.thead }),
-    tbody: _ui.tbody({ class: props.ui?.tbody }),
-    tr: _ui.tr({ class: props.ui?.tr }),
-    separator: 'bg-(--ui-border)',
-    th: _ui.th({ class: props.ui?.th }),
-    td: _ui.td({ class: props.ui?.td }),
-    empty: _ui.empty({ class: props.ui?.empty }),
-    loading: _ui.loading({ class: props.ui?.loading })
+    tr: _theme.tr({ class: uiTable.value.tr }),
+    th: _theme.th({ class: uiTable.value.th }),
+    td: _theme.td({ class: uiTable.value.td })
   };
 });
 
@@ -467,17 +520,31 @@ onMounted(() => {
 
           <div
             v-if="props.searchable"
-            class="flex grow shrink"
+            class="flex grow shrink max-w-[300px]"
           >
             <UInput
               v-model="search"
               :placeholder="props.placeholderSearch"
               icon="lucide:search"
               size="lg"
+              class="w-full"
               @keydown.enter.prevent="onSearch"
               @input="onInputSearch"
             />
           </div>
+
+          <UDropdownMenu
+            v-if="props.toggleColumnVisibility"
+            :items="visibleColumns"
+            :content="{ align: 'start' }"
+          >
+            <UButton
+              label="Columns"
+              color="info"
+              variant="subtle"
+              trailing-icon="lucide:chart-no-axes-column"
+            />
+          </UDropdownMenu>
 
           <slot name="toolbar-left-trailing" />
         </div>
@@ -507,8 +574,33 @@ onMounted(() => {
         manualSorting: isServerPagination,
         enableMultiSort: props.multiSort
       }"
+      :expanded-options="{
+        manualExpanding: true
+      }"
+      :loading-color="props.loadingColor"
+      :sticky="props.sticky"
       @update:sorting="onSorting"
     >
+      <template
+        v-if="!!slots['body-top']"
+        #body-top
+      >
+        <slot
+          name="body-top"
+          :ui="uiTableBodySlots"
+        />
+      </template>
+
+      <template
+        v-if="!!slots['body-bottom']"
+        #body-bottom
+      >
+        <slot
+          name="body-bottom"
+          :ui="uiTableBodySlots"
+        />
+      </template>
+
       <template #expanded="{ row }">
         <slot
           name="expanded"
@@ -549,7 +641,7 @@ onMounted(() => {
       </template>
     </UTable>
 
-    <slot name="bottom" />
+    <slot name="bottom-up" />
 
     <div
       v-if="props.paginated"
@@ -591,5 +683,7 @@ onMounted(() => {
         />
       </div>
     </div>
+
+    <slot name="bottom-down" />
   </div>
 </template>

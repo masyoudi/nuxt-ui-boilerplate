@@ -51,7 +51,7 @@ const theme = tv({
     base: 'backdrop-blur-sm',
     wrapper: '',
     inner: 'relative flex w-full min-h-screen justify-center items-center',
-    content: 'relative w-full bg-(--ui-bg) ring ring-accented rounded-xl shadow shadow-black/8 outline-none',
+    content: 'relative w-full bg-(--ui-bg) ring ring-transparent dark:ring-accented rounded-xl shadow shadow-black/8 outline-none',
     close: 'absolute inline-flex justify-center items-center top-2 right-2'
   },
   variants: {
@@ -145,7 +145,7 @@ function onAfterLeave() {
       <Transition v-bind="props.transition">
         <div
           v-if="isDisplayIf"
-          v-show="isDisplayShow"
+          v-show="isDisplayShow && entered"
           ref="contentRef"
           v-on-key-stroke:Escape="onEscape"
           :class="classes.content({ class: props.ui?.content })"
