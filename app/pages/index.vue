@@ -101,8 +101,6 @@ const statistics = [
               '--vis-tooltip-padding: 5px 7px',
               ' --vis-axis-tick-color: var(--ui-border)',
               '--vis-axis-grid-color: var(--ui-border)'
-              // '--vis-crosshair-line-stroke-color: transparent',
-              // '--vis-crosshair-circle-stroke-color: transparent'
             ]"
           >
             <HomeChartTopic />

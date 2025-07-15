@@ -19,12 +19,17 @@ const items = shallowRef(
 );
 
 async function fetchData(params: Record<string, any>) {
-  const { data } = await useRequest('/todos', {
+  const query = {
+    ...params,
+    modules: 'person,internet'
+  };
+
+  const { res } = await useRequest('/api-dev/test', {
     method: 'GET',
-    query: params
+    query
   });
 
-  return { data: data, total: 200 };
+  return { data: toArray(res.data), total: 200 };
 }
 </script>
 
@@ -39,19 +44,30 @@ async function fetchData(params: Record<string, any>) {
         :get-data="fetchData"
         selectable
         multi-sort
-        :selectable-order="0"
-        :numbering-order="1"
+        :numbering="false"
       >
         <TableColumn
-          label="Task"
-          accessor="task"
-          sortable
+          label="ID"
+          accessor="id"
         />
         <TableColumn
-          label="Description"
-          accessor="description"
-          sortable
-        />
+          v-slot="{ item }"
+          label="Name"
+        >
+          {{ item.person.fullName }}
+        </TableColumn>
+        <TableColumn
+          v-slot="{ item }"
+          label="Email"
+        >
+          {{ item.internet.email }}
+        </TableColumn>
+        <TableColumn
+          v-slot="{ item }"
+          label="Job"
+        >
+          {{ item.person.jobTitle }}
+        </TableColumn>
       </DataTable>
 
       <div class="text-md mb-2">

@@ -87,7 +87,7 @@ async function onChangeColor(value: string) {
               block
               class="justify-start"
               color="neutral"
-              variant="outline"
+              :variant="item.value === cookieTheme ? 'subtle' : 'outline'"
               @click="onChangeColor(item.value)"
             >
               <span

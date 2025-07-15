@@ -1,8 +1,11 @@
 import { colors, createAssetColors } from './config/colors';
+import { fakerGenerator } from './faker-generator';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@nuxt/eslint'],
+
+  ssr: false,
   devtools: {
     enabled: true
   },
@@ -21,43 +24,53 @@ export default defineNuxtConfig({
   },
 
   srcDir: 'app/',
-  serverDir: 'server/',
 
   future: {
     compatibilityVersion: 4
   },
+
+  experimental: {
+    payloadExtraction: false,
+    renderJsonPayloads: true
+  },
   compatibilityDate: '2024-11-01',
 
-  nitro: {
-    typescript: {
-      strict: true,
-      tsConfig: {
-        compilerOptions: {
-          types: ['./server/types/h3']
-        }
-      }
-    }
-  },
-
   vite: {
-    build: {
-      rollupOptions: {
-        output: {
-          manualChunks(id) {
-            if (['echarts', 'zrender'].includes(id)) {
-              return 'echarts';
+    server: {
+      open: true
+    },
+    plugins: [
+      {
+        name: 'api-dev',
+        configureServer(server) {
+          server.middlewares.use('/api-dev', (req, res, next) => {
+            if (!req.url) {
+              return next();
             }
-          }
+
+            const q = new URLSearchParams(req.url?.split('?').at(1));
+            const page = Number(q.get('page')) || 1;
+            const perPage = Number.parseInt(String(q.get('perpage'))) || 10;
+            const requestedModules = q.get('modules')?.split(',') ?? ['book', 'lorem'];
+
+            const data: any[] = [...Array(!Number.isNaN(perPage) ? perPage : 10)].map((_, i) => ({
+              id: page <= 1 ? (i + 1) : ((page - 1) * perPage) + (i + 1),
+              ...fakerGenerator(requestedModules as any)
+            }));
+
+            res.writeHead(200, { 'content-type': 'application/json' });
+            return res.end(JSON.stringify({ data }));
+          });
         }
       }
-    }
+    ]
   },
 
   typescript: {
     strict: true,
     tsConfig: {
       compilerOptions: {
-        types: ['./shared/types/app']
+        types: ['./app/types/app.d.ts']
       }
     }
   },

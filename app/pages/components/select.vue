@@ -36,10 +36,11 @@ async function onTogglePopover() {
           <UButton>Group</UButton>
           <MultiSelect
             v-model="autocomplete"
-            url="/todos"
+            url="/api-dev/test"
             paginated
             placeholder="Search anything..."
-            :transform-fetch-data="(res) => toArray(res).map((val) => ({ value: val.id, label: val.task }))"
+            :transform-fetch-query="(q) => ({ ...q, modules: 'person' })"
+            :transform-fetch-data="(res) => toArray(res.data).map((val) => ({ value: val.id, label: val.person.fullName }))"
             :debounce="500"
           />
         </UButtonGroup>
@@ -49,10 +50,11 @@ async function onTogglePopover() {
         <MultiSelect
           v-model="multiselects"
           multiple
-          url="/todos"
+          url="/api-dev/test"
           paginated
           placeholder="Search anything..."
-          :transform-fetch-data="(res) => toArray(res).map((val) => ({ value: val.id, label: val.task }))"
+          :transform-fetch-query="(q) => ({ ...q, modules: 'person' })"
+          :transform-fetch-data="(res) => toArray(res.data).map((val) => ({ value: val.id, label: val.person.fullName }))"
           :debounce="500"
         />
       </UFormField>
@@ -108,11 +110,11 @@ async function onTogglePopover() {
                       name="hobbies"
                     >
                       <MultiSelect
-                        url="/todos"
+                        url="/api-dev/test"
                         paginated
-                        color="neutral"
                         placeholder="Search anything..."
-                        :transform-fetch-data="(res) => toArray(res).map((val) => ({ value: val.id, label: val.task }))"
+                        :transform-fetch-query="(q) => ({ ...q, modules: 'person' })"
+                        :transform-fetch-data="(res) => toArray(res.data).map((val) => ({ value: val.id, label: val.person.fullName }))"
                         :debounce="500"
                         :portal="false"
                       />
