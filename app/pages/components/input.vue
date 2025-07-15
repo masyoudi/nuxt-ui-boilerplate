@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import z from 'zod';
 import { formDataBuilder } from '~/utils/helpers';
-import { toArray } from '~~/shared/utils';
 
 definePageMeta({
   middleware: 'auth',
@@ -11,34 +11,60 @@ useHead({
   title: 'Input'
 });
 
-const formModel = reactive({
+const selectionSchema = z.object({
+  value: z.union([z.string(), z.number()]),
+  label: z.string()
+});
+
+const formSchema = z.object({
+  name: z.string().trim().min(1, 'Enter your name'),
+  email: z.email('Invalid email address'),
+  gender: z
+    .string()
+    .min(1, 'Choose your gender')
+    .refine((v) => ['male', 'female'].includes(v), 'Invalid gender'),
+  address: z.string().trim().min(1, 'Enter your address'),
+  phone: z.string().trim().min(1, 'Enter your phone number'),
+  dob: z.iso.datetime('Please enter date of birth'),
+  hobbies: z.array(z.string()).min(1, 'Please select hobby'),
+  job: z.custom<z.output<typeof selectionSchema> | undefined>(
+    (val) => selectionSchema.safeParse(val).success,
+    'Please select job title'
+  ),
+  file: z.custom<File | undefined>((value) => value instanceof File, 'Please upload file')
+});
+
+const formModel = reactive<z.output<typeof formSchema>>({
   name: '',
   email: '',
   gender: '',
   address: '',
   phone: '',
   dob: '',
+  job: undefined,
   file: undefined as File | undefined,
-  hobbies: [] as string[]
+  hobbies: []
 });
-const formRef = ref();
+
 const loading = ref(false);
 
-async function onSubmit() {
-  try {
-    loading.value = true;
+const formHandler = defineFormHandler({
+  state: formModel,
+  schema: formSchema,
+  async onSubmit(data) {
+    try {
+      loading.value = true;
 
-    await useRequest('/profile', {
-      method: 'POST',
-      body: formDataBuilder(formModel)
-    });
-    loading.value = false;
+      const formData = formDataBuilder({ ...omit(data, 'job'), job: data.job!.value });
+      console.log([...formData.entries()]);
+      loading.value = false;
+    }
+    catch (err) {
+      loading.value = false;
+      useRequestError(err);
+    }
   }
-  catch (err) {
-    loading.value = false;
-    useRequestError(err, formRef);
-  }
-}
+});
 </script>
 
 <template>
@@ -48,10 +74,9 @@ async function onSubmit() {
         Input
       </div>
 
-      <FormRoot
-        ref="formRef"
+      <UForm
+        v-bind="formHandler"
         class="space-y-6"
-        @submit="onSubmit"
       >
         <UFormField
           label="Name"
@@ -93,7 +118,10 @@ async function onSubmit() {
           label="Date of Birth"
           name="dob"
         >
-          <DatePicker v-model="formModel.dob" />
+          <DatePicker
+            v-model="formModel.dob"
+            :creator="(d) => d.toISOString()"
+          />
         </UFormField>
 
         <UFormField
@@ -123,27 +151,24 @@ async function onSubmit() {
           label="Hobbies"
           name="hobbies"
         >
-          <MultiSelect
-            url="/todos"
-            multiple
-            paginated
-            color="neutral"
-            placeholder="Search anything..."
-            :transform-fetch-data="(res) => toArray(res).map((val) => ({ value: val.id, label: val.task }))"
-            :debounce="500"
-            @update:model-value="(val) => formModel.hobbies = toArray(val!).map((v) => String(v.value))"
+          <TagInput
+            v-model="formModel.hobbies"
+            placeholder="Input some item..."
           />
         </UFormField>
 
-        <UFormField label="Note">
-          <TextEditor />
-        </UFormField>
-
-        <UFormField label="Tag Input">
-          <TagInput
-            placeholder="Input some item..."
-            color="error"
-            variant="ghost"
+        <UFormField
+          label="Job Title"
+          name="job"
+        >
+          <MultiSelect
+            v-model="formModel.job"
+            url="/api-dev/test"
+            paginated
+            placeholder="Search anything..."
+            :transform-fetch-query="(q) => ({ ...q, modules: 'person' })"
+            :transform-fetch-data="(res) => toArray(res.data).map((val) => ({ value: val.id, label: val.person.jobTitle }))"
+            :debounce="500"
           />
         </UFormField>
 
@@ -183,7 +208,7 @@ async function onSubmit() {
             Submit
           </UButton>
         </div>
-      </FormRoot>
+      </UForm>
     </UCard>
   </div>
 </template>

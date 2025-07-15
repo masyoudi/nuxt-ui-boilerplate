@@ -4,11 +4,11 @@
       :toaster="{ position: 'top-right', expand: true }"
       :tooltip="{ delayDuration: 150, skipDelayDuration: 100 }"
     >
-      <NuxtLayout :name="authCheck.valid() ? 'default' : 'blank'">
+      <NuxtLayout :name="auth.valid() ? 'default' : 'blank'">
         <div class="w-full px-4 mx-auto">
           <div
             class="flex w-full items-center"
-            :class="!authCheck.valid() ? 'min-h-screen' : ''"
+            :class="!auth.valid() ? 'min-h-screen' : ''"
           >
             <div class="relative block w-full py-6">
               <div class="text-6xl font-bold text-center">
@@ -19,7 +19,7 @@
               </div>
 
               <div
-                v-if="!authCheck.valid()"
+                v-if="!auth.valid()"
                 class="relative flex justify-center pt-10"
               >
                 <UButton
@@ -40,8 +40,6 @@
 </template>
 
 <script lang="ts" setup>
-import authValidator from '~/utils/auth';
-
 interface Props {
   error: Record<string, any>;
 }
@@ -53,8 +51,7 @@ useHead({
   title: props.error ? (props.error?.message ? props.error.message : title) : title
 });
 
-const authState = useStateAuth();
-const authCheck = authValidator(authState.value);
+const auth = useStateAuth();
 
 function goToHome() {
   clearError({ redirect: '/' });

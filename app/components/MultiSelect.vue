@@ -248,12 +248,12 @@ async function fetchData() {
       q: search.value
     });
 
-    const { raw, data: result } = await useRequest(props.url, {
+    const { raw, res } = await useRequest(props.url, {
       method: 'GET',
       query
     });
 
-    const _data = props.transformFetchData(result, raw);
+    const _data = props.transformFetchData(res, raw);
     const hasMore = _data.length >= props.limit;
 
     data.value = [...data.value, ..._data];

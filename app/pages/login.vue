@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import z from 'zod';
+
 definePageMeta({
   layout: 'blank',
   middleware: 'unauth'
@@ -8,29 +10,58 @@ useHead({
   title: 'Login'
 });
 
-const formModel = reactive({
+const formSchema = z.object({
+  email: z.email('Please enter email address'),
+  password: z.string().refine((val) => val.trim().length > 0, 'Please enter password')
+});
+
+const formModel = reactive<z.output<typeof formSchema>>({
   email: '',
   password: ''
 });
-const formRef = ref();
+
 const loading = ref(false);
 const toast = useToast();
+const auth = useStateAuth();
 
-async function onSubmit() {
-  try {
-    loading.value = true;
-    await useRequest('/login?ahs=s', {
-      method: 'POST',
-      body: formModel
-    });
-    toast.add({ description: 'Login success', color: 'success' });
-    window.location.replace('/');
+const formHandler = defineFormHandler({
+  state: formModel,
+  schema: formSchema,
+  async onSubmit(data) {
+    try {
+      loading.value = true;
+
+      const user = {
+        id: new Date().valueOf().toString(),
+        name: data.email.split('@').at(0)!,
+        email: data.email
+      };
+      const permissions = [
+        'dashboard'
+      ];
+
+      const d = new Date();
+      const isValidAuthState = await auth.setState({
+        user,
+        token: new Date().valueOf().toString(),
+        permissions,
+        expiry: new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, d.getHours(), d.getMinutes()).valueOf()
+      });
+
+      if (!isValidAuthState) {
+        toast.add({ description: 'Login failed', color: 'error' });
+        return;
+      }
+
+      toast.add({ description: 'Login success', color: 'success' });
+      window.location.replace('/');
+    }
+    catch (err) {
+      loading.value = false;
+      useRequestError(err);
+    }
   }
-  catch (err) {
-    loading.value = false;
-    useRequestError(err, formRef);
-  }
-}
+});
 </script>
 
 <template>
@@ -48,10 +79,9 @@ async function onSubmit() {
         Enter your email &amp; password to login
       </div>
 
-      <FormRoot
-        ref="formRef"
+      <UForm
+        v-bind="formHandler"
         class="space-y-6"
-        @submit="onSubmit"
       >
         <UFormField
           label="Email"
@@ -96,7 +126,7 @@ async function onSubmit() {
             Login
           </UButton>
         </div>
-      </FormRoot>
+      </UForm>
     </div>
 
     <div class="wave" />
