@@ -11,5 +11,7 @@ export default authSessionHandler((event) => {
     created_at: faker.date.recent()
   }));
 
-  return data;
+  return {
+    data
+  };
 });

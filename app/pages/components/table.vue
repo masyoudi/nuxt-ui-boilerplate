@@ -19,12 +19,12 @@ const items = shallowRef(
 );
 
 async function fetchData(params: Record<string, any>) {
-  const { data } = await useRequest('/todos', {
+  const { res } = await useRequest('/todos', {
     method: 'GET',
     query: params
   });
 
-  return { data: data, total: 200 };
+  return { data: toArray(res.data), total: 200 };
 }
 </script>
 

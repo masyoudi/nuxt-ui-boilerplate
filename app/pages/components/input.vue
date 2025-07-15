@@ -21,7 +21,7 @@ const formModel = reactive({
   file: undefined as File | undefined,
   hobbies: [] as string[]
 });
-const formRef = ref();
+const formRef = useTemplateRef('formRef');
 const loading = ref(false);
 
 async function onSubmit() {
@@ -36,7 +36,7 @@ async function onSubmit() {
   }
   catch (err) {
     loading.value = false;
-    useRequestError(err, formRef);
+    useRequestErrorParser(err, formRef);
   }
 }
 </script>
@@ -129,7 +129,7 @@ async function onSubmit() {
             paginated
             color="neutral"
             placeholder="Search anything..."
-            :transform-fetch-data="(res) => toArray(res).map((val) => ({ value: val.id, label: val.task }))"
+            :transform-fetch-data="(res) => toArray(res.data).map((val) => ({ value: val.id, label: val.task }))"
             :debounce="500"
             @update:model-value="(val) => formModel.hobbies = toArray(val!).map((v) => String(v.value))"
           />

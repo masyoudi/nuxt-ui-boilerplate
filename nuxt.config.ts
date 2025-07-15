@@ -39,25 +39,11 @@ export default defineNuxtConfig({
     }
   },
 
-  vite: {
-    build: {
-      rollupOptions: {
-        output: {
-          manualChunks(id) {
-            if (['echarts', 'zrender'].includes(id)) {
-              return 'echarts';
-            }
-          }
-        }
-      }
-    }
-  },
-
   typescript: {
     strict: true,
     tsConfig: {
       compilerOptions: {
-        types: ['./shared/types/app']
+        types: ['./app/types/app.d.ts']
       }
     }
   },

@@ -39,7 +39,7 @@ async function onTogglePopover() {
             url="/todos"
             paginated
             placeholder="Search anything..."
-            :transform-fetch-data="(res) => toArray(res).map((val) => ({ value: val.id, label: val.task }))"
+            :transform-fetch-data="(res) => toArray(res.data).map((val) => ({ value: val.id, label: val.task }))"
             :debounce="500"
           />
         </UButtonGroup>
@@ -52,7 +52,7 @@ async function onTogglePopover() {
           url="/todos"
           paginated
           placeholder="Search anything..."
-          :transform-fetch-data="(res) => toArray(res).map((val) => ({ value: val.id, label: val.task }))"
+          :transform-fetch-data="(res) => toArray(res.data).map((val) => ({ value: val.id, label: val.task }))"
           :debounce="500"
         />
       </UFormField>
@@ -112,7 +112,7 @@ async function onTogglePopover() {
                         paginated
                         color="neutral"
                         placeholder="Search anything..."
-                        :transform-fetch-data="(res) => toArray(res).map((val) => ({ value: val.id, label: val.task }))"
+                        :transform-fetch-data="(res) => toArray(res.data).map((val) => ({ value: val.id, label: val.task }))"
                         :debounce="500"
                         :portal="false"
                       />

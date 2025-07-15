@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import type { H3Error } from 'h3';
 import { authSessionConfig, authSessionRoles } from '~~/server/utils/session';
 import type { AuthSessionData } from '~~/server/types/session';
