@@ -1,5 +1,7 @@
 # Nuxt v3 + Nuxt UI v3 Boilerplate
 
+SSR version in [here](https://github.com/masyoudi/nuxt-ui-boilerplate/tree/ssr)
+
 ![Screenshot](https://github.com/masyoudi/nuxt-ui-boilerplate/blob/master/screenshot.png?raw=true)
 
 Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
