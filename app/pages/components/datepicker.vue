@@ -8,10 +8,10 @@ useHead({
   title: 'Datepicker'
 });
 
-const datepicker = ref('');
-const datepickerRange = ref([]);
-const datetimepicker = ref('');
-const timepicker = ref('');
+const datePicker = ref('');
+const datePickerRange = ref([]);
+const datetimePicker = ref('');
+const timePicker = ref('');
 </script>
 
 <template>
@@ -21,14 +21,14 @@ const timepicker = ref('');
         label="Datepicker"
         class="mb-5"
       >
-        <DatePicker v-model="datepicker" />
+        <DatePicker v-model="datePicker" />
       </UFormField>
       <UFormField
         label="Datepicker Range"
         class="mb-5"
       >
         <DatePicker
-          v-model="datepickerRange"
+          v-model="datePickerRange"
           range
         />
       </UFormField>
@@ -37,7 +37,7 @@ const timepicker = ref('');
         class="mb-5"
       >
         <DatetimePicker
-          v-model="datetimepicker"
+          v-model="datetimePicker"
           icon="lucide:calendar"
         />
       </UFormField>
@@ -48,7 +48,7 @@ const timepicker = ref('');
         <UButtonGroup class="w-full">
           <UButton label="Timepicker" />
           <TimePicker
-            v-model="timepicker"
+            v-model="timePicker"
             class="grow shrink"
             color="error"
           />

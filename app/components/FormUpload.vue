@@ -80,7 +80,7 @@ const {
 const theme = tv({
   slots: {
     root: 'relative',
-    drop: 'border border-dashed border-slate-300 rounded-md data-dragover:border-(--ui-primary) focus:border-(--ui-primary)'
+    drop: 'border border-dashed border-accented rounded-md data-dragover:border-(--ui-primary) focus:border-(--ui-primary)'
   }
 });
 const ui = theme();

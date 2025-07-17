@@ -317,7 +317,9 @@ function init() {
         italic: isEnable('italic') ? undefined : false,
         listItem: isEnable('listItem') ? undefined : false,
         orderedList: isEnable('orderedList') ? undefined : false,
-        strike: isEnable('strike') ? undefined : false
+        strike: isEnable('strike') ? undefined : false,
+        link: false,
+        underline: false
       }),
       ...(isEnable('subscript') ? [Subscript] : []),
       ...(isEnable('superscript') ? [Superscript] : []),
