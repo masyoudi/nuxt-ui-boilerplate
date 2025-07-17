@@ -99,13 +99,17 @@ const vmodel = computed({
   set: (val) => {
     if (props.range && isValueRange(val as RangeValue)) {
       const { start, end } = val as RangeValue;
-      const values = [start.toDate(getLocalTimeZone()), new Date(end.toDate(getLocalTimeZone()).setHours(23, 59, 59, 999))];
+      const values = [
+        new Date(start.toDate(getLocalTimeZone()).setHours(0, 0, 0, 0)),
+        new Date(end.toDate(getLocalTimeZone()).setHours(23, 59, 59, 999))
+      ];
+
       _model.value = values;
       emits('update:modelValue', values.map((v) => props.creator(v)) as DatepickerValue[]);
     }
 
-    if (!props.range && val) {
-      const value = (val as CalendarDate).toDate(getLocalTimeZone());
+    if (!props.range && val instanceof CalendarDate) {
+      const value = new Date(val.toDate(getLocalTimeZone()).setHours(0, 0, 0, 0));
       _model.value = value;
       emits('update:modelValue', props.creator(value));
     }
