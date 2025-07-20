@@ -1,4 +1,4 @@
-import { useStateUser } from '~/composables/state';
+import { useAuth } from '~/composables/auth';
 
 export default defineNuxtPlugin((nuxtApp) => {
   const event = nuxtApp.ssrContext?.event;
@@ -7,17 +7,17 @@ export default defineNuxtPlugin((nuxtApp) => {
   }
 
   const context = event.context;
-  const auth = useStateAuth();
-
-  auth.value = context.auth;
-
   if (context.session) {
-    const userData = {
+    const auth = useAuth();
+    const user = {
       name: context.session.name,
       email: context.session.email
     };
-    const user = useStateUser();
 
-    user.value = userData;
+    auth.setState({
+      user,
+      token: context.auth,
+      permissions: []
+    });
   }
 });

@@ -1,13 +1,8 @@
-import authValidator from '~/utils/auth';
-
 export default defineNuxtRouteMiddleware(async () => {
   try {
-    const authState = useStateAuth();
-    const userState = useStateUser();
-    const authCheck = authValidator(authState.value);
-
-    if (!authState.value || !userState.value || (authState.value && !authCheck.valid())) {
-      authState.value = '';
+    const auth = useAuth();
+    if (!auth.valid()) {
+      auth.clear();
 
       if (import.meta.client) {
         window.location.replace('/login');
