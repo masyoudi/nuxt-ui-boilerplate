@@ -51,7 +51,7 @@ useHead({
   title: props.error ? (props.error?.message ? props.error.message : title) : title
 });
 
-const auth = useStateAuth();
+const auth = useAuth();
 
 function goToHome() {
   clearError({ redirect: '/' });

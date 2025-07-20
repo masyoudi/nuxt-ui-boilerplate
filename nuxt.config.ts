@@ -53,7 +53,7 @@ export default defineNuxtConfig({
             const perPage = Number.parseInt(String(q.get('perpage'))) || 10;
             const requestedModules = q.get('modules')?.split(',') ?? ['book', 'lorem'];
 
-            const data: any[] = [...Array(!Number.isNaN(perPage) ? perPage : 10)].map((_, i) => ({
+            const data: Record<string, any>[] = [...Array(!Number.isNaN(perPage) ? perPage : 10)].map((_, i) => ({
               id: page <= 1 ? (i + 1) : ((page - 1) * perPage) + (i + 1),
               ...fakerGenerator(requestedModules as any)
             }));

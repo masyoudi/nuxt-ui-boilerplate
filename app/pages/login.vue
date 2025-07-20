@@ -22,7 +22,7 @@ const formModel = reactive<z.output<typeof formSchema>>({
 
 const loading = ref(false);
 const toast = useToast();
-const auth = useStateAuth();
+const auth = useAuth();
 
 const formHandler = defineFormHandler({
   state: formModel,
