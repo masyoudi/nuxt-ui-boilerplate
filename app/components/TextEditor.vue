@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import { Editor, EditorContent } from '@tiptap/vue-3';
-import type { Editor as CoreEditor } from '@tiptap/core';
-import Link from '@tiptap/extension-link';
 import StarterKit from '@tiptap/starter-kit';
+import type { StarterKitOptions } from '@tiptap/starter-kit';
 import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
-import Underline from '@tiptap/extension-underline';
-import Placeholder from '@tiptap/extension-placeholder';
+import { Placeholder } from '@tiptap/extensions';
+import type { PlaceholderOptions } from '@tiptap/extensions';
 import TextAlign from '@tiptap/extension-text-align';
 import type { HeadingOptions } from '@tiptap/extension-heading';
 import { promiseTimeout } from '@vueuse/core';
-import type { Node as ProsemirrorNode } from '@tiptap/pm/model';
 
 type ExtensionNames = 'bold'
   | 'blockquote'
@@ -38,17 +36,10 @@ interface CommonToolbarItem {
   active: () => boolean | undefined;
 };
 
-interface PlaceholderProps {
-  editor: CoreEditor;
-  node: ProsemirrorNode;
-  pos: number;
-  hasAnchor: boolean;
-}
-
 interface Props {
   modelValue?: string;
   ignoreExtensions?: ExtensionNames[];
-  placeholder?: string | ((ctx: PlaceholderProps) => string);
+  placeholder?: PlaceholderOptions['placeholder'];
   teleport?: boolean;
   disabled?: boolean;
 }
@@ -262,9 +253,18 @@ function getDropdownItemColor(isActive?: boolean) {
 /**
  * Check is extension disabled
  * @param ext - Extension name
+ * @param returnUndefined - Return undefined on true
  */
-function isEnable(ext: ExtensionNames) {
-  return !(props.ignoreExtensions ?? []).includes(ext);
+function isEnable<
+  R extends boolean,
+  T = R extends true ? undefined | false : boolean
+>(ext: ExtensionNames, returnUndefined?: boolean) {
+  const enable = !(props.ignoreExtensions ?? []).includes(ext);
+  if (returnUndefined) {
+    return (!enable ? false : undefined) as T;
+  }
+
+  return enable as T;
 }
 
 /**
@@ -280,10 +280,10 @@ function init() {
     alignments: textAligns.value.map((v) => v.id)
   });
 
-  const _Link = Link.configure({
+  const _Link: Partial<StarterKitOptions['link']> = {
     openOnClick: false,
     defaultProtocol: 'https'
-  });
+  };
 
   editor.value = new Editor({
     editorProps: {
@@ -307,25 +307,23 @@ function init() {
     },
     extensions: [
       StarterKit.configure({
-        bold: isEnable('bold') ? undefined : false,
-        blockquote: isEnable('blockquote') ? undefined : false,
-        bulletList: isEnable('bulletList') ? undefined : false,
-        code: isEnable('code') ? undefined : false,
-        codeBlock: isEnable('codeBlock') ? undefined : false,
+        bold: isEnable('bold', true),
+        blockquote: isEnable('blockquote', true),
+        bulletList: isEnable('bulletList', true),
+        code: isEnable('code', true),
+        codeBlock: isEnable('codeBlock', true),
         heading: isEnable('heading') ? headingConfig : false,
-        horizontalRule: isEnable('horizontalRule') ? undefined : false,
-        italic: isEnable('italic') ? undefined : false,
-        listItem: isEnable('listItem') ? undefined : false,
-        orderedList: isEnable('orderedList') ? undefined : false,
-        strike: isEnable('strike') ? undefined : false,
-        link: false,
-        underline: false
+        horizontalRule: isEnable('horizontalRule', true),
+        italic: isEnable('italic', true),
+        listItem: isEnable('listItem', true),
+        orderedList: isEnable('orderedList', true),
+        strike: isEnable('strike', true),
+        link: isEnable('link') ? _Link : false,
+        underline: isEnable('underline', true)
       }),
       ...(isEnable('subscript') ? [Subscript] : []),
       ...(isEnable('superscript') ? [Superscript] : []),
-      ...(isEnable('underline') ? [Underline] : []),
       ...(isEnable('textAlign') ? [_TextAlign] : []),
-      ...(isEnable('link') ? [_Link] : []),
       Placeholder.configure({
         emptyEditorClass: 'is-editor-empty',
         placeholder: props.placeholder
