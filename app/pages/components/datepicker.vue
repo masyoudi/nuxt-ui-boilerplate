@@ -21,7 +21,9 @@ const timePicker = ref('');
         label="Datepicker"
         class="mb-5"
       >
-        <DatePicker v-model="datePicker" />
+        <DatePicker
+          v-model="datePicker"
+        />
       </UFormField>
 
       <UFormField

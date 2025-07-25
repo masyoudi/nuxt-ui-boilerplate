@@ -140,10 +140,11 @@ async function onSubmit() {
         </UFormField>
 
         <UFormField label="Tag Input">
-          <TagInput
+          <UInputTags
             placeholder="Input some item..."
             color="error"
             variant="ghost"
+            class="w-full"
           />
         </UFormField>
 
@@ -151,8 +152,8 @@ async function onSubmit() {
           label="Resume"
           name="file"
         >
-          <FormUpload
-            v-slot="{ onclick }"
+          <UFileUpload
+            v-slot="{ open }"
             v-model="formModel.file"
             class="mb-5"
           >
@@ -162,17 +163,17 @@ async function onSubmit() {
             >
               <UButton
                 label="Choose file"
-                @click="onclick"
+                @click="open()"
               />
               <UInput
                 :model-value="formModel.file?.name"
                 placeholder="Upload file here"
                 readonly
                 class="grow shrink"
-                @click="onclick"
+                @click="open()"
               />
             </UButtonGroup>
-          </FormUpload>
+          </UFileUpload>
         </UFormField>
 
         <div class="flex justify-end">
