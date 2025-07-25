@@ -3,6 +3,11 @@ import { colors, createAssetColors } from './config/colors';
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@nuxt/eslint'],
+
+  pages: {
+    pattern: ['**/*.vue', '!**/_components/**', '!**/*/_utils/**']
+  },
+
   devtools: {
     enabled: true
   },
@@ -51,15 +56,7 @@ export default defineNuxtConfig({
   telemetry: false,
 
   hooks: {
-    'build:before': () => createAssetColors(),
-    'pages:extend': (pages) => {
-      const ignorePaths = ['_components', '_utils'];
-      const pagesToRemove = pages.filter((page) => page.path.split('/').some((path) => ignorePaths.includes(path)));
-
-      pagesToRemove.forEach((page) => {
-        pages.splice(pages.findIndex((p) => p.path === page.path), 1);
-      });
-    }
+    'build:before': () => createAssetColors()
   },
 
   eslint: {
