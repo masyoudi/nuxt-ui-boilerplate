@@ -1,5 +1,17 @@
 <script setup lang="ts">
-import type { Cell, CellContext, ColumnSort, Header, HeaderContext, Row, useVueTable } from '@tanstack/vue-table';
+import type {
+  CellContext,
+  ColumnSort,
+  HeaderContext,
+  Row,
+  ColumnPinningState,
+  ColumnSizingState,
+  ColumnSizingInfoState,
+  RowSelectionState,
+  RowPinningState,
+  GroupingState,
+  useVueTable
+} from '@tanstack/vue-table';
 import { promiseTimeout } from '@vueuse/core';
 import { tv } from 'tailwind-variants';
 import TableHeaderSelection from './TableHeaderSelection.vue';
@@ -9,19 +21,7 @@ import type { TableFetchParams } from '~/types/table';
 import { toArray } from '~~/shared/utils';
 import { findNodeChildrens } from '~~/app/utils/helpers';
 import theme from '#build/ui/table';
-
-interface TableMeta {
-  class?: {
-    tr?: string | ((row: Row<any>) => string);
-  };
-}
-
-interface ColumnMeta {
-  class?: {
-    th?: string | ((cell: Header<any, any>) => string);
-    td?: string | ((cell: Cell<any, any>) => string);
-  };
-}
+import type { TableProps, TableColumn as _TableColumn } from '#ui/components/Table.vue';
 
 interface GetDataResult {
   data: Record<string, any>[];
@@ -29,6 +29,7 @@ interface GetDataResult {
 }
 
 type Theme = typeof theme;
+type TableColumn = _TableColumn<any>;
 
 type UITable = Partial<Pick<Theme, 'slots'>['slots']>;
 
@@ -41,26 +42,44 @@ interface Props {
   serverPagination?: boolean;
   showPerPage?: boolean;
   paginationSimple?: boolean;
+  caption?: string;
   selectionField?: string;
-  selectionMeta?: ColumnMeta;
+  selectionMeta?: TableColumn['meta'];
   selectable?: boolean;
   selectableOrder?: number;
   numbering?: boolean;
   numberingLabel?: string;
   numberingOrder?: number;
-  numberingMeta?: ColumnMeta;
+  numberingMeta?: TableColumn['meta'];
   searchable?: boolean;
   searchFilter?: (currentItem: Record<string, any>, searchTerm: string) => boolean;
   multiSort?: boolean;
   iconSortAsc?: string;
   iconSortDesc?: string;
   iconUnsort?: string;
-  sticky?: boolean;
-  // sticky?: boolean | 'header' | 'footer'; // Incoming release
-  loadingColor?: keyof Theme['variants']['loadingColor'];
-  loadingAnimation?: keyof Theme['variants']['loadingAnimation'];
+  sticky?: TableProps['sticky'];
+  loadingColor?: TableProps['loadingColor'];
+  loadingAnimation?: TableProps['loadingAnimation'];
+  globalFilterOptions?: TableProps['globalFilterOptions'];
+  columnFiltersOptions?: TableProps['columnFiltersOptions'];
+  columnPinningOptions?: TableProps['columnPinningOptions'];
+  columnSizingOptions?: TableProps['columnSizingOptions'];
+  groupingOptions?: TableProps['groupingOptions'];
+  rowSelectionOptions?: TableProps['rowSelectionOptions'];
+  rowPinningOptions?: TableProps['rowPinningOptions'];
   toggleColumnVisibility?: boolean;
-  meta?: TableMeta;
+  /**
+   * Display table as card on mobile
+   */
+  mobileCards?: boolean;
+  /**
+   * Show sorting columns on mobile. Only applicable when mobileCards is true
+   */
+  showMobileSorting?: boolean;
+  meta?: TableProps['meta'];
+  onSelect?: TableProps['onSelect'];
+  onHover?: TableProps['onHover'];
+  onContextmenu?: TableProps['onContextmenu'];
   placeholderSearch?: string;
   ui?: UITable;
   uiToolbar?: UIToolbar;
@@ -82,6 +101,10 @@ const props = withDefaults(defineProps<Props>(), {
   },
   toggleColumnVisibility: true,
   multiSort: false,
+  iconSortAsc: 'lucide:arrow-up-narrow-wide',
+  iconSortDesc: 'lucide:arrow-down-wide-narrow',
+  iconUnsort: 'lucide:arrow-up-down',
+  mobileCards: true,
   placeholderSearch: 'Search...'
 });
 
@@ -176,19 +199,27 @@ const totalPagination = computed(() => {
   return data.value.length;
 });
 
+const columnPinning = defineModel<ColumnPinningState>('columnPinning', { default: () => ({}) });
+const columnSizing = defineModel<ColumnSizingState>('columnSizing', { default: () => ({}) });
+const columnSizingInfo = defineModel<ColumnSizingInfoState>('columnSizingInfo', { default: () => ({}) });
+const rowSelection = defineModel<RowSelectionState>('rowSelection', { default: () => ({}) });
+const rowPinning = defineModel<RowPinningState>('rowPinning', { default: () => ({}) });
+const grouping = defineModel<GroupingState>('grouping', { default: () => ([]) });
 const expanded = defineModel<Record<string, boolean>>('expanded', { default: () => ({}) });
 const columnVisibility = ref({});
 
-const table = useTemplateRef<{ tableApi: ReturnType<typeof useVueTable> }>('table');
+const table = useTemplateRef<{ tableApi: ReturnType<typeof useVueTable<any>> }>('table');
 
 const selection = defineModel<Record<string, any>[]>('selection', {
   default: () => [],
   required: false
 });
 
+const headerGroups = computed(() => table.value?.tableApi.getHeaderGroups() ?? []);
 const selectionColumn = computed(() => ({
   accessorKey: '__selection',
   label: 'Selection',
+  enableSorting: false,
   header: ({ table: tbl }: HeaderContext<any, any>) => h(TableHeaderSelection, {
     table: tbl,
     checked: selection.value,
@@ -211,12 +242,13 @@ const selectionColumn = computed(() => ({
       selection.value = selection.value.filter((item) => item?.[props.selectionField] !== value?.[props.selectionField]);
     }
   }),
-  meta: props.selectionMeta
+  meta: setColumnMeta(props.selectionMeta, 'Selection')
 }));
 
 const numberingColumn = computed(() => ({
   accessorKey: '__numbering',
   label: props.numberingLabel,
+  enableSorting: false,
   header: () => props.numberingLabel,
   cell: (ctx: CellContext<any, any>) => {
     const index = ctx.row.index;
@@ -226,7 +258,7 @@ const numberingColumn = computed(() => ({
 
     return h('span', page.value <= 1 ? index + 1 : (page.value - 1) * perPage.value + (index + 1));
   },
-  meta: props.numberingMeta
+  meta: setColumnMeta(props.numberingMeta, props.numberingLabel)
 }));
 
 const columnNodes = computed(() => findNodeChildrens(slots.default(), 'TableColumn'));
@@ -237,15 +269,25 @@ const columns = computed(() => {
     const children = node.children as any;
     const key = _props?.accessor ?? Math.random().toString(36).slice(2);
     const label = _props?.label ?? '';
+    const isSortable = Boolean(_props?.sortable) || (typeof _props?.sortable === 'string' && _props?.sortable === '');
+    const excludeProps = ['label', 'accessor', 'sortable', 'visible', 'meta'];
+    const parts = Object.entries(omit(_props ?? {}, excludeProps)).reduce((result, [key, value]) => {
+      const _key = key.split('-').map((v, i) => i > 0 ? v.substring(0, 1).toUpperCase() + v.substring(1) : v).join('');
+      result[_key] = value;
+
+      return result;
+    }, {} as Record<string, any>);
+    const slotData = {
+      data: data.value,
+      visibleData: visibleData.value
+    };
 
     return {
       accessorKey: key,
-      label: _props?.label,
+      label,
+      enableSorting: isSortable,
       header: (ctx: HeaderContext<any, any>) => {
-        if (
-          (typeof _props?.sortable === 'boolean' && _props?.sortable)
-          || (typeof _props?.sortable === 'string' && _props?.sortable === '')
-        ) {
+        if (isSortable) {
           const sortingProps = {
             label,
             column: ctx.column,
@@ -258,12 +300,14 @@ const columns = computed(() => {
           return h(TableHeaderSorting, sortingProps);
         }
 
-        return children?.header?.(ctx) ?? label;
+        return children?.header?.({ ...ctx, ...slotData }) ?? label;
       },
       cell: (ctx: CellContext<any, any>) => {
-        return children?.default?.({ ...ctx, item: ctx.row.original }) ?? ctx.row.original?.[key] ?? '';
+        return children?.default?.({ ...ctx, item: ctx.row.original, ...slotData }) ?? ctx.row.original?.[key] ?? '';
       },
-      meta: _props?.meta
+      ...(children?.footer && { footer: (ctx: HeaderContext<any, any>) => children?.footer?.({ ...ctx, ...slotData }) }),
+      meta: setColumnMeta(_props?.meta, label),
+      ...parts
     };
   });
 
@@ -294,6 +338,11 @@ const visibleColumns = computed(() => {
   }));
 });
 
+const columnsSortableIds = computed(() => columns.value.filter((c) => c.enableSorting).map((c) => c.accessorKey));
+const hasSorting = computed(() => {
+  return headerGroups.value.some((g) => g.headers.some((head) => columnsSortableIds.value.includes(head.id)));
+});
+
 const hasPrevPaginationSimple = computed(() => page.value > 1);
 const hasNextPaginationSimple = computed(() => {
   return (isServerPagination.value ? data.value.length : visibleData.value.length) >= perPage.value;
@@ -321,16 +370,49 @@ const themeTable = tv({
     caption: '',
     thead: '',
     tbody: '',
+    tfoot: '',
     tr: 'data-[selected=true]:bg-transparent',
     th: 'bg-muted dark:bg-(--ui-color-neutral-950)',
     td: 'whitespace-normal',
+    separator: '',
     empty: '',
     loading: ''
-  }
+  },
+  variants: {
+    mobileCards: {
+      true: {
+        tr: 'block lg:table-row',
+        th: 'hidden lg:table-cell',
+        td: [
+          'flex justify-between gap-2.5 lg:table-cell p-2.5 lg:p-4 text-right lg:text-left',
+          '[&:has([role=checkbox])]:pe-2.5 lg:[&:has([role=checkbox])]:pe-0',
+          'before:content-(--td-label) before:text-default before:font-semibold lg:before:content-[unset]'
+        ]
+      },
+      false: {}
+    },
+    loading: {
+      true: '',
+      false: ''
+    }
+  },
+  compoundVariants: [
+    {
+      mobileCards: true,
+      loading: false,
+      class: {
+        separator: 'bg-transparent lg:bg-(--ui-border-accented)'
+      }
+    }
+  ]
 });
 
 const uiTable = computed(() => {
-  const themeCustom = themeTable();
+  const themeCustom = themeTable({
+    mobileCards: props.mobileCards,
+    loading: loading.value
+  });
+
   return {
     root: themeCustom.root({ class: props.ui?.root }),
     base: themeCustom.base({ class: props.ui?.base }),
@@ -340,6 +422,7 @@ const uiTable = computed(() => {
     tr: themeCustom.tr({ class: props.ui?.tr }),
     th: themeCustom.th({ class: props.ui?.th }),
     td: themeCustom.td({ class: props.ui?.td }),
+    separator: themeCustom.separator({ class: props.ui?.separator }),
     empty: themeCustom.empty({ class: props.ui?.empty }),
     loading: themeCustom.loading({ class: props.ui?.loading })
   };
@@ -362,7 +445,7 @@ const uiTableBodySlots = computed(() => {
 
 const toolbarTheme = tv({
   slots: {
-    root: 'grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5',
+    root: 'grid grid-cols-1 xl:grid-cols-2 gap-5 mb-5',
     left: 'relative',
     leftWrapper: 'flex flex-wrap gap-3',
     right: 'relative',
@@ -411,6 +494,9 @@ async function fetchData() {
   }
 }
 
+/**
+ * Handle change page
+ */
 function onPageChange() {
   if (isServerPagination.value) {
     data.value = [];
@@ -418,11 +504,18 @@ function onPageChange() {
   }
 }
 
+/**
+ * Handle change per page
+ * @param val - Perpage value
+ */
 function onPerPageChange(val: number) {
   perPage.value = val;
   reset();
 }
 
+/**
+ * Reset and refetching data. only works for server pagination
+ */
 function reset() {
   if (Array.isArray(props.items)) {
     return;
@@ -436,6 +529,9 @@ function reset() {
   nextTick(fetchData);
 }
 
+/**
+ * Handle sorting
+ */
 function onSorting() {
   if (isServerPagination.value) {
     page.value = 1;
@@ -457,6 +553,9 @@ function onInputSearch() {
   page.value = 1;
 }
 
+/**
+ * Handle simple pagination back to previous page
+ */
 function onPrevPaginationSimple() {
   if (!hasPrevPaginationSimple.value) {
     return;
@@ -466,6 +565,9 @@ function onPrevPaginationSimple() {
   nextTick(onPageChange);
 }
 
+/**
+ * Handle simple pagination move to next page
+ */
 function onNextPaginationSimple() {
   if (!hasNextPaginationSimple.value) {
     return;
@@ -475,8 +577,34 @@ function onNextPaginationSimple() {
   nextTick(onPageChange);
 }
 
+function setColumnMeta(meta?: TableColumn['meta'], label?: string) {
+  if (typeof label !== 'string') {
+    return meta;
+  }
+
+  const styleTD = (cell: any) => {
+    const result = typeof meta?.style?.td === 'function' ? meta.style.td(cell) : meta?.style?.td;
+    const parts = {
+      '--td-label': `'${label}'`
+    };
+
+    if (typeof result !== 'string') {
+      return { ...result, ...parts };
+    }
+
+    return `${Object.entries(parts).map((v) => v.join(':')).join(';')};${result}`;
+  };
+
+  const style = {
+    th: meta?.style?.th,
+    td: styleTD
+  };
+
+  return { ...meta, style };
+}
+
 defineExpose({
-  tableApi: computed(() => table.value?.tableApi),
+  tableApi: table.value?.tableApi,
   reset
 });
 
@@ -542,9 +670,48 @@ onMounted(() => {
               label="Columns"
               color="info"
               variant="subtle"
-              trailing-icon="lucide:chart-no-axes-column"
+              icon="lucide:chart-no-axes-column"
             />
           </UDropdownMenu>
+
+          <UPopover
+            v-if="props.mobileCards && props.showMobileSorting && hasSorting"
+            :content="{
+              align: 'center'
+            }"
+          >
+            <UButton
+              label="Sorting"
+              :icon="props.iconUnsort"
+              class="inline-flex lg:hidden"
+            />
+
+            <template #content>
+              <div class="w-56 space-y-1 p-1">
+                <template
+                  v-for="(group, groupIndex) in headerGroups"
+                  :key="`mobile-sorting-group-${groupIndex}`"
+                >
+                  <TableHeaderSorting
+                    v-for="(header, index) in group.headers.filter((head) => columnsSortableIds.includes(head.id))"
+                    :key="`mobile-sorting-${groupIndex}-${index}`"
+                    v-bind="header.getContext()"
+                    v-slot="{ onsorting, isSorted }"
+                    :multiple="props.multiSort"
+                  >
+                    <UButton
+                      :label="columns.find((c) => c.accessorKey === header.id)?.label"
+                      :trailing-icon="isSorted ? isSorted === 'asc' ? props.iconSortAsc : props.iconSortDesc : props.iconUnsort"
+                      :color="isSorted ? 'primary' : 'neutral'"
+                      :variant="isSorted ? 'soft' : 'ghost'"
+                      block
+                      @click="onsorting"
+                    />
+                  </TableHeaderSorting>
+                </template>
+              </div>
+            </template>
+          </UPopover>
 
           <slot name="toolbar-left-trailing" />
         </div>
@@ -565,9 +732,23 @@ onMounted(() => {
       v-model:sorting="sorting"
       v-model:expanded="expanded"
       v-model:column-visibility="columnVisibility"
+      v-model:column-pinning="columnPinning"
+      v-model:column-sizing="columnSizing"
+      v-model:column-sizing-info="columnSizingInfo"
+      v-model:row-selection="rowSelection"
+      v-model:row-pinning="rowPinning"
+      v-model:grouping="grouping"
       :data="visibleData"
       :columns="columns"
+      :caption="props.caption"
       :loading="loading"
+      :global-filter-options="props.globalFilterOptions"
+      :column-filters-options="props.columnFiltersOptions"
+      :column-pinning-options="props.columnPinningOptions"
+      :column-sizing-options="props.columnSizingOptions"
+      :grouping-options="props.groupingOptions"
+      :row-selection-options="props.rowSelectionOptions"
+      :row-pinning-options="props.rowPinningOptions"
       :ui="uiTable"
       :meta="props.meta"
       :sorting-options="{
@@ -579,6 +760,9 @@ onMounted(() => {
       }"
       :loading-color="props.loadingColor"
       :sticky="props.sticky"
+      @select="props.onSelect"
+      @hover="props.onHover"
+      @contextmenu="props.onContextmenu"
       @update:sorting="onSorting"
     >
       <template

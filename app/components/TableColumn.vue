@@ -1,19 +1,37 @@
 <script setup lang="ts">
-import type { Cell, CellContext, Header, HeaderContext } from '@tanstack/vue-table';
+import type { CellContext, HeaderContext } from '@tanstack/vue-table';
+import type { TableColumn } from '#ui/components/Table.vue';
 
-interface ColumnMeta {
-  class?: {
-    th?: string | ((cell: Header<any, any>) => string);
-    td?: string | ((cell: Cell<any, any>) => string);
-  };
-}
+type Column = TableColumn<Record<string, any>>;
+
+type SlotData = {
+  item: Record<string, any>;
+  data: Record<string, any>[];
+  visibleData: Record<string, any>[];
+};
 
 interface Props {
   label?: string;
   accessor?: string;
   visible?: boolean;
   sortable?: boolean;
-  meta?: ColumnMeta;
+  meta?: Column['meta'];
+  enableHiding?: Column['enableHiding'];
+  enablePinning?: Column['enablePinning'];
+  enableColumnFilter?: Column['enableColumnFilter'];
+  filterFn?: Column['filterFn'];
+  enableGlobalFilter?: Column['enableGlobalFilter'];
+  enableMultiSort?: Column['enableMultiSort'];
+  sortUndefined?: Column['sortUndefined'];
+  aggregatedCell?: Column['aggregatedCell'];
+  aggregationFn?: Column['aggregationFn'];
+  enableGrouping?: Column['enableGrouping'];
+  getGroupingValue?: Column['getGroupingValue'];
+  enableResizing?: Column['enableResizing'];
+  maxSize?: Column['maxSize'];
+  minSize?: Column['minSize'];
+  size?: Column['size'];
+  getUniqueValues?: Column['getUniqueValues'];
 }
 
 defineOptions({
@@ -26,8 +44,9 @@ withDefaults(defineProps<Props>(), {
 });
 
 defineSlots<{
-  header: (options: HeaderContext<any, any>) => VNode[];
-  default: (options: CellContext<any, any> & { item: Record<string, any> }) => VNode[];
+  header: (slotProps: HeaderContext<any, any> & Omit<SlotData, 'item'>) => VNode[];
+  default: (slotProps: CellContext<any, any> & SlotData) => VNode[];
+  footer?: (slotProps: HeaderContext<any, any> & Omit<SlotData, 'item'>) => VNode[];
 }>();
 </script>
 

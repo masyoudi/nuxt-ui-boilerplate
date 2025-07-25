@@ -1,5 +1,7 @@
 import { Fragment, type Component, type VNode } from 'vue-demi';
 import { serialize as serializeFormData, type Options as FormDataBuilderOptions } from 'object-to-formdata';
+import { formatDate as _formatDate } from '@vueuse/core';
+import type { UseDateFormatOptions } from '@vueuse/core';
 
 /**
  * Find childrend nodes
@@ -91,4 +93,20 @@ export function trapFocus(element: HTMLElement) {
  */
 export function formDataBuilder(body: Record<string, any>, options?: FormDataBuilderOptions) {
   return serializeFormData(body, options ?? { indices: true });
+}
+
+/**
+ * Date formatter. See available format https://vueuse.org/shared/useDateFormat/#usedateformat
+ * @param date - Date to format
+ * @param formatTemplate - Template format
+ * @param options - Date format options
+ * @returns string
+ */
+export function formatDate(date: string | number | Date, formatTemplate: string, options: UseDateFormatOptions = { locales: 'id-ID' }) {
+  const _date = new Date(date);
+  if (Number.isNaN(_date.valueOf())) {
+    return '';
+  }
+
+  return _formatDate(_date, formatTemplate, options);
 }

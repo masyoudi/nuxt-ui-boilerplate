@@ -151,8 +151,9 @@ const formHandler = defineFormHandler({
           label="Hobbies"
           name="hobbies"
         >
-          <TagInput
+          <UInputTags
             v-model="formModel.hobbies"
+            class="w-full"
             placeholder="Input some item..."
           />
         </UFormField>
@@ -176,8 +177,8 @@ const formHandler = defineFormHandler({
           label="Resume"
           name="file"
         >
-          <FormUpload
-            v-slot="{ onclick }"
+          <UFileUpload
+            v-slot="{ open }"
             v-model="formModel.file"
             class="mb-5"
           >
@@ -187,17 +188,17 @@ const formHandler = defineFormHandler({
             >
               <UButton
                 label="Choose file"
-                @click="onclick"
+                @click="open()"
               />
               <UInput
                 :model-value="formModel.file?.name"
                 placeholder="Upload file here"
                 readonly
                 class="grow shrink"
-                @click="onclick"
+                @click="open()"
               />
             </UButtonGroup>
-          </FormUpload>
+          </UFileUpload>
         </UFormField>
 
         <div class="flex justify-end">

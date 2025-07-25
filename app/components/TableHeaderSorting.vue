@@ -15,11 +15,7 @@ defineOptions({
   inheritAttrs: false
 });
 
-const props = withDefaults(defineProps<Props>(), {
-  iconSortAsc: 'lucide:arrow-up-narrow-wide',
-  iconSortDesc: 'lucide:arrow-down-wide-narrow',
-  iconUnsort: 'lucide:arrow-up-down'
-});
+const props = defineProps<Props>();
 const isSorted = computed(() => props.column?.getIsSorted?.() ?? false);
 
 /**

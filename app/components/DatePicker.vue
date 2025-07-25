@@ -23,6 +23,7 @@ interface Props<R extends boolean> {
   calendarSize?: CalendarProps<any, any>['size'];
   icon?: string;
   trailingIcon?: string;
+  timeRange?: 'start' | 'end';
   min?: Date;
   max?: Date;
   creator?: (value: Date) => TModel<R>;
@@ -109,7 +110,12 @@ const vmodel = computed({
     }
 
     if (!props.range && val instanceof CalendarDate) {
-      const value = new Date(val.toDate(getLocalTimeZone()).setHours(0, 0, 0, 0));
+      type Hours = [number, number, number, number];
+      const d = new Date();
+      const currentHours: Hours = [d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()];
+      const hours: Hours = props.timeRange === 'start' ? [0, 0, 0, 0] : props.timeRange === 'end' ? [23, 59, 59, 999] : currentHours;
+      const value = new Date(val.toDate(getLocalTimeZone()).setHours(...hours));
+
       _model.value = value;
       emits('update:modelValue', props.creator(value));
     }
