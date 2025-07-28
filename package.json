@@ -32,7 +32,7 @@
     "@vueuse/core": "^13.5.0",
     "chroma-js": "^3.1.2",
     "defu": "^6.1.4",
-    "dotenv": "^17.2.0",
+    "dotenv": "^17.2.1",
     "imask": "^7.6.1",
     "nuxt": "^4.0.1",
     "object-to-formdata": "^4.5.1",
@@ -47,7 +47,7 @@
     "vue-imask": "^7.6.1",
     "vue-router": "^4.5.1",
     "winston": "^3.17.0",
-    "zod": "^4.0.8"
+    "zod": "^4.0.10"
   },
   "packageManager": "pnpm@10.13.1",
   "devDependencies": {
@@ -57,7 +57,7 @@
     "@iconify-json/ph": "^1.2.2",
     "@nuxt/eslint": "^1.7.1",
     "@types/chroma-js": "^3.1.1",
-    "eslint": "^9.31.0",
+    "eslint": "^9.32.0",
     "eslint-plugin-format": "^1.0.1",
     "lint-staged": "^16.1.2",
     "simple-git-hooks": "^2.13.0",
