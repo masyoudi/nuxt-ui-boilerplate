@@ -10,6 +10,7 @@ useHead({
 
 const nested = ref(false);
 const second = ref(false);
+const displayShow = ref(false);
 const fullscreen = ref(false);
 </script>
 
@@ -23,6 +24,12 @@ const fullscreen = ref(false);
           Nested
         </UButton>
         <UButton
+          color="secondary"
+          @click="displayShow = true"
+        >
+          Display Directive Show
+        </UButton>
+        <UButton
           color="success"
           @click="fullscreen = true"
         >
@@ -32,19 +39,52 @@ const fullscreen = ref(false);
 
       <AppModal
         v-model="nested"
-        display-directive="show"
       >
-        <div class="w-full flex gap-4">
+        <template #header>
+          <div class="text-lg font-semibold">
+            Nested Modal
+          </div>
+        </template>
+
+        <template #body>
+          <p
+            v-for="val in 2"
+            :key="val"
+          >
+            Lorem ipsum dolor, sit amet consectetur adipisicing elit. Quisquam tempora repudiandae at error in, molestiae aperiam.
+            Non amet placeat similique suscipit ipsum architecto voluptas deleniti eos laudantium? Labore, dicta nostrum?
+          </p>
+        </template>
+
+        <template #footer>
           <UButton @click="second = true">
             Second
           </UButton>
-        </div>
-        <p
-          v-for="val in 10"
-          :key="val"
-        >
-          Lorem ipsum dolor, sit amet consectetur adipisicing elit. Quisquam tempora repudiandae at error in, molestiae aperiam. Non amet placeat similique suscipit ipsum architecto voluptas deleniti eos laudantium? Labore, dicta nostrum?
-        </p>
+        </template>
+      </AppModal>
+
+      <AppModal
+        v-model="displayShow"
+        display-directive="show"
+      >
+        <template #header>
+          <div class="text-lg font-semibold">
+            Display Directive Show
+          </div>
+        </template>
+
+        <template #body>
+          <p>
+            Lorem ipsum dolor, sit amet consectetur adipisicing elit. Quisquam tempora repudiandae at error in, molestiae aperiam.
+            Non amet placeat similique suscipit ipsum architecto voluptas deleniti eos laudantium? Labore, dicta nostrum?
+          </p>
+        </template>
+
+        <template #footer>
+          <UButton @click="displayShow = false">
+            Close
+          </UButton>
+        </template>
       </AppModal>
 
       <AppModal
@@ -52,7 +92,8 @@ const fullscreen = ref(false);
         class="z-[55]"
       >
         <p>
-          Lorem ipsum dolor, sit amet consectetur adipisicing elit. Quisquam tempora repudiandae at error in, molestiae aperiam. Non amet placeat similique suscipit ipsum architecto voluptas deleniti eos laudantium? Labore, dicta nostrum?
+          Lorem ipsum dolor, sit amet consectetur adipisicing elit. Quisquam tempora repudiandae at error in, molestiae aperiam.
+          Non amet placeat similique suscipit ipsum architecto voluptas deleniti eos laudantium? Labore, dicta nostrum?
         </p>
       </AppModal>
 
@@ -60,38 +101,32 @@ const fullscreen = ref(false);
         v-model="fullscreen"
         fullscreen
       >
-        <UCard
-          :ui="{
-            root: 'flex flex-col h-screen rounded-none',
-            header: 'grow-0 shrink-0',
-            body: 'grow shrink overflow-y-auto',
-            footer: 'flex flex-wrap justify-end gap-3 grow-0 shrink-0'
-          }"
-        >
-          <template #header>
-            This is Header
-          </template>
+        <template #header>
+          This is Header
+        </template>
 
+        <template #body>
           <p
             v-for="val in 20"
             :key="val"
           >
-            Lorem ipsum dolor, sit amet consectetur adipisicing elit. Quisquam tempora repudiandae at error in, molestiae aperiam. Non amet placeat similique suscipit ipsum architecto voluptas deleniti eos laudantium? Labore, dicta nostrum?
+            Lorem ipsum dolor, sit amet consectetur adipisicing elit. Quisquam tempora repudiandae at error in, molestiae aperiam.
+            Non amet placeat similique suscipit ipsum architecto voluptas deleniti eos laudantium? Labore, dicta nostrum?
           </p>
+        </template>
 
-          <template #footer>
-            <UButton
-              color="neutral"
-              variant="outline"
-              @click="fullscreen = false"
-            >
-              Close
-            </UButton>
-            <UButton>
-              Submit
-            </UButton>
-          </template>
-        </UCard>
+        <template #footer>
+          <UButton
+            color="neutral"
+            variant="outline"
+            @click="fullscreen = false"
+          >
+            Close
+          </UButton>
+          <UButton>
+            Submit
+          </UButton>
+        </template>
       </AppModal>
     </UCard>
   </div>

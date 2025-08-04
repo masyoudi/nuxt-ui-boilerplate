@@ -5,7 +5,6 @@ import type { TransitionProps } from 'vue-demi';
 interface Props {
   teleport?: boolean;
   class?: string;
-  wrapper?: string;
   displayDirective?: 'if' | 'show';
   transition?: TransitionProps;
 }
@@ -48,8 +47,7 @@ const attributes = computed(() => {
 
 const theme = tv({
   slots: {
-    base: 'fixed inset-0 flex bg-black/30 z-50',
-    wrapper: 'fixed inset-0'
+    base: 'fixed inset-0 flex bg-black/30 z-50'
   }
 });
 const ui = theme();
@@ -84,14 +82,13 @@ function onBeforeLeave() {
         v-show="isDisplayShow"
         v-bind="attributes"
         :class="ui.base({ class: props.class })"
+        :data-open="open"
       >
-        <div :class="ui.wrapper({ class: props.wrapper })">
-          <slot
-            :entered="isEntered"
-            :is-display-if="isDisplayIf"
-            :is-display-show="isDisplayShow"
-          />
-        </div>
+        <slot
+          :entered="isEntered"
+          :is-display-if="isDisplayIf"
+          :is-display-show="isDisplayShow"
+        />
       </div>
     </Transition>
   </Teleport>

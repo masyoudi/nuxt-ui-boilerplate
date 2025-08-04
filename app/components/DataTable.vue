@@ -303,7 +303,8 @@ const columns = computed(() => {
         return children?.header?.({ ...ctx, ...slotData }) ?? label;
       },
       cell: (ctx: CellContext<any, any>) => {
-        return children?.default?.({ ...ctx, item: ctx.row.original, ...slotData }) ?? ctx.row.original?.[key] ?? '';
+        const item = ctx.row.original;
+        return children?.default?.({ ...ctx, item, ...slotData }) ?? getObjectValue(item, key, '') ?? '';
       },
       ...(children?.footer && { footer: (ctx: HeaderContext<any, any>) => children?.footer?.({ ...ctx, ...slotData }) }),
       meta: setColumnMeta(_props?.meta, label),
