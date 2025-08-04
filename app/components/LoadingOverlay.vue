@@ -1,15 +1,10 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants';
 
-interface UIElements {
-  wrapper?: string;
-  loading?: string;
-}
-
 interface Props {
   teleport?: boolean;
   class?: string;
-  ui?: UIElements;
+  ui?: Partial<Record<keyof ReturnType<typeof theme>, string>>;
 }
 
 defineOptions({
@@ -24,8 +19,7 @@ const open = defineModel<boolean>({ default: false, required: false });
 
 const theme = tv({
   slots: {
-    base: 'backdrop-blur-xs z-[1000]',
-    wrapper: 'flex justify-center items-center',
+    base: 'justify-center items-center backdrop-blur-xs z-[1000]',
     loading: 'border-x-white border-b-white'
   }
 });
@@ -45,7 +39,6 @@ const attributes = computed(() => {
     v-model="open"
     v-bind="attributes"
     :class="classes.base({ class: props.class })"
-    :wrapper="classes.wrapper({ class: props.ui?.wrapper })"
     :teleport="props.teleport"
   >
     <slot>
