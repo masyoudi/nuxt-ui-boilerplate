@@ -3,7 +3,7 @@
     <IMaskComponent
       :id="id"
       ref="inputRef"
-      v-model:typed="modelValue"
+      v-model:typed="vmodel"
       type="text"
       :name="name"
       :placeholder="placeholder"
@@ -49,27 +49,30 @@
 </template>
 
 <script setup lang="ts">
-import { tv, type VariantProps } from 'tailwind-variants';
-import type { AppConfig } from '@nuxt/schema';
+import { tv } from 'tailwind-variants';
 import type { FactoryArg } from 'imask';
+import type { InputProps } from '@nuxt/ui/components/Input.vue';
 import { IMaskComponent } from 'vue-imask';
-import type { InputHTMLAttributes } from 'vue';
+import type { InputHTMLAttributes, VNode } from 'vue';
 import _appConfig from '#build/app.config';
 import theme from '#build/ui/input';
 
-const appConfig = _appConfig as AppConfig & { ui: { input: Partial<typeof theme> } };
-const input = tv({ extend: tv(theme), ...(appConfig.ui?.input || {}) });
+type AppConfig = typeof _appConfig & {
+  ui: {
+    input: Partial<typeof theme>;
+  };
+};
 
-type InputVariants = VariantProps<typeof input>;
+const input = tv({ extend: tv(theme), ...((_appConfig as AppConfig).ui?.input || {}) });
 
 interface Props {
   modelValue?: string | number;
   mask?: Partial<FactoryArg>;
   name?: string;
   placeholder?: string;
-  color?: InputVariants['color'];
-  variant?: InputVariants['variant'];
-  size?: InputVariants['size'];
+  color?: InputProps['color'];
+  variant?: InputProps['variant'];
+  size?: InputProps['size'];
   required?: boolean;
   autocomplete?: InputHTMLAttributes['autocomplete'];
   autofocus?: boolean;
@@ -104,13 +107,13 @@ const emits = defineEmits<{
   (e: 'change', event: Event): void;
 }>();
 const slots = defineSlots<{
-  leading(props?: unknown): any;
-  default(props?: unknown): any;
-  trailing(props?: unknown): any;
+  leading(): VNode[];
+  default(): VNode[];
+  trailing(): VNode[];
 }>();
 
 const _value = ref('');
-const modelValue = computed({
+const vmodel = computed({
   get: () => String(props.modelValue ?? _value.value),
   set: (val) => {
     _value.value = String(val);
@@ -138,8 +141,7 @@ const { orientation, size: buttonGroupSize } = useButtonGroup<Props>(props);
 const inputSize = computed(() => buttonGroupSize.value || formGroupSize.value);
 
 const classes = computed(() => input({
-  type: 'text' as InputVariants['type'],
-  color: color.value as InputVariants['color'],
+  color: color.value,
   variant: props.variant,
   size: inputSize?.value,
   loading: props.loading,
