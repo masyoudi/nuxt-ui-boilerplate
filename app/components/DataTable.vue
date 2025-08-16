@@ -44,7 +44,9 @@ interface Props {
   paginationSimple?: boolean;
   caption?: string;
   selectionField?: string;
+  selectionLabel?: string;
   selectionMeta?: TableColumn['meta'];
+  selectionCheck?: (item: Record<string, any>, row: Row<any>) => boolean;
   selectable?: boolean;
   selectableOrder?: number;
   numbering?: boolean;
@@ -224,22 +226,30 @@ const selectionColumn = computed(() => ({
     table: tbl,
     checked: selection.value,
     field: props.selectionField,
-    onChange(val) {
-      selection.value = val;
+    label: props.selectionLabel,
+    selectionCheck: props.selectionCheck,
+    onChange(values) {
+      selection.value = values;
     }
   }),
   cell: ({ row }: CellContext<any, any>) => h(TableRowSelection, {
     row,
     checked: selection.value,
     field: props.selectionField,
+    ...(typeof props.selectionCheck === 'function' && { disabled: !props.selectionCheck(row.original, row) }),
     onChange() {
-      const value = row.original;
-      if (!selection.value.some((item) => item?.[props.selectionField] === value?.[props.selectionField])) {
-        selection.value.push(value);
+      const rowValue = row.original;
+      if (props.selectionCheck && !props.selectionCheck(rowValue, row)) {
         return;
       }
 
-      selection.value = selection.value.filter((item) => item?.[props.selectionField] !== value?.[props.selectionField]);
+      const field = props.selectionField;
+      if (!selection.value.some((item) => getObjectValue(item, field) === getObjectValue(rowValue, field))) {
+        selection.value.push(rowValue);
+        return;
+      }
+
+      selection.value = selection.value.filter((item) => getObjectValue(item, field) !== getObjectValue(rowValue, field));
     }
   }),
   meta: setColumnMeta(props.selectionMeta, 'Selection')
