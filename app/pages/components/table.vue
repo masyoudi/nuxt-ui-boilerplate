@@ -112,13 +112,6 @@ async function fetchData(params: Record<string, any>) {
         </TableColumn>
       </DataTable>
 
-      <div class="text-md mb-2">
-        Checked Rows
-      </div>
-      <div class="w-full overflow-x-auto">
-        <pre>{{ checkedRows }}</pre>
-      </div>
-
       <UPopover
         v-if="selectedRow"
         :open="openDebounced"

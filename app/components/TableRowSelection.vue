@@ -5,6 +5,7 @@ interface Props {
   row: Row<any>;
   checked: Record<string, any>[];
   field: string;
+  disabled?: boolean;
 }
 
 defineOptions({
@@ -21,7 +22,8 @@ const currentRow = computed(() => props.row);
 const checkedRows = computed(() => props.checked);
 
 const isChecked = computed(() => {
-  return checkedRows.value.some((item) => item?.[props.field] === currentRow.value?.original?.[props.field]);
+  const currentValue = getObjectValue(currentRow.value?.original, props.field);
+  return checkedRows.value.some((item) => getObjectValue(item, props.field) === currentValue);
 });
 </script>
 
@@ -29,6 +31,7 @@ const isChecked = computed(() => {
   <UCheckbox
     :model-value="isChecked"
     aria-label="Select row"
+    :disabled="props.disabled"
     @update:model-value="() => emits('change')"
   />
 </template>

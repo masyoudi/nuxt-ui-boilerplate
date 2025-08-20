@@ -67,7 +67,23 @@ export default defineNuxtConfig({
           });
         }
       }
-    ]
+    ],
+    optimizeDeps: {
+      include: [
+        '@internationalized/date',
+        '@vueuse/core',
+        '@vueuse/components',
+        '@unovis/ts',
+        '@unovis/vue',
+        'chroma-js',
+        'object-to-formdata',
+        'reka-ui',
+        'tailwind-variants',
+        'theme-colors',
+        'vue-imask',
+        'zod'
+      ]
+    }
   },
 
   typescript: {
