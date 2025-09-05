@@ -21,11 +21,11 @@ const theme = tv({
     trailing: 'group absolute inset-y-0 end-0 flex items-center disabled:cursor-not-allowed disabled:opacity-75',
     trailingIcon: 'shrink-0 text-dimmed',
     content: [
-      'max-h-60 w-(--reka-combobox-trigger-width) bg-default shadow-lg rounded-md ring ring-default overflow-hidden',
+      'w-(--reka-combobox-trigger-width) max-h-60 bg-default shadow-lg rounded-md ring ring-default overflow-hidden',
       'data-[state=open]:animate-[scale-in_100ms_ease-out] data-[state=closed]:animate-[scale-out_100ms_ease-in]',
       'origin-(--reka-combobox-content-transform-origin) pointer-events-auto'
     ],
-    viewport: 'scroll-py-1',
+    viewport: 'relative h-48 scroll-py-1 overflow-y-auto flex-1',
     group: 'p-1 isolate',
     label: 'font-semibold text-highlighted',
     separator: '-mx-1 my-1 h-px bg-border',

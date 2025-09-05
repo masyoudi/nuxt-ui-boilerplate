@@ -12,7 +12,6 @@ import {
   ComboboxRoot,
   ComboboxSeparator,
   ComboboxTrigger,
-  ComboboxViewport,
   TagsInputInput,
   TagsInputItem,
   TagsInputItemDelete,
@@ -190,6 +189,7 @@ const options = computed(() => {
 const page = ref(1);
 const hasMoreItems = ref(false);
 const isFetched = ref(false);
+const rootRef = useTemplateRef('rootRef');
 
 const _loading = ref(false);
 const isLoading = computed(() => props.loading || _loading.value);
@@ -241,6 +241,7 @@ async function fetchData() {
       return;
     }
 
+    const prevLastItem = data.value.at(data.value.length - 1);
     _loading.value = true;
     const query = props.transformFetchQuery({
       page: page.value,
@@ -261,6 +262,12 @@ async function fetchData() {
     page.value = hasMore ? page.value + 1 : page.value;
     isFetched.value = true;
     _loading.value = false;
+
+    // Prevent scroll to top
+    if (prevLastItem) {
+      await nextTick();
+      rootRef.value?.highlightItem?.(prevLastItem);
+    }
   }
   catch (err) {
     useRequestError(err);
@@ -364,20 +371,11 @@ function onSelect(event: Event, item: MultiSelectItem) {
 }
 
 /**
- * Handle infinity scroll combobox
- */
-function onScrollEnd() {
-  if (!isLoading.value && hasMoreItems.value && props.paginated && open.value) {
-    fetchData();
-  }
-}
-
-/**
  * Handle intersection observer
  */
 function onIntersectionBottom([entry]: IntersectionObserverEntry[]) {
-  if (entry?.isIntersecting) {
-    onScrollEnd();
+  if (entry?.isIntersecting && !isLoading.value && hasMoreItems.value && props.paginated && open.value) {
+    fetchData();
   }
 }
 
@@ -582,7 +580,8 @@ function onOpenContent() {
           />
         </ComboboxInput>
 
-        <ComboboxViewport
+        <div
+          role="presentation"
           :class="classes.viewport({ class: props.ui?.viewport })"
         >
           <ComboboxGroup
@@ -695,7 +694,7 @@ function onOpenContent() {
             v-intersection-observer="onIntersectionBottom"
             class="w-full h-0.5"
           />
-        </ComboboxViewport>
+        </div>
       </ComboboxContent>
     </ComboboxPortal>
   </ComboboxRoot>
