@@ -30,7 +30,7 @@ async function onTogglePopover() {
   <div class="w-full p-5">
     <UCard :ui="{ body: 'space-y-5' }">
       <UFormField label="Autocomplete">
-        <UButtonGroup
+        <UFieldGroup
           class="w-full"
         >
           <UButton>Group</UButton>
@@ -43,7 +43,7 @@ async function onTogglePopover() {
             :transform-fetch-data="(res) => toArray(res.data).map((val) => ({ value: val.id, label: val.person.fullName }))"
             :debounce="500"
           />
-        </UButtonGroup>
+        </UFieldGroup>
       </UFormField>
 
       <UFormField label="Multiselect">
@@ -155,6 +155,22 @@ async function onTogglePopover() {
           </template>
         </ClientOnly>
       </UFormField>
+
+      <div>
+        <UButton
+          color="neutral"
+          variant="outline"
+          trailing-icon="lucide:chevron-down"
+        >
+          <span>Settings</span>
+          <span class="size-4 inline-flex justify-center items-center group rounded-full hover:bg-error">
+            <UIcon
+              name="lucide:x"
+              class="size-4 group-hover:text-white z-[2]"
+            />
+          </span>
+        </UButton>
+      </div>
     </UCard>
   </div>
 </template>

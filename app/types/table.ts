@@ -10,4 +10,6 @@ export interface TableFetchParams {
   offset: number;
   q?: string;
   sorting?: Sorting[];
+  orderBy?: string;
+  orderDir?: 'asc' | 'desc';
 }

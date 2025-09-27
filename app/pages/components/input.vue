@@ -182,7 +182,7 @@ const formHandler = defineFormHandler({
             v-model="formModel.file"
             class="mb-5"
           >
-            <UButtonGroup
+            <UFieldGroup
               class="w-full"
               size="lg"
             >
@@ -197,7 +197,7 @@ const formHandler = defineFormHandler({
                 class="grow shrink"
                 @click="open()"
               />
-            </UButtonGroup>
+            </UFieldGroup>
           </UFileUpload>
         </UFormField>
 

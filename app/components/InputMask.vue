@@ -137,8 +137,8 @@ const {
   deferInputValidation: true
 });
 const { isLeading, isTrailing, leadingIconName, trailingIconName } = useComponentIcons(props);
-const { orientation, size: buttonGroupSize } = useButtonGroup<Props>(props);
-const inputSize = computed(() => buttonGroupSize.value || formGroupSize.value);
+const { orientation, size: fieldGroupSize } = useFieldGroup<Props>(props);
+const inputSize = computed(() => fieldGroupSize.value || formGroupSize.value);
 
 const classes = computed(() => input({
   color: color.value,
@@ -148,13 +148,17 @@ const classes = computed(() => input({
   highlight: highlight.value,
   leading: isLeading.value || !!slots.leading,
   trailing: isTrailing.value || !!slots.trailing,
-  buttonGroup: orientation.value
+  fieldGroup: orientation.value
 }));
 
 const inputRef = ref<HTMLInputElement | null>(null);
 const attrs: Record<string, any> = useAttrs();
 
-const attributes = computed(() => ({ ...attrs, ...ariaAttrs, ...(typeof props.mask === 'object' && props.mask) }));
+const attributes = computed(() => ({
+  ...attrs,
+  ...ariaAttrs,
+  ...(typeof props.mask === 'object' && props.mask)
+}));
 
 /**
  * Set autofocus

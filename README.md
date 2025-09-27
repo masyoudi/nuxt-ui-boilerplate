@@ -1,4 +1,4 @@
-# Nuxt v4 + Nuxt UI v3 Boilerplate
+# Dashboard Boilerplate with Nuxt v4 + Nuxt UI v4
 
 SSR version in [here](https://github.com/masyoudi/nuxt-ui-boilerplate/tree/ssr)
 

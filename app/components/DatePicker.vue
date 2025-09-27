@@ -5,11 +5,14 @@ import type { ButtonProps } from '#ui/components/Button.vue';
 import type { CalendarProps } from '#ui/components/Calendar.vue';
 import type { DatepickerValue } from '~/types/datepicker';
 import { toArray } from '~~/shared/utils';
+import theme from '~/theme/datepicker';
 
 type RangeValue = {
   start: CalendarDate;
   end: CalendarDate;
 };
+
+type Hours = [number, number, number, number];
 
 type TModel<R extends boolean = false> = R extends true ? DatepickerValue[] : DatepickerValue;
 
@@ -30,6 +33,8 @@ interface Props<R extends boolean> {
   formatter?: (value: Date) => string;
   placeholder?: string;
   dismissable?: boolean;
+  clearable?: boolean;
+  clearIcon?: string;
   teleport?: boolean;
   disabled?: boolean;
 }
@@ -39,13 +44,16 @@ const props = withDefaults(defineProps<Props<IsRange>>(), {
   variant: 'outline',
   placeholder: 'Select date',
   creator: (value: Date) => value as TModel<IsRange>,
+  trailingIcon: 'lucide:calendar',
   dismissable: true,
+  clearable: true,
+  clearIcon: 'lucide:x',
   teleport: true,
   disabled: false
 });
 
 const emits = defineEmits<{
-  (e: 'update:modelValue', value: DatepickerValue | DatepickerValue[]): void;
+  (e: 'update:modelValue', value?: DatepickerValue | DatepickerValue[]): void;
   (e: 'focus', event: FocusEvent): void;
   // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'blur', event: FocusEvent): void;
@@ -65,9 +73,12 @@ const {
   ariaAttrs,
   disabled
 } = useFormField<Props<IsRange>>(props, { deferInputValidation: true });
-const { size: buttonGroupSize } = useButtonGroup<Props<IsRange>>(props);
+const { size: fieldGroupSize } = useFieldGroup<Props<IsRange>>(props);
 
-const buttonSize = computed(() => buttonGroupSize.value || formGroupSize.value);
+const startHours: Hours = [0, 0, 0, 0];
+const endHours: Hours = [23, 59, 59, 999];
+
+const buttonSize = computed(() => fieldGroupSize.value || formGroupSize.value);
 const buttonId = ref(id.value ?? useId());
 const buttonElement = ref<HTMLButtonElement>();
 
@@ -101,26 +112,26 @@ const vmodel = computed({
     if (props.range && isValueRange(val as RangeValue)) {
       const { start, end } = val as RangeValue;
       const values = [
-        new Date(start.toDate(getLocalTimeZone()).setHours(0, 0, 0, 0)),
-        new Date(end.toDate(getLocalTimeZone()).setHours(23, 59, 59, 999))
+        new Date(start.toDate(getLocalTimeZone()).setHours(...startHours)),
+        new Date(end.toDate(getLocalTimeZone()).setHours(...endHours))
       ];
+      const formatted = values.map((v) => props.creator(v)) as DatepickerValue[];
 
       _model.value = values;
-      emits('update:modelValue', values.map((v) => props.creator(v)) as DatepickerValue[]);
+      emits('update:modelValue', formatted);
+      open.value = false;
     }
 
     if (!props.range && val instanceof CalendarDate) {
-      type Hours = [number, number, number, number];
       const d = new Date();
       const currentHours: Hours = [d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()];
-      const hours: Hours = props.timeRange === 'start' ? [0, 0, 0, 0] : props.timeRange === 'end' ? [23, 59, 59, 999] : currentHours;
+      const hours = props.timeRange === 'start' ? startHours : props.timeRange === 'end' ? endHours : currentHours;
       const value = new Date(val.toDate(getLocalTimeZone()).setHours(...hours));
 
       _model.value = value;
       emits('update:modelValue', props.creator(value));
+      open.value = false;
     }
-
-    open.value = false;
   }
 });
 
@@ -156,6 +167,13 @@ const displayDate = computed(() => {
   return format(val.toDate(getLocalTimeZone()));
 });
 
+const isClearable = computed(() => displayDate.value !== '' && props.clearable);
+
+const ui = computed(() => theme({
+  size: props.size,
+  hasValue: displayDate.value !== ''
+}));
+
 /**
  * Format display date
  * @param date - Date value
@@ -173,12 +191,14 @@ function format(date: Date) {
  * @param value - Range date value
  */
 function isValueRange(value: RangeValue) {
-  return (
-    Object.keys(value).length === 2
-    && Object.keys(value).every((k) => ['start', 'end'].includes(k))
-    && typeof value?.start === 'object'
-    && typeof value?.end === 'object'
-  );
+  const checks = [
+    Object.keys(value).length === 2,
+    Object.keys(value).every((k) => ['start', 'end'].includes(k)),
+    value?.start instanceof CalendarDate,
+    value?.end instanceof CalendarDate
+  ];
+
+  return checks.every((isValid) => isValid);
 }
 
 /**
@@ -243,6 +263,12 @@ function onKeydownArrowUpAndDown() {
   }
 }
 
+function onClear() {
+  _model.value = undefined;
+  emits('update:modelValue', props.range ? [] : undefined);
+  onUpdate(undefined);
+}
+
 watch(() => props.modelValue, () => {
   if (
     (props.range && Array.isArray(props.modelValue))
@@ -276,10 +302,10 @@ onMounted(() => {
         :id="buttonId"
         :color="color"
         :variant="props.variant"
-        class="justify-start font-normal group hover:bg-muted"
+        :class="ui.trigger()"
         :ui="{
-          leadingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700',
-          trailingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700'
+          leadingIcon: ui.triggerIcon(),
+          trailingIcon: ui.triggerTrailingIcon()
         }"
         block
         :icon="props.icon"
@@ -289,12 +315,24 @@ onMounted(() => {
         @keydown.up.prevent="onKeydownArrowUpAndDown"
         @keydown.down.prevent="onKeydownArrowUpAndDown"
       >
-        <span
-          class="overflow-hidden whitespace-nowrap"
-          :class="{ 'text-slate-400': !displayDate }"
-        >
+        <span :class="ui.value()">
           {{ displayDate ? displayDate : props.placeholder }}
         </span>
+
+        <template
+          v-if="isClearable"
+          #trailing
+        >
+          <span
+            :class="ui.clearAction()"
+            @click.prevent.stop="onClear"
+          >
+            <UIcon
+              :name="props.clearIcon"
+              :class="ui.clearIcon()"
+            />
+          </span>
+        </template>
       </UButton>
     </slot>
 
@@ -311,7 +349,7 @@ onMounted(() => {
 
       <slot
         name="footer"
-        :onclose="close"
+        :on-close="close"
       />
     </template>
   </UPopover>

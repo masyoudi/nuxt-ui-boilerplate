@@ -115,10 +115,10 @@ const {
 
 const {
   orientation,
-  size: buttonGroupSize
-} = useButtonGroup<Props>(props);
+  size: fieldGroupSize
+} = useFieldGroup<Props>(props);
 
-const inputSize = computed(() => buttonGroupSize.value || groupSize.value);
+const inputSize = computed(() => fieldGroupSize.value || groupSize.value);
 
 const theme = tv({
   slots: {

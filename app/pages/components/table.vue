@@ -70,94 +70,90 @@ async function fetchData(params: Record<string, any>) {
 
 <template>
   <div class="w-full p-5">
-    <UCard class="mb-5">
-      <div class="text-lg mb-5">
-        Server Side Pagination
-      </div>
-      <DataTable
-        v-model:selection="checkedRows"
-        :get-data="fetchData"
-        selectable
-        multi-sort
-        :numbering="false"
-        show-mobile-sorting
-        @pointermove="onPointermove"
-        @hover="onHover"
+    <div class="text-lg mb-5">
+      Server Side Pagination &amp; Responsive Table
+    </div>
+    <DataTable
+      v-model:selection="checkedRows"
+      :get-data="fetchData"
+      selectable
+      :numbering="false"
+      show-mobile-sorting
+      class="mb-5"
+      @pointermove="onPointermove"
+      @hover="onHover"
+    >
+      <TableColumn
+        label="ID"
+        accessor="id"
+      />
+      <TableColumn
+        v-slot="{ item }"
+        label="Name"
+        sortable
+        accessor="fullName"
       >
-        <TableColumn
-          label="ID"
-          accessor="id"
-        />
-        <TableColumn
-          v-slot="{ item }"
-          label="Name"
-          sortable
-          accessor="fullName"
-        >
-          {{ item.person.fullName }}
-        </TableColumn>
-        <TableColumn
-          v-slot="{ item }"
-          label="Email"
-          sortable
-          accessor="email"
-        >
-          {{ item.internet.email }}
-        </TableColumn>
-        <TableColumn
-          v-slot="{ item }"
-          label="Job"
-        >
-          {{ item.person.jobTitle }}
-        </TableColumn>
-      </DataTable>
+        {{ item.person.fullName }}
+      </TableColumn>
+      <TableColumn
+        v-slot="{ item }"
+        label="Email"
+        sortable
+        accessor="email"
+      >
+        {{ item.internet.email }}
+      </TableColumn>
+      <TableColumn
+        v-slot="{ item }"
+        label="Job"
+      >
+        {{ item.person.jobTitle }}
+      </TableColumn>
+    </DataTable>
 
-      <UPopover
-        v-if="selectedRow"
-        :open="openDebounced"
-        :reference="reference"
-        :content="{
-          side: 'top',
-          sideOffset: 16,
-          updatePositionStrategy: 'always'
-        }"
+    <UPopover
+      v-if="selectedRow"
+      :open="openDebounced"
+      :reference="reference"
+      :content="{
+        side: 'top',
+        sideOffset: 16,
+        updatePositionStrategy: 'always'
+      }"
+    >
+      <template #content>
+        <div class="px-4 py-2.5">
+          {{ selectedRow?.original?.person?.fullName }}
+        </div>
+      </template>
+    </UPopover>
+
+    <div class="text-lg mb-5">
+      Client Side Pagination
+    </div>
+    <DataTable
+      v-model:items="items"
+      v-model:column-pinning="columnPinning"
+      :mobile-cards="false"
+    >
+      <TableColumn
+        label="Todo"
+        accessor="todo"
+      />
+      <TableColumn
+        label="Description"
+        accessor="description"
       >
-        <template #content>
-          <div class="px-4 py-2.5">
-            {{ selectedRow?.original?.person?.fullName }}
-          </div>
+        <template #default="{ item }">
+          {{ item.description }}
         </template>
-      </UPopover>
-    </UCard>
 
-    <UCard>
-      <div class="text-lg mb-5">
-        Client Side Pagination
-      </div>
-      <DataTable
-        v-model:items="items"
-        v-model:column-pinning="columnPinning"
-        :mobile-cards="false"
-      >
-        <TableColumn
-          label="Todo"
-          accessor="todo"
-        />
-        <TableColumn
-          label="Description"
-          accessor="description"
-        >
-          <template #default="{ item }">
-            {{ item.description }}
-          </template>
-
-          <template #footer="{ data, visibleData }">
-            <p class="text-right">
-              Todo : {{ visibleData.length }}/{{ data.length }}
-            </p>
-          </template>
-        </TableColumn>
-      </DataTable>
-    </UCard>
+        <template #footer="{ data, visibleData }">
+          <p class="text-right">
+            Todo : {{ visibleData.length }}/{{ data.length }}
+          </p>
+        </template>
+      </TableColumn>
+    </DataTable>
   </div>
 </template>
