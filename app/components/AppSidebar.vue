@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useThrottleFn } from '@vueuse/core';
-import theme from '~/utils/theme/sidebar';
+import theme from '~/theme/sidebar';
 
 const open = defineModel<boolean>('open', {
   default: false,

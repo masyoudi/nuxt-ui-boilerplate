@@ -24,7 +24,7 @@ const files = ref<File[]>([]);
           v-model="file"
           accept=".pdf"
         >
-          <UButtonGroup
+          <UFieldGroup
             class="w-full"
             size="lg"
           >
@@ -39,7 +39,7 @@ const files = ref<File[]>([]);
               class="grow shrink"
               @click="open()"
             />
-          </UButtonGroup>
+          </UFieldGroup>
         </UFileUpload>
       </UFormField>
 

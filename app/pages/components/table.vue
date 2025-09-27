@@ -65,82 +65,78 @@ async function fetchData(params: Record<string, any>) {
 
 <template>
   <div class="w-full p-5">
-    <UCard class="mb-5">
-      <div class="text-lg mb-5">
-        Server Side Pagination
-      </div>
-      <DataTable
-        v-model:selection="checkedRows"
-        :get-data="fetchData"
-        selectable
-        multi-sort
-        :selectable-order="0"
-        :numbering-order="1"
-        show-mobile-sorting
-        @pointermove="onPointermove"
-        @hover="onHover"
+    <div class="text-lg mb-5">
+      Server Side Pagination
+    </div>
+    <DataTable
+      v-model:selection="checkedRows"
+      :get-data="fetchData"
+      selectable
+      :selectable-order="0"
+      :numbering-order="1"
+      show-mobile-sorting
+      class="mb-5"
+      @pointermove="onPointermove"
+      @hover="onHover"
+    >
+      <TableColumn
+        label="Task"
+        accessor="task"
+        sortable
+      />
+      <TableColumn
+        v-slot="{ item }"
+        label="Description"
+        accessor="description"
+        sortable
       >
-        <TableColumn
-          label="Task"
-          accessor="task"
-          sortable
-        />
-        <TableColumn
-          v-slot="{ item }"
-          label="Description"
-          accessor="description"
-          sortable
-        >
+        {{ item.description }}
+      </TableColumn>
+    </DataTable>
+
+    <UPopover
+      v-if="selectedRow"
+      :open="openDebounced"
+      :reference="reference"
+      :content="{
+        side: 'top',
+        sideOffset: 16,
+        updatePositionStrategy: 'always'
+      }"
+    >
+      <template #content>
+        <div class="px-4 py-2.5">
+          {{ selectedRow?.original?.task }}
+        </div>
+      </template>
+    </UPopover>
+
+    <div class="text-lg mb-5">
+      Client Side Pagination
+    </div>
+    <DataTable
+      v-model:items="items"
+      v-model:column-pinning="columnPinning"
+      :mobile-cards="false"
+    >
+      <TableColumn
+        label="Todo"
+        accessor="todo"
+      />
+      <TableColumn
+        label="Description"
+        accessor="description"
+      >
+        <template #default="{ item }">
           {{ item.description }}
-        </TableColumn>
-      </DataTable>
-
-      <UPopover
-        v-if="selectedRow"
-        :open="openDebounced"
-        :reference="reference"
-        :content="{
-          side: 'top',
-          sideOffset: 16,
-          updatePositionStrategy: 'always'
-        }"
-      >
-        <template #content>
-          <div class="px-4 py-2.5">
-            {{ selectedRow?.original?.task }}
-          </div>
         </template>
-      </UPopover>
-    </UCard>
 
-    <UCard>
-      <div class="text-lg mb-5">
-        Client Side Pagination
-      </div>
-      <DataTable
-        v-model:items="items"
-        v-model:column-pinning="columnPinning"
-        :mobile-cards="false"
-      >
-        <TableColumn
-          label="Todo"
-          accessor="todo"
-        />
-        <TableColumn
-          label="Description"
-          accessor="description"
-        >
-          <template #default="{ item }">
-            {{ item.description }}
-          </template>
-
-          <template #footer="{ data, visibleData }">
-            <p class="text-right">
-              Todo : {{ visibleData.length }}/{{ data.length }}
-            </p>
-          </template>
-        </TableColumn>
-      </DataTable>
-    </UCard>
+        <template #footer="{ data, visibleData }">
+          <p class="text-right">
+            Todo : {{ visibleData.length }}/{{ data.length }}
+          </p>
+        </template>
+      </TableColumn>
+    </DataTable>
   </div>
 </template>

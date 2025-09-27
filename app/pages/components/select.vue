@@ -30,7 +30,7 @@ async function onTogglePopover() {
   <div class="w-full p-5">
     <UCard :ui="{ body: 'space-y-5' }">
       <UFormField label="Autocomplete">
-        <UButtonGroup
+        <UFieldGroup
           class="w-full"
         >
           <UButton>Group</UButton>
@@ -42,7 +42,7 @@ async function onTogglePopover() {
             :transform-fetch-data="(res) => toArray(res.data).map((val) => ({ value: val.id, label: val.task }))"
             :debounce="500"
           />
-        </UButtonGroup>
+        </UFieldGroup>
       </UFormField>
 
       <UFormField label="Multiselect">

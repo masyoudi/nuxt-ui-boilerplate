@@ -157,7 +157,7 @@ async function onSubmit() {
             v-model="formModel.file"
             class="mb-5"
           >
-            <UButtonGroup
+            <UFieldGroup
               class="w-full"
               size="lg"
             >
@@ -172,7 +172,7 @@ async function onSubmit() {
                 class="grow shrink"
                 @click="open()"
               />
-            </UButtonGroup>
+            </UFieldGroup>
           </UFileUpload>
         </UFormField>
 

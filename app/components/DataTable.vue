@@ -12,7 +12,6 @@ import type {
   GroupingState,
   useVueTable
 } from '@tanstack/vue-table';
-import { promiseTimeout } from '@vueuse/core';
 import { tv } from 'tailwind-variants';
 import TableHeaderSelection from './TableHeaderSelection.vue';
 import TableRowSelection from './TableRowSelection.vue';
@@ -22,6 +21,7 @@ import { toArray } from '~~/shared/utils';
 import { findNodeChildrens } from '~~/app/utils/helpers';
 import theme from '#build/ui/table';
 import type { TableProps, TableColumn as _TableColumn } from '#ui/components/Table.vue';
+import { themeCard, themeTable, themeToolbar } from '~/theme/data-table';
 
 interface GetDataResult {
   data: Record<string, any>[];
@@ -33,7 +33,7 @@ type TableColumn = _TableColumn<any>;
 
 type UITable = Partial<Pick<Theme, 'slots'>['slots']>;
 
-type UIToolbar = Partial<Record<keyof ReturnType<typeof toolbarTheme>, string>>;
+type UIToolbar = Partial<Record<keyof ReturnType<typeof themeToolbar>, string>>;
 
 interface Props {
   items?: Record<string, any>[];
@@ -83,6 +83,8 @@ interface Props {
   onHover?: TableProps['onHover'];
   onContextmenu?: TableProps['onContextmenu'];
   placeholderSearch?: string;
+  asCard?: boolean;
+  class?: any;
   ui?: UITable;
   uiToolbar?: UIToolbar;
 }
@@ -107,6 +109,7 @@ const props = withDefaults(defineProps<Props>(), {
   iconSortDesc: 'lucide:arrow-down-wide-narrow',
   iconUnsort: 'lucide:arrow-up-down',
   mobileCards: true,
+  asCard: true,
   placeholderSearch: 'Search...'
 });
 
@@ -118,7 +121,6 @@ const emits = defineEmits<{
 const slots = defineSlots<{
   'default': () => VNode[];
   'expanded': (slotProps: { row: Row<any> }) => VNode[];
-  'filter': (slotProps: { loading: boolean; data: Record<string, any>[] }) => VNode[];
   'toolbar-left-leading': () => VNode[];
   'toolbar-left-trailing': () => VNode[];
   'toolbar-right': () => VNode[];
@@ -138,17 +140,17 @@ const slots = defineSlots<{
   }) => VNode[];
   'top': () => VNode[];
   'middle': () => VNode[];
-  'bottom-up': () => VNode[];
-  'bottom-down': () => VNode[];
+  'footer': () => VNode[];
+  'bottom': () => VNode[];
   'loading': () => VNode[];
   'empty': () => VNode[];
 }>();
 
-const _data = ref<Record<string, any>[]>([]);
+const _values = ref<Record<string, any>[]>([]);
 const data = computed({
-  get: () => Array.isArray(props.items) ? props.items : _data.value,
+  get: () => Array.isArray(props.items) ? props.items : _values.value,
   set: (val) => {
-    _data.value = val;
+    _values.value = val;
     emits('update:items', val);
   }
 });
@@ -274,19 +276,21 @@ const numberingColumn = computed(() => ({
 const columnNodes = computed(() => findNodeChildrens(slots.default(), 'TableColumn'));
 
 const columns = computed(() => {
-  const result = columnNodes.value.map((node) => {
+  const nodes = columnNodes.value.filter((node) => node.props?.visible === '' || Boolean(node.props?.visible ?? true));
+  const result = nodes.map((node) => {
     const _props = node.props;
     const children = node.children as any;
     const key = _props?.accessor ?? Math.random().toString(36).slice(2);
     const label = _props?.label ?? '';
-    const isSortable = Boolean(_props?.sortable) || (typeof _props?.sortable === 'string' && _props?.sortable === '');
-    const excludeProps = ['label', 'accessor', 'sortable', 'visible', 'meta'];
-    const parts = Object.entries(omit(_props ?? {}, excludeProps)).reduce((result, [key, value]) => {
+    const isSortable = _props?.sortable === '' || Boolean(_props?.sortable ?? true);
+    const ignoreProps = ['label', 'accessor', 'sortable', 'visible', 'meta'];
+    const parts = Object.entries(omit(_props ?? {}, ignoreProps)).reduce((result, [key, value]) => {
       const _key = key.split('-').map((v, i) => i > 0 ? v.substring(0, 1).toUpperCase() + v.substring(1) : v).join('');
       result[_key] = value;
 
       return result;
     }, {} as Record<string, any>);
+
     const slotData = {
       data: data.value,
       visibleData: visibleData.value
@@ -374,68 +378,24 @@ const hasToolbar = computed(() => {
 
 const mounted = ref(true);
 
-const themeTable = tv({
-  slots: {
-    root: 'border-t border-t-default',
-    base: '',
-    caption: '',
-    thead: '',
-    tbody: '',
-    tfoot: '',
-    tr: 'data-[selected=true]:bg-transparent',
-    th: 'bg-muted dark:bg-(--ui-color-neutral-950)',
-    td: 'whitespace-normal',
-    separator: '',
-    empty: '',
-    loading: ''
-  },
-  variants: {
-    mobileCards: {
-      true: {
-        tr: 'block lg:table-row',
-        th: 'hidden lg:table-cell',
-        td: [
-          'flex justify-between gap-2.5 lg:table-cell p-2.5 lg:p-4 text-right lg:text-left',
-          '[&:has([role=checkbox])]:pe-2.5 lg:[&:has([role=checkbox])]:pe-0',
-          'before:content-(--td-label) before:text-default before:font-semibold lg:before:content-[unset]'
-        ]
-      },
-      false: {}
-    },
-    loading: {
-      true: '',
-      false: ''
-    }
-  },
-  compoundVariants: [
-    {
-      mobileCards: true,
-      loading: false,
-      class: {
-        separator: 'bg-transparent lg:bg-(--ui-border-accented)'
-      }
-    }
-  ]
-});
-
 const uiTable = computed(() => {
-  const themeCustom = themeTable({
+  const _ui = themeTable({
     mobileCards: props.mobileCards,
     loading: loading.value
   });
 
   return {
-    root: themeCustom.root({ class: props.ui?.root }),
-    base: themeCustom.base({ class: props.ui?.base }),
-    caption: themeCustom.caption({ class: props.ui?.caption }),
-    thead: themeCustom.thead({ class: props.ui?.thead }),
-    tbody: themeCustom.tbody({ class: props.ui?.tbody }),
-    tr: themeCustom.tr({ class: props.ui?.tr }),
-    th: themeCustom.th({ class: props.ui?.th }),
-    td: themeCustom.td({ class: props.ui?.td }),
-    separator: themeCustom.separator({ class: props.ui?.separator }),
-    empty: themeCustom.empty({ class: props.ui?.empty }),
-    loading: themeCustom.loading({ class: props.ui?.loading })
+    root: _ui.root({ class: props.ui?.root }),
+    base: _ui.base({ class: props.ui?.base }),
+    caption: _ui.caption({ class: props.ui?.caption }),
+    thead: _ui.thead({ class: props.ui?.thead }),
+    tbody: _ui.tbody({ class: props.ui?.tbody }),
+    tr: _ui.tr({ class: props.ui?.tr }),
+    th: _ui.th({ class: props.ui?.th }),
+    td: _ui.td({ class: props.ui?.td }),
+    separator: _ui.separator({ class: props.ui?.separator }),
+    empty: _ui.empty({ class: props.ui?.empty }),
+    loading: _ui.loading({ class: props.ui?.loading })
   };
 });
 
@@ -454,17 +414,10 @@ const uiTableBodySlots = computed(() => {
   };
 });
 
-const toolbarTheme = tv({
-  slots: {
-    root: 'grid grid-cols-1 xl:grid-cols-2 gap-5 mb-5',
-    left: 'relative',
-    leftWrapper: 'flex flex-wrap gap-3',
-    right: 'relative',
-    rightWrapper: 'flex flex-wrap justify-end gap-3'
-  }
-});
-const uiToolbar = computed(() => {
-  const _ui = toolbarTheme();
+const toolbar = computed(() => {
+  const _ui = themeToolbar({
+    asCard: props.asCard
+  });
 
   return {
     root: _ui.root({ class: props.uiToolbar?.root }),
@@ -474,6 +427,8 @@ const uiToolbar = computed(() => {
     rightWrapper: _ui.rightWrapper({ class: props.uiToolbar?.rightWrapper })
   };
 });
+
+const uiCard = themeCard();
 
 /**
  * Get data
@@ -485,16 +440,25 @@ async function fetchData() {
     }
 
     loading.value = true;
+    const _sorting = sorting.value.map((v) => ({
+      col: v.id,
+      dir: v.desc ? 'desc' as const : 'asc' as const
+    }));
     const { data: _data, total: _total } = await props.getData({
       page: page.value,
       perpage: perPage.value,
       limit: perPage.value,
       offset: perPage.value * (page.value - 1),
       q: search.value,
-      sorting: sorting.value.map((v) => ({ col: v.id, dir: v.desc ? 'desc' : 'asc' }))
+      ...(props.multiSort && _sorting.length > 0 && {
+        sorting: _sorting
+      }),
+      ...(!props.multiSort && _sorting.length === 1 && {
+        orderBy: _sorting[0]?.col,
+        orderDir: _sorting[0]?.dir
+      })
     });
 
-    await promiseTimeout(700);
     data.value = _data;
     total.value = isServerPagination.value ? _total ?? 0 : toArray(_data).length;
 
@@ -631,15 +595,15 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="w-full">
+  <div :class="props.asCard ? uiCard.root({ class: props.class }) : ['w-full', props.class]">
     <slot name="top" />
 
     <div
       v-if="hasToolbar"
-      :class="uiToolbar.root"
+      :class="toolbar.root"
     >
-      <div :class="uiToolbar.left">
-        <div :class="uiToolbar.leftWrapper">
+      <div :class="toolbar.left">
+        <div :class="toolbar.leftWrapper">
           <slot name="toolbar-left-leading" />
 
           <div
@@ -728,8 +692,8 @@ onMounted(() => {
         </div>
       </div>
 
-      <div :class="uiToolbar.right">
-        <div :class="uiToolbar.rightWrapper">
+      <div :class="toolbar.right">
+        <div :class="toolbar.rightWrapper">
           <slot name="toolbar-right" />
         </div>
       </div>
@@ -836,11 +800,12 @@ onMounted(() => {
       </template>
     </UTable>
 
-    <slot name="bottom-up" />
+    <slot name="footer" />
 
     <div
       v-if="props.paginated"
-      class="flex border-t border-t-(--ui-border) py-4"
+      class="flex border-t border-t-(--ui-border) pt-4"
+      :class="{ 'px-5': props.asCard }"
     >
       <UPagination
         v-if="!props.paginationSimple"
@@ -879,6 +844,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <slot name="bottom-down" />
+    <slot name="bottom" />
   </div>
 </template>

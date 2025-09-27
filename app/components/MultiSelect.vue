@@ -23,8 +23,8 @@ import type { FetchResponse } from 'ofetch';
 import { useDebounceFn, createReusableTemplate } from '@vueuse/core';
 import { vIntersectionObserver } from '@vueuse/components';
 import defu from 'defu';
-import theme from '~/utils/theme/multi-select';
-import type { MultiSelectColor, MultiSelectSize, MultiSelectVariant } from '~/utils/theme/multi-select';
+import theme from '~/theme/multi-select';
+import type { MultiSelectColor, MultiSelectSize, MultiSelectVariant } from '~/theme/multi-select';
 import type { MultiSelectItem } from '~/types/multi-select';
 import type { InputProps } from '#ui/types';
 
@@ -129,8 +129,8 @@ const {
 
 const {
   orientation,
-  size: buttonGroupSize
-} = useButtonGroup<InputProps>(props);
+  size: fieldGroupSize
+} = useFieldGroup<InputProps>(props);
 
 const {
   isLeading,
@@ -139,7 +139,7 @@ const {
   trailingIconName
 } = useComponentIcons(toRef(() => defu(props, { trailingIcon: props.trailingIcon })));
 
-const inputSize = computed(() => buttonGroupSize.value || formGroupSize.value);
+const inputSize = computed(() => fieldGroupSize.value || formGroupSize.value);
 
 const _selected = ref<ModelValue<M>>();
 const selected = computed({
@@ -270,7 +270,7 @@ async function fetchData() {
     }
   }
   catch (err) {
-    useRequestError(err);
+    useRequestErrorParser(err);
     _loading.value = false;
   }
 }

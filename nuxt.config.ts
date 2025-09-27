@@ -48,6 +48,7 @@ export default defineNuxtConfig({
     strict: true,
     tsConfig: {
       compilerOptions: {
+        allowArbitraryExtensions: true,
         types: ['./app/types/app.d.ts']
       }
     }

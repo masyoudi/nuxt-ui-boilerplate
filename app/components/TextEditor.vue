@@ -416,7 +416,7 @@ onUnmounted(() => {
     class="relative w-full bg-(--ui-bg) border rounded-md tiptap"
     :class="isFocused ? 'border-(--ui-color-primary-500)' : 'border-(--ui-border-accented)'"
   >
-    <div class="flex flex-wrap bg-muted gap-2 p-2 rounded-t-md border-b border-b-(--ui-border-accented)">
+    <div class="flex flex-wrap bg-slate-50 gap-2 p-2 rounded-t-md border-b border-b-(--ui-border-accented)">
       <UDropdownMenu
         v-if="isEnable('heading')"
         :items="headings"
@@ -425,7 +425,7 @@ onUnmounted(() => {
       >
         <UButton
           :label="headings.find((val) => editor?.isActive('heading', { level: val.id }))?.label ?? 'Paragraph'"
-          color="neutral"
+          color="primary"
           size="sm"
           block
           class="max-w-[115px] justify-between"
@@ -463,8 +463,8 @@ onUnmounted(() => {
         >
           <UButton
             size="sm"
-            :color="item.active() ? 'primary' : 'neutral'"
-            variant="subtle"
+            color="primary"
+            :variant="item.active() ? 'solid' : 'subtle'"
             :icon="item.icon"
             class="cursor-pointer"
             @click="item.command"
@@ -488,7 +488,7 @@ onUnmounted(() => {
         >
           <UButton
             :icon="textAligns.find((v) => editor?.isActive({ textAlign: v.id }))?.icon ?? 'lucide:align-left'"
-            color="neutral"
+            color="primary"
             size="sm"
             variant="subtle"
           />
@@ -502,8 +502,8 @@ onUnmounted(() => {
       >
         <UButton
           icon="lucide:link"
-          :color="editor?.isActive('link') ? 'primary' : 'neutral'"
-          variant="subtle"
+          color="primary"
+          :variant="editor?.isActive('link') ? 'solid' : 'subtle'"
           size="sm"
           @click="onOpenLink"
         />

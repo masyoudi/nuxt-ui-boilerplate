@@ -49,14 +49,14 @@ const timePicker = ref('');
         label="Timepicker"
         class="mb-5"
       >
-        <UButtonGroup class="w-full">
+        <UFieldGroup class="w-full">
           <UButton label="Timepicker" />
           <TimePicker
             v-model="timePicker"
             class="grow shrink"
             color="error"
           />
-        </UButtonGroup>
+        </UFieldGroup>
       </UFormField>
     </UCard>
   </div>

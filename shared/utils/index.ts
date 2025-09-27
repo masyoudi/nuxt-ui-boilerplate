@@ -21,8 +21,8 @@ export function omit<T extends object, Keys extends keyof T>(source: T, keys: Ke
  * @param assign - Force assign to array
  * @returns array
  */
-export function toArray<T>(value: T | T[], assign: boolean = false): T[] {
-  return Array.isArray(value) ? [...value] : assign ? [value] : [];
+export function toArray<T>(value: T | T[], assign: boolean = false): NonNullable<T>[] {
+  return Array.isArray(value) ? [...(value as any)] : assign ? [value!] : [];
 }
 
 /**

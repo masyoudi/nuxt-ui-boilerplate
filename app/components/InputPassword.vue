@@ -1,15 +1,15 @@
 <template>
-  <UInput :type="show ? 'text' : 'password'">
+  <UInput :type="visible ? 'text' : 'password'">
     <template #trailing>
       <UButton
         color="neutral"
         variant="link"
         :size="props.buttonSize"
-        :icon="show ? 'lucide:eye-closed' : 'lucide:eye'"
-        :aria-label="show ? 'Hide password' : 'Show password'"
-        :aria-pressed="show"
+        :icon="visible ? 'lucide:eye-closed' : 'lucide:eye'"
+        :aria-label="visible ? 'Hide password' : 'Show password'"
+        :aria-pressed="visible"
         aria-controls="password"
-        @click="show = !show"
+        @click="visible = !visible"
       />
     </template>
   </UInput>
@@ -26,5 +26,5 @@ const props = withDefaults(defineProps<Props>(), {
   buttonSize: 'md'
 });
 
-const show = ref(false);
+const visible = ref(false);
 </script>

@@ -4,6 +4,7 @@ import { formatDate } from '@vueuse/core';
 import type { ButtonProps } from '#ui/components/Button.vue';
 import type { CalendarProps } from '#ui/components/Calendar.vue';
 import type { DatepickerValue } from '~/types/datepicker';
+import theme from '~/theme/datepicker';
 
 interface Props {
   id?: string;
@@ -20,6 +21,8 @@ interface Props {
   formatter?: (value: Date) => string;
   placeholder?: string;
   dismissable?: boolean;
+  clearable?: boolean;
+  clearIcon?: string;
   teleport?: boolean;
   disabled?: boolean;
 }
@@ -30,12 +33,14 @@ const props = withDefaults(defineProps<Props>(), {
   placeholder: 'Select date',
   creator: (value: Date) => value as DatepickerValue,
   dismissable: true,
+  clearable: true,
+  clearIcon: 'lucide:x',
   teleport: true,
   disabled: false
 });
 
 const emits = defineEmits<{
-  (e: 'update:modelValue', value: DatepickerValue): void;
+  (e: 'update:modelValue', value?: DatepickerValue): void;
   (e: 'focus', event: FocusEvent): void;
   // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'blur', event: FocusEvent): void;
@@ -53,9 +58,9 @@ const {
   ariaAttrs,
   disabled
 } = useFormField<Props>(props, { deferInputValidation: true });
-const { size: buttonGroupSize } = useButtonGroup<Props>(props);
+const { size: fieldGroupSize } = useFieldGroup<Props>(props);
 
-const buttonSize = computed(() => buttonGroupSize.value || formGroupSize.value);
+const buttonSize = computed(() => fieldGroupSize.value || formGroupSize.value);
 const buttonId = ref(id.value ?? useId());
 const buttonElement = ref<HTMLButtonElement>();
 
@@ -115,6 +120,13 @@ const displayDate = computed(() => {
   const val = vmodel.value as CalendarDateTime;
   return format(val.toDate(getLocalTimeZone()));
 });
+
+const isClearable = computed(() => displayDate.value !== '' && props.clearable);
+
+const ui = computed(() => theme({
+  size: props.size,
+  hasValue: displayDate.value !== ''
+}));
 
 /**
  * Format display date
@@ -207,6 +219,12 @@ function close() {
   open.value = false;
 }
 
+function onClear() {
+  _model.value = undefined;
+  emits('update:modelValue', undefined);
+  onUpdate(undefined);
+}
+
 onMounted(() => {
   buttonElement.value = document.getElementById(buttonId.value) as HTMLButtonElement;
 });
@@ -230,10 +248,10 @@ onMounted(() => {
         :id="buttonId"
         :color="color"
         :variant="props.variant"
-        class="justify-start font-normal group hover:bg-muted"
+        :class="ui.trigger()"
         :ui="{
-          leadingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700',
-          trailingIcon: 'text-slate-400 group-focus:text-slate-700 group-data-[state=open]:text-slate-700'
+          leadingIcon: ui.triggerIcon(),
+          trailingIcon: ui.triggerTrailingIcon()
         }"
         block
         :icon="props.icon"
@@ -243,12 +261,24 @@ onMounted(() => {
         @keydown.up.prevent="onKeydownArrowUpAndDown"
         @keydown.down.prevent="onKeydownArrowUpAndDown"
       >
-        <span
-          class="overflow-hidden whitespace-nowrap"
-          :class="{ 'text-slate-400': !displayDate }"
-        >
+        <span :class="ui.value()">
           {{ displayDate ? displayDate : props.placeholder }}
         </span>
+
+        <template
+          v-if="isClearable"
+          #trailing
+        >
+          <span
+            :class="ui.clearAction()"
+            @click.prevent.stop="onClear"
+          >
+            <UIcon
+              :name="props.clearIcon"
+              :class="ui.clearIcon()"
+            />
+          </span>
+        </template>
       </UButton>
     </slot>
 

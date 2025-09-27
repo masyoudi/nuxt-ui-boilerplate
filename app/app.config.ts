@@ -49,7 +49,7 @@ export default defineAppConfig({
     },
     radioGroup: {
       slots: {
-        base: 'focus-visible:outline-1 border border-accented ring-0'
+        base: 'focus-visible:outline-1 border-2 border-(--ui-color-neutral-400) ring-0'
       },
       variants: {
         color: {
@@ -77,16 +77,16 @@ export default defineAppConfig({
         },
         size: {
           xs: {
-            indicator: 'after:size-2' as typeof radioIndicator[number]
+            indicator: 'after:size-1.5' as typeof radioIndicator[number]
           },
           sm: {
             indicator: 'after:size-2' as typeof radioIndicator[number]
           },
           md: {
-            indicator: 'after:size-2.5' as typeof radioIndicator[number]
+            indicator: 'after:size-2' as typeof radioIndicator[number]
           },
           lg: {
-            indicator: 'after:size-3' as typeof radioIndicator[number]
+            indicator: 'after:size-2.5' as typeof radioIndicator[number]
           },
           xl: {
             indicator: 'after:size-3' as typeof radioIndicator[number]
