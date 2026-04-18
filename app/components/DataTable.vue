@@ -57,7 +57,7 @@ import { cn, tv } from 'tailwind-variants';
 import { camelize } from 'vue-demi';
 import { useComponentUI } from '@nuxt/ui/composables';
 import type { WatchOptions, TransitionProps, VNode } from 'vue-demi';
-import TableHeaderSorting from './TableHeaderSorting.vue';
+import DataTableHeaderSorting from './DataTableHeaderSorting.vue';
 import defu from 'defu';
 import type { CheckboxProps } from '@nuxt/ui/components/Checkbox.vue';
 import UCheckbox from '#build/ui/checkbox';
@@ -764,7 +764,7 @@ function defineColumn(node: VNode, index: number, depth = 0): DataTableColumnDef
       multiple: enableMultiSort
     };
 
-    return h(TableHeaderSorting, sortingProps);
+    return h(DataTableHeaderSorting, sortingProps);
   };
 
   const cell = (ctx: CellContext<T, unknown>) => {

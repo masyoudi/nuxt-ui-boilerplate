@@ -71,6 +71,8 @@ export default defineNuxtConfig({
     optimizeDeps: {
       include: [
         '@internationalized/date',
+        '@tanstack/vue-table',
+        '@tanstack/vue-virtual',
         '@vueuse/core',
         '@vueuse/components',
         '@unovis/ts',
