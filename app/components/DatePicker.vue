@@ -6,6 +6,7 @@ import type { CalendarProps } from '#ui/components/Calendar.vue';
 import type { DatepickerValue } from '~/types/datepicker';
 import { toArray } from '~~/shared/utils';
 import theme from '~/theme/datepicker';
+import { useFieldGroup } from '@nuxt/ui/composables';
 
 type RangeValue = {
   start: CalendarDate;
@@ -55,7 +56,7 @@ const props = withDefaults(defineProps<Props<IsRange>>(), {
 const emits = defineEmits<{
   (e: 'update:modelValue', value?: DatepickerValue | DatepickerValue[]): void;
   (e: 'focus', event: FocusEvent): void;
-  // eslint-disable-next-line @typescript-eslint/unified-signatures
+
   (e: 'blur', event: FocusEvent): void;
   (e: 'change', event: Event): void;
 }>();

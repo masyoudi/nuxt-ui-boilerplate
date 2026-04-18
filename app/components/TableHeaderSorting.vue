@@ -15,12 +15,13 @@ defineOptions({
   inheritAttrs: false
 });
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  iconSortAsc: 'lucide:arrow-up-narrow-wide',
+  iconSortDesc: 'lucide:arrow-down-wide-narrow',
+  iconUnsort: 'lucide:arrow-up-down'
+});
 const isSorted = computed(() => props.column?.getIsSorted?.() ?? false);
 
-/**
- * Handle click event
- */
 function onSorting() {
   if (!isSorted.value) {
     props.column?.toggleSorting?.(false, props.multiple);
