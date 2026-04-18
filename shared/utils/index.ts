@@ -116,7 +116,6 @@ export function getObjectValue(object: Record<string, any> | undefined, path: (s
   }
 
   let result: any = object;
-
   for (const key of path) {
     if (result === undefined || result === null) {
       return defaultValue;
@@ -125,5 +124,5 @@ export function getObjectValue(object: Record<string, any> | undefined, path: (s
     result = result[key];
   }
 
-  return result !== undefined ? result : defaultValue;
+  return result ?? defaultValue;
 }
