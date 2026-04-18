@@ -11,7 +11,7 @@ interface Props {
 }
 
 defineOptions({
-  name: 'TableHeaderSorting',
+  name: 'DataTableHeaderSorting',
   inheritAttrs: false
 });
 
