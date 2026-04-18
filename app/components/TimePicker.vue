@@ -4,6 +4,7 @@ import { TimeFieldInput, TimeFieldRoot, type TimeFieldRootProps } from 'reka-ui'
 import { tv } from 'tailwind-variants';
 import type { InputProps } from '#ui/components/Input.vue';
 import type { DatepickerValue } from '~/types/datepicker';
+import { useFieldGroup } from '@nuxt/ui/composables';
 
 interface UIElements {
   base?: string;
@@ -51,7 +52,6 @@ const emits = defineEmits<{
   (e: 'update:modelValue', value: DatepickerValue): void;
   (e: 'change', event: Event): void;
   (e: 'focus', event: FocusEvent): void;
-  // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'blur', event: FocusEvent): void;
 }>();
 

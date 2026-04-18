@@ -12,6 +12,7 @@ useHead({
 });
 
 const autocomplete = ref();
+const virtualize = ref();
 const multiselects = ref<any[]>([]);
 
 const openPopover = ref(false);
@@ -37,6 +38,7 @@ async function onTogglePopover() {
           <MultiSelect
             v-model="autocomplete"
             url="/api-dev/test"
+            leading-icon="i-ph-nut-bold"
             paginated
             placeholder="Search anything..."
             :transform-fetch-query="(q) => ({ ...q, modules: 'person' })"
@@ -44,6 +46,18 @@ async function onTogglePopover() {
             :debounce="500"
           />
         </UFieldGroup>
+      </UFormField>
+
+      <UFormField label="Virtualizer">
+        <MultiSelect
+          v-model="virtualize"
+          url="/api-dev/test"
+          :paginated="false"
+          placeholder="Search..."
+          :transform-fetch-query="(q) => ({ ...q, perpage: 1000, modules: 'person' })"
+          :transform-fetch-data="(res) => toArray(res.data).map((val) => ({ value: val.id, label: val.person.fullName }))"
+          :debounce="500"
+        />
       </UFormField>
 
       <UFormField label="Multiselect">
@@ -56,14 +70,6 @@ async function onTogglePopover() {
           :transform-fetch-query="(q) => ({ ...q, modules: 'person' })"
           :transform-fetch-data="(res) => toArray(res.data).map((val) => ({ value: val.id, label: val.person.fullName }))"
           :debounce="500"
-        />
-      </UFormField>
-
-      <UFormField label="Input">
-        <UInput
-          size="md"
-          placeholder="Input text..."
-          class="w-full"
         />
       </UFormField>
 
@@ -155,22 +161,6 @@ async function onTogglePopover() {
           </template>
         </ClientOnly>
       </UFormField>
-
-      <div>
-        <UButton
-          color="neutral"
-          variant="outline"
-          trailing-icon="lucide:chevron-down"
-        >
-          <span>Settings</span>
-          <span class="size-4 inline-flex justify-center items-center group rounded-full hover:bg-error">
-            <UIcon
-              name="lucide:x"
-              class="size-4 group-hover:text-white z-[2]"
-            />
-          </span>
-        </UButton>
-      </div>
     </UCard>
   </div>
 </template>

@@ -19,12 +19,14 @@ const theme = tv({
     leading: 'absolute inset-y-0 start-0 flex items-center',
     leadingIcon: 'shrink-0 text-dimmed',
     trailing: 'group absolute inset-y-0 end-0 flex items-center disabled:cursor-not-allowed disabled:opacity-75',
+    trailingClear: 'p-0',
     trailingIcon: 'shrink-0 text-dimmed',
     content: [
       'w-(--reka-combobox-trigger-width) max-h-60 bg-default shadow-lg rounded-md ring ring-default overflow-hidden',
       'data-[state=open]:animate-[scale-in_100ms_ease-out] data-[state=closed]:animate-[scale-out_100ms_ease-in]',
       'origin-(--reka-combobox-content-transform-origin) pointer-events-auto'
     ],
+    focusScope: 'flex flex-col min-h-0',
     viewport: 'relative h-48 scroll-py-1 overflow-y-auto flex-1',
     group: 'p-1 isolate',
     label: 'font-semibold text-highlighted',
@@ -38,7 +40,7 @@ const theme = tv({
     ],
     itemLeadingIcon: ['shrink-0 text-dimmed group-data-highlighted:not-group-data-disabled:text-default', 'transition-colors'],
     itemLeadingAvatar: 'shrink-0',
-    itemLeadingAvatarSize: '',
+    itemLeadingAvatarSize: 'sm' as const,
     itemLeadingChip: 'shrink-0',
     itemLeadingChipSize: '',
     itemTrailing: 'ms-auto inline-flex gap-1.5 items-center',
@@ -67,7 +69,15 @@ const theme = tv({
     loadingLabel: 'inline-flex text-sm text-slate-500 loading-text'
   },
   variants: {
-    buttonGroup: {
+    virtualize: {
+      true: {
+        viewport: 'p-1 isolate'
+      },
+      false: {
+        viewport: 'divide-y divide-default'
+      }
+    },
+    fieldGroup: {
       horizontal: {
         root: 'group',
         base: 'group-not-only:group-first:rounded-e-none group-not-only:group-last:rounded-s-none group-not-last:group-not-first:rounded-none'
@@ -304,21 +314,6 @@ const theme = tv({
       trailing: true,
       size: 'xl',
       class: 'pe-11'
-    },
-    {
-      loading: true,
-      leading: true,
-      class: {
-        leadingIcon: 'animate-spin'
-      }
-    },
-    {
-      loading: true,
-      leading: false,
-      trailing: true,
-      class: {
-        trailingIcon: 'animate-spin'
-      }
     },
     {
       tagsInputIcon: true,
