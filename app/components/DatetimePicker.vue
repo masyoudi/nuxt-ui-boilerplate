@@ -5,6 +5,7 @@ import type { ButtonProps } from '#ui/components/Button.vue';
 import type { CalendarProps } from '#ui/components/Calendar.vue';
 import type { DatepickerValue } from '~/types/datepicker';
 import theme from '~/theme/datepicker';
+import { useFieldGroup } from '@nuxt/ui/composables';
 
 interface Props {
   id?: string;
@@ -42,7 +43,6 @@ const props = withDefaults(defineProps<Props>(), {
 const emits = defineEmits<{
   (e: 'update:modelValue', value?: DatepickerValue): void;
   (e: 'focus', event: FocusEvent): void;
-  // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'blur', event: FocusEvent): void;
   (e: 'change', event: Event): void;
 }>();

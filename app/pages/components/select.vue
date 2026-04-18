@@ -12,6 +12,7 @@ useHead({
 });
 
 const autocomplete = ref();
+const virtualize = ref();
 const multiselects = ref<any[]>([]);
 
 const openPopover = ref(false);
@@ -45,6 +46,18 @@ async function onTogglePopover() {
         </UFieldGroup>
       </UFormField>
 
+      <UFormField label="Virtualizer">
+        <MultiSelect
+          v-model="virtualize"
+          url="/faker"
+          :paginated="false"
+          placeholder="Search..."
+          :transform-fetch-query="(q) => ({ ...q, perpage: 1000, modules: 'person' })"
+          :transform-fetch-data="(res) => toArray(res.data).map((val) => ({ value: val.id, label: val.person.fullName }))"
+          :debounce="500"
+        />
+      </UFormField>
+
       <UFormField label="Multiselect">
         <MultiSelect
           v-model="multiselects"
@@ -54,14 +67,6 @@ async function onTogglePopover() {
           placeholder="Search anything..."
           :transform-fetch-data="(res) => toArray(res.data).map((val) => ({ value: val.id, label: val.task }))"
           :debounce="500"
-        />
-      </UFormField>
-
-      <UFormField label="Input">
-        <UInput
-          size="md"
-          placeholder="Input text..."
-          class="w-full"
         />
       </UFormField>
 

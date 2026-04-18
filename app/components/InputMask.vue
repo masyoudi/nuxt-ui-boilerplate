@@ -56,6 +56,7 @@ import { IMaskComponent } from 'vue-imask';
 import type { InputHTMLAttributes, VNode } from 'vue';
 import _appConfig from '#build/app.config';
 import theme from '#build/ui/input';
+import { useComponentIcons, useFieldGroup } from '@nuxt/ui/composables';
 
 type AppConfig = typeof _appConfig & {
   ui: {
@@ -102,7 +103,6 @@ const props = withDefaults(defineProps<Props>(), {
 const emits = defineEmits<{
   (e: 'update:modelValue', value: string | number): void;
   (e: 'focus', event: FocusEvent): void;
-  // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'blur', event: FocusEvent): void;
   (e: 'change', event: Event): void;
 }>();
