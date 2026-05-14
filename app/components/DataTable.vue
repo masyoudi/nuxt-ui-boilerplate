@@ -105,7 +105,6 @@ interface DataTableColumnSelection<T> {
 }
 
 interface UILayout {
-  virtualizer?: string;
   pagination?: string;
 }
 
@@ -133,7 +132,7 @@ export interface DataTableProps<T extends DataTableItem = DataTableItem> extends
   watchOptions?: WatchOptions;
   /**
    * Enable virtualization for large datasets.
-   * Note: when enabled, the divider between rows, sticky and row pinning properties are not supported.
+   * Note: row pinning is not supported when virtualization is enabled.
    * @see https://tanstack.com/virtual/latest/docs/api/virtualizer#options
    * @defaultValue false
    */
@@ -372,11 +371,10 @@ const uiTable = computed(() => {
   });
 
   return _theme({
-    sticky: props.virtualize ? false : props.sticky,
+    sticky: props.sticky,
     loading: isLoading.value,
     loadingColor: props.loadingColor,
     loadingAnimation: props.loadingAnimation,
-    virtualize: !!props.virtualize,
     mobileCards: props.mobileCards,
     variant: !props.virtualize ? props.variant : undefined
   });
@@ -711,17 +709,15 @@ const virtualizer = !!props.virtualize && useVirtualizer({
   }
 });
 
-const renderedSize = computed(() => {
-  if (!virtualizer) {
+const virtualItems = computed(() => virtualizer ? virtualizer.value.getVirtualItems() : []);
+const virtualPaddingTop = computed(() => virtualItems.value[0]?.start ?? 0);
+const virtualPaddingBottom = computed(() => {
+  const itemsLength = virtualizer ? virtualItems.value.length : 0;
+  if (!virtualizer || itemsLength <= 0) {
     return 0;
   }
 
-  const virtualItems = virtualizer.value.getVirtualItems();
-  if (!virtualItems?.length) {
-    return 0;
-  }
-
-  return virtualItems.reduce((sum, item) => sum + item.size, 0);
+  return virtualizer.value.getTotalSize() - (virtualItems.value[itemsLength - 1]?.end ?? 0);
 });
 
 const [DefineTableTemplate, ReuseTableTemplate] = createReusableTemplate();
@@ -1140,18 +1136,31 @@ onMounted(() => {
             />
 
             <template v-if="virtualizer">
+              <tr
+                v-if="virtualPaddingTop > 0"
+                :style="{ height: `${virtualPaddingTop}px` }"
+                aria-hidden="true"
+              >
+                <td :colspan="tableApi.getAllLeafColumns().length" />
+              </tr>
               <template
-                v-for="(virtualRow, index) in virtualizer.getVirtualItems()"
-                :key="centerRows[virtualRow.index]?.id"
+                v-for="virtualRow in virtualizer.getVirtualItems()"
+                :key="centerRows[virtualRow.index]?.id ?? `virtual-${virtualRow.index}`"
               >
                 <ReuseRowTemplate
+                  v-if="centerRows[virtualRow.index]"
                   :row="centerRows[virtualRow.index]!"
-                  :style="{
-                    height: `${virtualRow.size}px`,
-                    transform: `translateY(${virtualRow.start - index * virtualRow.size}px)`
-                  }"
+                  :style="{ height: `${virtualRow.size}px` }"
                 />
               </template>
+
+              <tr
+                v-if="virtualPaddingBottom > 0"
+                :style="{ height: `${virtualPaddingBottom}px` }"
+                aria-hidden="true"
+              >
+                <td :colspan="tableApi.getAllLeafColumns().length" />
+              </tr>
             </template>
 
             <template v-else>
@@ -1208,9 +1217,6 @@ onMounted(() => {
           v-if="hasFooter"
           :class="uiTable.tfoot({ class: uiTableProp.tfoot })"
           data-slot="tfoot"
-          :style="virtualizer && {
-            transform: `translateY(${virtualizer.getTotalSize() - renderedSize}px)`
-          }"
         >
           <tr
             data-slot="separator"
@@ -1244,14 +1250,7 @@ onMounted(() => {
       ref="wrapperRef"
       :class="uiTable.root({ class: ['w-full flex-1', uiTableProp.root] })"
     >
-      <div
-        v-if="virtualizer"
-        :class="props.uiLayout?.virtualizer"
-        :style="{ height: `${virtualizer.getTotalSize()}px` }"
-      >
-        <ReuseTableTemplate />
-      </div>
-      <ReuseTableTemplate v-else />
+      <ReuseTableTemplate />
     </div>
 
     <div

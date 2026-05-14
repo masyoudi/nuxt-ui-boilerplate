@@ -40,13 +40,13 @@ interface Props {
   modelValue?: string;
   ignoreExtensions?: ExtensionNames[];
   placeholder?: PlaceholderOptions['placeholder'];
-  teleport?: boolean;
+  portal?: boolean | string | HTMLElement;
   disabled?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   placeholder: 'Enter text...',
-  teleport: true,
+  portal: true,
   disabled: false
 });
 const emits = defineEmits<{
@@ -416,16 +416,16 @@ onUnmounted(() => {
     class="relative w-full bg-(--ui-bg) border rounded-md tiptap"
     :class="isFocused ? 'border-(--ui-color-primary-500)' : 'border-(--ui-border-accented)'"
   >
-    <div class="flex flex-wrap bg-slate-50 gap-2 p-2 rounded-t-md border-b border-b-(--ui-border-accented)">
+    <div class="flex flex-wrap bg-slate-50/50 dark:bg-transparent gap-2 p-2 rounded-t-md border-b border-b-(--ui-border-accented)">
       <UDropdownMenu
         v-if="isEnable('heading')"
         :items="headings"
         :ui="{ content: 'w-38' }"
-        :portal="props.teleport"
+        :portal="props.portal"
       >
         <UButton
           :label="headings.find((val) => editor?.isActive('heading', { level: val.id }))?.label ?? 'Paragraph'"
-          color="primary"
+          color="neutral"
           size="sm"
           block
           class="max-w-[115px] justify-between"
@@ -459,12 +459,12 @@ onUnmounted(() => {
           :text="item.name"
           :kbds="item.shortcuts"
           arrow
-          :portal="props.teleport"
+          :portal="props.portal"
         >
           <UButton
             size="sm"
-            color="primary"
-            :variant="item.active() ? 'solid' : 'subtle'"
+            :color="item.active() ? 'primary' : 'neutral'"
+            variant="subtle"
             :icon="item.icon"
             class="cursor-pointer"
             @click="item.command"
@@ -479,16 +479,16 @@ onUnmounted(() => {
         :ui="{
           content: 'min-w-9 w-9'
         }"
-        :portal="props.teleport"
+        :portal="props.portal"
       >
         <UTooltip
           text="Text Align"
           arrow
-          :portal="props.teleport"
+          :portal="props.portal"
         >
           <UButton
             :icon="textAligns.find((v) => editor?.isActive({ textAlign: v.id }))?.icon ?? 'lucide:align-left'"
-            color="primary"
+            color="neutral"
             size="sm"
             variant="subtle"
           />
@@ -498,12 +498,12 @@ onUnmounted(() => {
       <UPopover
         v-if="isEnable('link')"
         v-model:open="link.open"
-        :portal="props.teleport"
+        :portal="props.portal"
       >
         <UButton
           icon="lucide:link"
-          color="primary"
-          :variant="editor?.isActive('link') ? 'solid' : 'subtle'"
+          :color="editor?.isActive('link') ? 'primary' : 'neutral'"
+          variant="subtle"
           size="sm"
           @click="onOpenLink"
         />

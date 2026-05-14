@@ -1,0 +1,8 @@
+allowBuilds:
+  '@parcel/watcher': false
+  core-js-pure: false
+  esbuild: false
+  maplibre-gl: false
+  simple-git-hooks: false
+  unrs-resolver: false
+  vue-demi: false

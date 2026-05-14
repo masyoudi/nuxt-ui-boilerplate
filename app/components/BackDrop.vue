@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { usePortal } from '#ui/composables';
 import { tv } from 'tailwind-variants';
 import type { TransitionProps } from 'vue-demi';
 
 interface Props {
-  teleport?: boolean;
+  portal?: boolean | string | HTMLElement;
   class?: string;
   displayDirective?: 'if' | 'show';
   transition?: TransitionProps;
@@ -14,7 +15,7 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<Props>(), {
-  teleport: true,
+  portal: true,
   displayDirective: 'if',
   transition: () => ({
     enterActiveClass: 'animate-[fade-in_150ms_ease-out]',
@@ -24,11 +25,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emits = defineEmits<{
   (e: 'beforeEnter'): void;
-  // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'beforeLeave'): void;
-  // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'afterEnter'): void;
-  // eslint-disable-next-line @typescript-eslint/unified-signatures
   (e: 'afterLeave'): void;
 }>();
 
@@ -37,6 +35,7 @@ const isEntered = ref(open.value);
 
 const isDisplayIf = computed(() => open.value || props.displayDirective !== 'if');
 const isDisplayShow = computed(() => open.value || props.displayDirective !== 'show');
+const portalProps = usePortal(toRef(() => props.portal));
 
 const attrs: Record<string, any> = useAttrs();
 const attributes = computed(() => {
@@ -67,8 +66,8 @@ function onBeforeLeave() {
 
 <template>
   <Teleport
-    to="#teleports"
-    :disabled="!props.teleport"
+    v-bind="portalProps"
+    :to="portalProps.to ?? '#teleports'"
   >
     <Transition
       v-bind="props.transition"

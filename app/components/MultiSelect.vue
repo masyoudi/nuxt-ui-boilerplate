@@ -457,7 +457,6 @@ function onBlur(event: FocusEvent) {
 
 function onInput(value: string) {
   searchTerm.value = value;
-  console.log(filteredGroups.value);
   debouncedInput();
 }
 
@@ -770,7 +769,7 @@ function onClear() {
         data-slot="content"
       >
         <FocusScope
-          trapped
+          :trapped="!props.multiple"
           data-slot="focusScope"
           :class="uiTheme.focusScope({ class: props.ui?.focusScope })"
         >

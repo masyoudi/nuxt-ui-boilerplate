@@ -1,50 +1,71 @@
-import { tv } from 'tailwind-variants';
-
-const theme = tv({
+const theme = {
   slots: {
-    base: 'block backdrop-blur-sm',
-    wrapper: 'relative flex w-full min-h-screen justify-center items-center',
-    content: 'relative w-full bg-(--ui-bg) ring ring-transparent dark:ring-accented rounded-xl shadow shadow-black/8 outline-none',
-    card: 'ring-0',
-    header: 'sm:px-6',
-    body: 'sm:p-6',
-    footer: 'flex justify-end gap-x-4 sm:px-6',
-    close: 'absolute inline-flex justify-center items-center top-2 right-2'
+    overlay: 'fixed inset-0',
+    content: 'bg-default flex flex-col focus:outline-none',
+    header: 'flex items-center gap-1.5 p-4 sm:px-6 min-h-(--ui-header-height)',
+    wrapper: '',
+    body: 'flex-1 p-4 sm:p-6',
+    footer: 'flex items-center gap-1.5 p-4 sm:px-6',
+    title: 'text-highlighted font-semibold',
+    description: 'mt-1 text-muted text-sm',
+    close: 'absolute top-4 end-4'
   },
   variants: {
+    transition: {
+      true: {
+        overlay: 'data-[state=open]:animate-[fade-in_200ms_ease-out] data-[state=closed]:animate-[fade-out_200ms_ease-in]',
+        content: 'data-[state=open]:animate-[scale-in_200ms_ease-out] data-[state=closed]:animate-[scale-out_200ms_ease-in]'
+      }
+    },
     fullscreen: {
       true: {
-        base: 'overflow-y-hidden',
-        wrapper: 'overflow-hidden px-0 py-0',
-        content: 'max-w-full h-screen rounded-none p-0'
+        content: 'inset-0'
       },
       false: {
-        base: 'overflow-y-auto',
-        wrapper: 'py-3 px-4',
-        content: 'max-w-xl p-5'
+        content: 'w-[calc(100vw-2rem)] max-w-lg rounded-lg shadow-lg ring ring-default'
+      }
+    },
+    overlay: {
+      true: {
+        overlay: 'bg-elevated/75'
+      }
+    },
+    scrollable: {
+      true: {
+        overlay: 'overflow-y-auto',
+        content: 'relative'
+      },
+      false: {
+        content: 'fixed',
+        body: 'overflow-y-auto'
       }
     },
     asCard: {
       true: {
-        content: 'p-0'
+        content: 'divide-y divide-default'
       },
       false: {
-
+        content: 'p-5',
+        close: 'top-1 end-1'
       }
     }
   },
   compoundVariants: [
     {
-      fullscreen: true,
-      asCard: true,
+      scrollable: true,
+      fullscreen: false,
       class: {
-        card: 'flex flex-col h-screen rounded-none',
-        header: 'grow-0 shrink-0',
-        body: 'grow shrink overflow-y-auto',
-        footer: 'grow-0 shrink-0'
+        overlay: 'grid place-items-center p-4 sm:py-8'
+      }
+    },
+    {
+      scrollable: false,
+      fullscreen: false,
+      class: {
+        content: 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden'
       }
     }
   ]
-});
+};
 
 export default theme;

@@ -398,6 +398,7 @@ function globalFilterTodo(row: Row<(typeof todos.value)[number]>) {
         :items="virtualItems"
         :pagination="false"
         virtualize
+        sticky="header"
         :ui="{
           root: 'h-150'
         }"
