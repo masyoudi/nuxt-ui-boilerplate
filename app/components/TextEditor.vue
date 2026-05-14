@@ -40,13 +40,13 @@ interface Props {
   modelValue?: string;
   ignoreExtensions?: ExtensionNames[];
   placeholder?: PlaceholderOptions['placeholder'];
-  teleport?: boolean;
+  portal?: boolean | string | HTMLElement;
   disabled?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   placeholder: 'Enter text...',
-  teleport: true,
+  portal: true,
   disabled: false
 });
 const emits = defineEmits<{
@@ -421,7 +421,7 @@ onUnmounted(() => {
         v-if="isEnable('heading')"
         :items="headings"
         :ui="{ content: 'w-38' }"
-        :portal="props.teleport"
+        :portal="props.portal"
       >
         <UButton
           :label="headings.find((val) => editor?.isActive('heading', { level: val.id }))?.label ?? 'Paragraph'"
@@ -459,7 +459,7 @@ onUnmounted(() => {
           :text="item.name"
           :kbds="item.shortcuts"
           arrow
-          :portal="props.teleport"
+          :portal="props.portal"
         >
           <UButton
             size="sm"
@@ -479,12 +479,12 @@ onUnmounted(() => {
         :ui="{
           content: 'min-w-9 w-9'
         }"
-        :portal="props.teleport"
+        :portal="props.portal"
       >
         <UTooltip
           text="Text Align"
           arrow
-          :portal="props.teleport"
+          :portal="props.portal"
         >
           <UButton
             :icon="textAligns.find((v) => editor?.isActive({ textAlign: v.id }))?.icon ?? 'lucide:align-left'"
@@ -498,7 +498,7 @@ onUnmounted(() => {
       <UPopover
         v-if="isEnable('link')"
         v-model:open="link.open"
-        :portal="props.teleport"
+        :portal="props.portal"
       >
         <UButton
           icon="lucide:link"

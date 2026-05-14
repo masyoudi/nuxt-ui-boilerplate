@@ -36,7 +36,7 @@ interface Props<R extends boolean> {
   dismissable?: boolean;
   clearable?: boolean;
   clearIcon?: string;
-  teleport?: boolean;
+  portal?: boolean | string | HTMLElement;
   disabled?: boolean;
 }
 
@@ -49,7 +49,7 @@ const props = withDefaults(defineProps<Props<IsRange>>(), {
   dismissable: true,
   clearable: true,
   clearIcon: 'lucide:x',
-  teleport: true,
+  portal: true,
   disabled: false
 });
 
@@ -290,7 +290,7 @@ onMounted(() => {
     :ui="{ content: 'z-50' }"
     :content="{ align: 'start' }"
     :dismissible="props.dismissable"
-    :portal="props.teleport"
+    :portal="props.portal"
     @update:open="onUpdateOpen"
   >
     <slot

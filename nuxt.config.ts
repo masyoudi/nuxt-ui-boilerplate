@@ -35,7 +35,8 @@ export default defineNuxtConfig({
 
   experimental: {
     payloadExtraction: false,
-    renderJsonPayloads: true
+    renderJsonPayloads: true,
+    viteEnvironmentApi: true
   },
   compatibilityDate: '2024-11-01',
 
@@ -79,7 +80,6 @@ export default defineNuxtConfig({
         '@unovis/vue',
         'chroma-js',
         'object-to-formdata',
-        'reka-ui',
         'tailwind-variants',
         'theme-colors',
         'vue-imask',
