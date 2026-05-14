@@ -71,7 +71,7 @@ onMounted(() => {
     <BackDrop
       v-model="sidebarOpen"
       class="lg:hidden bg-slate-500/30 backdrop-blur-xs lg:pointer-events-none z-[18] lg:-z-10"
-      :teleport="false"
+      :portal="false"
       @click.prevent.stop="sidebarOpen = false"
     />
     <div

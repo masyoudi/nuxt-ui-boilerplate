@@ -2,7 +2,7 @@
 import { tv } from 'tailwind-variants';
 
 interface Props {
-  teleport?: boolean;
+  portal?: boolean | string | HTMLElement;
   class?: string;
   ui?: Partial<Record<keyof ReturnType<typeof theme>, string>>;
 }
@@ -12,7 +12,7 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<Props>(), {
-  teleport: true
+  portal: true
 });
 
 const open = defineModel<boolean>({ default: false, required: false });
@@ -39,7 +39,7 @@ const attributes = computed(() => {
     v-model="open"
     v-bind="attributes"
     :class="classes.base({ class: props.class })"
-    :teleport="props.teleport"
+    :portal="props.portal"
   >
     <slot>
       <LoadingSpinner :class="classes.loading({ class: props.ui?.loading })" />

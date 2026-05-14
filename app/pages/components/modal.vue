@@ -10,7 +10,6 @@ useHead({
 
 const nested = ref(false);
 const second = ref(false);
-const displayShow = ref(false);
 const fullscreen = ref(false);
 </script>
 
@@ -24,12 +23,6 @@ const fullscreen = ref(false);
           Nested
         </UButton>
         <UButton
-          color="secondary"
-          @click="displayShow = true"
-        >
-          Display Directive Show
-        </UButton>
-        <UButton
           color="success"
           @click="fullscreen = true"
         >
@@ -39,13 +32,8 @@ const fullscreen = ref(false);
 
       <AppModal
         v-model="nested"
+        title="Nested Modal"
       >
-        <template #header>
-          <div class="text-lg font-semibold">
-            Nested Modal
-          </div>
-        </template>
-
         <template #body>
           <p
             v-for="val in 2"
@@ -63,34 +51,7 @@ const fullscreen = ref(false);
         </template>
       </AppModal>
 
-      <AppModal
-        v-model="displayShow"
-        display-directive="show"
-      >
-        <template #header>
-          <div class="text-lg font-semibold">
-            Display Directive Show
-          </div>
-        </template>
-
-        <template #body>
-          <p>
-            Lorem ipsum dolor, sit amet consectetur adipisicing elit. Quisquam tempora repudiandae at error in, molestiae aperiam.
-            Non amet placeat similique suscipit ipsum architecto voluptas deleniti eos laudantium? Labore, dicta nostrum?
-          </p>
-        </template>
-
-        <template #footer>
-          <UButton @click="displayShow = false">
-            Close
-          </UButton>
-        </template>
-      </AppModal>
-
-      <AppModal
-        v-model="second"
-        class="z-[55]"
-      >
+      <AppModal v-model="second">
         <p>
           Lorem ipsum dolor, sit amet consectetur adipisicing elit. Quisquam tempora repudiandae at error in, molestiae aperiam.
           Non amet placeat similique suscipit ipsum architecto voluptas deleniti eos laudantium? Labore, dicta nostrum?
@@ -100,6 +61,7 @@ const fullscreen = ref(false);
       <AppModal
         v-model="fullscreen"
         fullscreen
+        :scrollable="false"
       >
         <template #header>
           This is Header
