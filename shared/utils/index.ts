@@ -126,3 +126,12 @@ export function getObjectValue(object: Record<string, any> | undefined, path: (s
 
   return result ?? defaultValue;
 }
+
+/**
+ * Object.keys with strict typing
+ * @param obj - Object value
+ * @returns Array of string
+ */
+export function keysOf<T extends object>(obj: T): (keyof T)[] {
+  return Object.keys(obj) as (keyof T)[];
+}

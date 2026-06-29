@@ -53,9 +53,8 @@ import { useVirtualizer } from '@tanstack/vue-virtual';
 import { createRef, createReusableTemplate, reactivePick } from '@vueuse/core';
 import theme from '#build/ui/table';
 import { Primitive, useForwardProps } from 'reka-ui';
-import { cn, tv } from 'tailwind-variants';
+import { cn, tv, type ClassValue } from 'tailwind-variants';
 import { camelize } from 'vue-demi';
-import { useComponentUI } from '@nuxt/ui/composables';
 import type { WatchOptions, TransitionProps, VNode } from 'vue-demi';
 import DataTableHeaderSorting from './DataTableHeaderSorting.vue';
 import defu from 'defu';
@@ -89,6 +88,8 @@ export interface DataTableOptions<T extends DataTableItem = DataTableItem> exten
 }
 
 type DataTableTheme = ComponentConfig<typeof theme, AppConfig, 'table'>;
+
+type DataTableThemeUIProps = DataTableTheme['slots'];
 
 interface DataTableColumnNumbering<T> {
   label?: string;
@@ -221,7 +222,7 @@ export interface DataTableProps<T extends DataTableItem = DataTableItem> extends
   onHover?: (e: Event, row: TableRow<T> | null) => void;
   onContextmenu?: ((e: Event, row: TableRow<T>) => void) | Array<((e: Event, row: TableRow<T>) => void)>;
   variant?: 'striped' | 'bordered' | 'separated';
-  ui?: DataTableTheme['slots'];
+  ui?: Partial<Record<keyof DataTableThemeUIProps, ClassValue>>;
   uiPagination?: PaginationProps['ui'];
   uiLayout?: UILayout;
 }
@@ -303,13 +304,17 @@ const tableThemeVariants = {
   variant: {
     bordered: {
       root: 'border border-default rounded-md',
-      th: 'not-first:border-l not-first:border-l-default'
+      th: 'not-first:border-l not-first:border-l-default whitespace-normal',
+      td: 'whitespace-normal'
     },
     striped: {
-      tbody: '[&>tr]:even:bg-white [&>tr]:odd:bg-secondary-50'
+      tbody: '[&>tr]:even:bg-white [&>tr]:odd:bg-secondary-50',
+      th: 'whitespace-normal',
+      td: 'whitespace-normal'
     },
     separated: {
-      th: 'py-1'
+      th: 'whitespace-normal py-1',
+      td: 'whitespace-normal'
     }
   }
 };
@@ -379,7 +384,6 @@ const uiTable = computed(() => {
     variant: !props.virtualize ? props.variant : undefined
   });
 });
-const uiTableProp = useComponentUI('table', props);
 
 const wrapperRef = useTemplateRef('wrapperRef');
 const tableRef = useTemplateRef<HTMLTableElement>('tableRef');
@@ -1010,7 +1014,7 @@ onMounted(() => {
         :role="props.onSelect ? 'button' : undefined"
         :tabindex="props.onSelect ? 0 : undefined"
         data-slot="tr"
-        :class="uiTable.tr({ class: [uiTableProp.tr, resolveValue(tableApi.options.meta?.class?.tr, row)] })"
+        :class="uiTable.tr({ class: [props.ui?.tr, resolveValue(tableApi.options.meta?.class?.tr, row)] })"
         :style="[
           resolveValue(tableApi.options.meta?.style?.tr, row),
           style
@@ -1031,7 +1035,7 @@ onMounted(() => {
           :data-pinned-index="cell.column.getIsPinned() ? cell.column.getPinnedIndex() : undefined"
           :data-pinned-section="getColumnPinningSection(cell.column)"
           :class="uiTable.td({
-            class: [uiTableProp.td, resolveValue(cell.column.columnDef.meta?.class?.td, cell)],
+            class: [props.ui?.td, resolveValue(cell.column.columnDef.meta?.class?.td, cell)],
             pinned: !!cell.column.getIsPinned()
           })"
           :style="[
@@ -1053,8 +1057,8 @@ onMounted(() => {
           :row="row"
           :table="tableApi"
           :ui="{
-            tr: uiTable.tr({ class: uiTableProp.tr }),
-            td: uiTable.td({ class: uiTableProp.td })
+            tr: uiTable.tr({ class: props.ui?.tr }),
+            td: uiTable.td({ class: props.ui?.td })
           }"
         />
       </TransitionGroup>
@@ -1064,25 +1068,25 @@ onMounted(() => {
       <table
         ref="tableRef"
         data-slot="base"
-        :class="uiTable.base({ class: [uiTableProp.base] })"
+        :class="uiTable.base({ class: [props.ui?.base] })"
       >
         <caption
           v-if="!!slots.caption"
           data-slot="caption"
-          :class="uiTable.caption({ class: uiTableProp.caption })"
+          :class="uiTable.caption({ class: props.ui?.caption })"
         >
           <slot name="caption" />
         </caption>
 
         <thead
           data-slot="thead"
-          :class="uiTable.thead({ class: uiTableProp.thead })"
+          :class="uiTable.thead({ class: props.ui?.thead })"
         >
           <tr
             v-for="headerGroup in tableApi?.getHeaderGroups() ?? []"
             :key="headerGroup.id"
             data-slot="tr"
-            :class="uiTable.tr({ class: uiTableProp.tr })"
+            :class="uiTable.tr({ class: props.ui?.tr })"
           >
             <th
               v-for="header in headerGroup.headers"
@@ -1094,7 +1098,7 @@ onMounted(() => {
               :data-pinned-index="header.column.getIsPinned() ? header.column.getPinnedIndex() : undefined"
               :data-pinned-section="getColumnPinningSection(header.column)"
               :class="uiTable.th({
-                class: [uiTableProp.th, resolveValue(header.column.columnDef.meta?.class?.th, header)],
+                class: [props.ui?.th, resolveValue(header.column.columnDef.meta?.class?.th, header)],
                 pinned: !!header.column.getIsPinned()
               })"
               :style="[
@@ -1112,19 +1116,19 @@ onMounted(() => {
 
           <tr
             data-slot="separator"
-            :class="uiTable.separator({ class: uiTableProp.separator })"
+            :class="uiTable.separator({ class: props.ui?.separator })"
           />
         </thead>
         <tbody
           data-slot="tbody"
-          :class="uiTable.tbody({ class: uiTableProp.tbody })"
+          :class="uiTable.tbody({ class: props.ui?.tbody })"
         >
           <slot
             name="body-top"
             :table="tableApi"
             :ui="{
-              tr: uiTable.tr({ class: uiTableProp.tr }),
-              td: uiTable.td({ class: uiTableProp.td })
+              tr: uiTable.tr({ class: props.ui?.tr }),
+              td: uiTable.td({ class: props.ui?.td })
             }"
           />
 
@@ -1182,7 +1186,7 @@ onMounted(() => {
             <td
               :colspan="tableApi?.getAllLeafColumns().length"
               data-slot="loading"
-              :class="uiTable.loading({ class: uiTableProp?.loading })"
+              :class="uiTable.loading({ class: props.ui?.loading })"
             >
               <slot name="loading">
                 <div class="text-center">
@@ -1196,7 +1200,7 @@ onMounted(() => {
             <td
               :colspan="tableApi?.getAllLeafColumns().length"
               data-slot="empty"
-              :class="uiTable.empty({ class: uiTableProp?.empty })"
+              :class="uiTable.empty({ class: props.ui?.empty })"
             >
               <slot name="empty">
                 No data available.
@@ -1208,32 +1212,32 @@ onMounted(() => {
             name="body-bottom"
             :table="tableApi"
             :ui="{
-              tr: uiTable.tr({ class: uiTableProp.tr }),
-              td: uiTable.td({ class: uiTableProp.td })
+              tr: uiTable.tr({ class: props.ui?.tr }),
+              td: uiTable.td({ class: props.ui?.td })
             }"
           />
         </tbody>
         <tfoot
           v-if="hasFooter"
-          :class="uiTable.tfoot({ class: uiTableProp.tfoot })"
+          :class="uiTable.tfoot({ class: props.ui?.tfoot })"
           data-slot="tfoot"
         >
           <tr
             data-slot="separator"
-            :class="uiTable.separator({ class: uiTableProp.separator })"
+            :class="uiTable.separator({ class: props.ui?.separator })"
           />
           <tr
             v-for="footerGroup in tableApi.getFooterGroups()"
             :key="footerGroup.id"
             data-slot="tr"
-            :class="uiTable.tr({ class: uiTableProp.tr })"
+            :class="uiTable.tr({ class: props.ui?.tr })"
           >
             <th
               v-for="header in footerGroup.headers"
               :key="header.id"
               :colSpan="header.colSpan"
               data-slot="th"
-              :class="uiTable.th({ class: uiTableProp.th })"
+              :class="uiTable.th({ class: props.ui?.th })"
             >
               <FlexRender
                 v-if="!header.isPlaceholder"
@@ -1248,7 +1252,7 @@ onMounted(() => {
 
     <div
       ref="wrapperRef"
-      :class="uiTable.root({ class: ['w-full flex-1', uiTableProp.root] })"
+      :class="uiTable.root({ class: ['w-full flex-1', props.ui?.root] })"
     >
       <ReuseTableTemplate />
     </div>
