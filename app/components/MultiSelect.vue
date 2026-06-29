@@ -282,12 +282,13 @@ const searchInputProps = computed(() => {
   const inputProps = typeof props.searchInput === 'boolean' ? {} : props.searchInput;
   const defaults = {
     placeholder: 'Search...',
-    variant: 'none' as const,
+    variant: 'outline' as const,
     ...(isLoading.value && { trailingIcon: props.loadingIcon })
   };
 
   const ui = {
     ...inputProps.ui,
+    root: cn('w-full', inputProps.ui?.root),
     trailingIcon: cn(inputProps.ui?.trailingIcon, isLoading.value ? 'animate-spin' : '')
   };
 
@@ -457,7 +458,6 @@ function onBlur(event: FocusEvent) {
 
 function onInput(value: string) {
   searchTerm.value = value;
-  console.log(filteredGroups.value);
   debouncedInput();
 }
 
@@ -778,22 +778,25 @@ function onClear() {
             name="content-top"
             :ui="uiTheme"
           />
-          <ComboboxInput
+          <div
             v-if="!!props.searchInput && !props.multiple"
-            v-model="searchTerm"
-            :display-value="() => searchTerm"
-            as-child
+            :class="uiTheme.searchWrapper({ class: props.ui?.searchWrapper })"
           >
-            <UInput
-              type="text"
-              autofocus
-              autocomplete="off"
-              v-bind="searchInputProps"
-              :class="uiTheme.searchInput({ class: props.ui?.searchInput })"
-              data-slot="searchInput"
-              @update:model-value="(val) => onInput(String(val))"
-            />
-          </ComboboxInput>
+            <ComboboxInput
+              v-model="searchTerm"
+              :display-value="() => searchTerm"
+              as-child
+            >
+              <UInput
+                type="text"
+                autofocus
+                autocomplete="off"
+                v-bind="searchInputProps"
+                data-slot="searchInput"
+                @update:model-value="(val) => onInput(String(val))"
+              />
+            </ComboboxInput>
+          </div>
 
           <div
             role="presentation"

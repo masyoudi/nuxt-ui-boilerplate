@@ -4,10 +4,6 @@
 
 @import "@nuxt/ui";
 
-@plugin "@tailwindcss/typography";
-
-@config "../../../tailwind.config.ts";
-
 @theme {
   --shadow-2xs: 0 0 4px 1px rgba(0, 0, 0, .05);
   --shadow-xs: 0 0 5px 1px rgba(0, 0, 0, .05);
@@ -59,4 +55,231 @@ html {
 .scroll-mini::-webkit-scrollbar {
   width: 9px;
   height: 9px;
+}
+
+
+/* WYSIWYG content */
+.content {
+  @apply w-full outline-none;
+
+  ::selection {
+    @apply bg-primary/20;
+  }
+
+  & > * {
+    @apply my-2;
+  }
+
+  & > *:first-child {
+    @apply mt-0;
+  }
+
+  & > *:last-child {
+    @apply mb-0;
+  }
+
+  /* Paragraph */
+  p {
+    @apply leading-5;
+  }
+
+  /* Links */
+  a {
+    @apply text-primary border-b border-transparent font-medium;
+
+    &:hover {
+      @apply border-primary;
+    }
+
+    /* Code inside links */
+    & > code {
+      @apply border-dashed;
+    }
+    
+    &:hover > code {
+      @apply border-primary text-primary;
+    }
+  }
+
+  /* Headings */
+  :is(h1, h2, h3, h4, h5, h6) {
+    @apply text-highlighted font-bold;
+  }
+
+  h1 {
+    @apply text-3xl;
+  }
+
+  h2 {
+    @apply text-2xl;
+  }
+
+  h3 {
+    @apply text-xl;
+  }
+
+  h4 {
+    @apply text-lg;
+  }
+
+  h5 {
+    @apply text-base;
+  }
+
+  h6 {
+    @apply text-base;
+  }
+
+
+  :is(h1, h2, h3, h4, h5, h6) > code {
+    @apply border-dashed font-bold;
+  }
+
+  h2 > code {
+    @apply text-xl/6;
+  }
+
+  h3 > code {
+    @apply text-lg/5;
+  }
+
+  /* Blockquote & HR */
+  blockquote {
+    @apply border-s-4 border-accented ps-4 italic;
+  }
+
+  [data-type="horizontalRule"] {
+    @apply my-8 py-2;
+  }
+
+  hr {
+    @apply border-t border-default;
+  }
+
+  /* Code blocks */
+  pre {
+    @apply text-sm/6 border border-muted bg-muted rounded-md px-4 py-3 whitespace-pre-wrap break-words overflow-x-auto;
+  }
+
+  pre code {
+    @apply p-0 text-inherit rounded-none inline border-0 bg-transparent;
+  }
+
+  /* Inline code */
+  code {
+    @apply px-1.5 py-0.5 text-sm font-mono font-medium rounded-md inline-block border border-muted text-highlighted bg-muted;
+  }
+
+  /* Lists */
+  :is(ul, ol) { @apply ps-6; }
+  ul {
+    @apply list-disc marker:text-slate-800;
+  }
+
+  ol {
+    @apply list-decimal marker:text-slate-800;
+  }
+
+  li {
+    @apply my-1.5 ps-1.5;
+  }
+
+  /* Images */
+  img {
+    @apply rounded-md block max-w-full;
+    &.ProseMirror-selectednode {
+      @apply outline-2 outline-primary;
+    }
+  }
+
+  /* Table */
+  table {
+    @apply w-full border-separate border-spacing-0 rounded-md;
+  }
+
+  /* Header cells */
+  th {
+    @apply py-3 px-4 font-semibold text-sm text-left bg-muted/50;
+    @apply border-t border-b border-e border-muted;
+
+    &:first-child {
+      @apply border-s;
+    }
+
+    p {
+      @apply my-0 leading-5;
+    }
+  }
+
+  /* Data cells */
+  td {
+    @apply py-3 px-4 text-sm text-left;
+    @apply border-b border-e border-muted;
+
+    &:first-child {
+      @apply border-s;
+    }
+
+    p {
+      @apply my-0 leading-5;
+    }
+
+    code {
+      @apply text-xs/5;
+    }
+
+    ul {
+      @apply my-0 ps-4.5;
+    }
+
+    ol {
+      @apply my-0 ps-4.5;
+    }
+
+    li {
+      @apply leading-6 my-0.5;
+    }
+  }
+
+  /* Rounded corners on outer cells */
+  tr:first-child th:first-child {
+    @apply rounded-tl-md;
+  }
+
+  tr:first-child th:last-child {
+    @apply rounded-tr-md;
+  }
+
+  tr:last-child td:first-child {
+    @apply rounded-bl-md;
+  }
+
+  tr:last-child td:last-child {
+    @apply rounded-br-md;
+  }
+
+  /* Selected cell (ProseMirror table selection) */
+  .selectedCell {
+    @apply bg-primary/10 ring-2 ring-primary ring-inset;
+  }
+
+  /* Selected nodes */
+  .ProseMirror-selectednode:not(img):not(pre):not([data-node-view-wrapper]) {
+    @apply bg-primary/20;
+  }
+
+  :is(p, h1, h2, h3, h4, h5, h6).is-editor-empty:first-child,
+  :is(p, h1, h2, h3, h4, h5, h6).is-empty {
+    &::before {
+      @apply content-[attr(data-placeholder)] text-dimmed float-start h-0 pointer-events-none;
+    }
+  }
+
+  [data-content-type=table] .tableWrapper {
+    @apply relative w-full -ml-4 overflow-y-hidden pbs-4 ps-4 pbe-4 pe-4;
+  }
+
+  .tableWrapper {
+    @apply overflow-x-auto;
+  }
 }

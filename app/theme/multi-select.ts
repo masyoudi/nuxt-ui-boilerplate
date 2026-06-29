@@ -62,7 +62,7 @@ const theme = tv({
     tagsInputLeading: 'absolute inset-y-0 start-0 flex items-center text-dimmed',
     tagsInputLeadingIcon: '',
     empty: 'py-2 text-center text-sm text-muted',
-    searchInput: 'border-default border-t-transparent border-x-transparent border-b',
+    searchWrapper: 'w-full p-2',
     loading: 'relative w-full flex justify-center items-center gap-x-1.5 p-2',
     loadingSpinner: 'inline-flex grow-0 shrink-0',
     loadingIcon: 'animate-spin',

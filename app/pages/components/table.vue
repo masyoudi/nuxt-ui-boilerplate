@@ -32,7 +32,7 @@ const selectedRow = ref<Record<string, any> | null>(null);
 
 const columnPinning = ref({
   left: [],
-  right: ['person.jobType']
+  right: ['person.jobType', 'person.jobTitle']
 });
 const columnOrder = ref(['__numbering', '__selection', 'todo', 'description', 'status.label']);
 
@@ -345,11 +345,21 @@ function globalFilterTodo(row: Row<(typeof todos.value)[number]>) {
         <DataTableColumn
           label="First Name"
           accessor-key="person.firstName"
+          :meta="{
+            class: {
+              th: 'min-w-[250px]'
+            }
+          }"
         />
 
         <DataTableColumn
           label="Last Name"
           accessor-key="person.lastName"
+          :meta="{
+            class: {
+              th: 'min-w-[250px]'
+            }
+          }"
         />
 
         <DataTableColumn
@@ -378,10 +388,24 @@ function globalFilterTodo(row: Row<(typeof todos.value)[number]>) {
         <DataTableColumn
           label="Job Type"
           accessor-key="person.jobType"
+          :size="150"
+          :meta="{
+            class: {
+              th: 'min-w-[150px] max-w-[150px]',
+              td: 'min-w-[150px] max-w-[150px]'
+            }
+          }"
         />
         <DataTableColumn
           label="Job Title"
           accessor-key="person.jobTitle"
+          :size="250"
+          :meta="{
+            class: {
+              th: 'min-w-[250px] max-w-[250px]',
+              td: 'min-w-[250px] max-w-[250px]'
+            }
+          }"
         />
       </DataTable>
     </UCard>

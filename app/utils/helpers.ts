@@ -110,3 +110,12 @@ export function formatDate(date: string | number | Date, formatTemplate: string,
 
   return _formatDate(_date, formatTemplate, options);
 }
+
+/**
+ * Object.keys with strict typing
+ * @param obj - Object value
+ * @returns Array of string
+ */
+export function keysOf<T extends object>(obj: T): (keyof T)[] {
+  return Object.keys(obj) as (keyof T)[];
+}

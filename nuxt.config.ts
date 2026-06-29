@@ -72,6 +72,7 @@ export default defineNuxtConfig({
     optimizeDeps: {
       include: [
         '@internationalized/date',
+        '@nuxt/ui > prosemirror-state',
         '@tanstack/vue-table',
         '@tanstack/vue-virtual',
         '@vueuse/core',
@@ -84,6 +85,15 @@ export default defineNuxtConfig({
         'theme-colors',
         'vue-imask',
         'zod'
+      ],
+      force: true
+    },
+    resolve: {
+      dedupe: [
+        'prosemirror-model',
+        'prosemirror-state',
+        'prosemirror-view',
+        'prosemirror-transform'
       ]
     }
   },

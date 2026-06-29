@@ -45,7 +45,7 @@ const formModel = reactive<z.output<typeof formSchema>>({
   file: undefined as File | undefined,
   hobbies: []
 });
-
+const editorValue = ref('');
 const loading = ref(false);
 
 const formHandler = defineFormHandler({
@@ -78,6 +78,22 @@ const formHandler = defineFormHandler({
         v-bind="formHandler"
         class="space-y-6"
       >
+        <UFormField label="Text Editor">
+          <TextEditor
+            v-model="editorValue"
+          />
+        </UFormField>
+
+        <UFormField label="Editor Value">
+          <div
+            class="content"
+            v-html="editorValue"
+          />
+        </UFormField>
+
+        <UFormField label="UEditor">
+          <UEditor />
+        </UFormField>
         <UFormField
           label="Name"
           name="name"
