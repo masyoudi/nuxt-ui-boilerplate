@@ -4,11 +4,14 @@ import { CellSelection } from '@tiptap/pm/tables';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
+import { TextStyleKit } from '@tiptap/extension-text-style';
+import { ImageResize } from './ExtensionImageResize';
+import { ImageUpload } from './ExtensionImageUpload';
 import type { Editor } from '@tiptap/vue-3';
 import type { EditorProps, EditorCustomHandlers } from '@nuxt/ui';
 import { cn } from 'tailwind-variants';
 
-interface Props extends Omit<EditorProps, 'contentType' | 'modelValue' | 'editable'> {
+interface Props extends Omit<EditorProps, 'contentType' | 'modelValue' | 'editable' | 'image'> {
   disabled?: boolean;
 }
 
@@ -25,14 +28,26 @@ const props = withDefaults(defineProps<Props>(), {
   disabled: false
 });
 
-const extensions = [
+const extensions = computed(() => [
+  ImageResize,
+  ImageUpload,
   TableKit,
   TextAlign.configure({ types: ['heading', 'paragraph'] }),
   Subscript,
-  Superscript
-];
+  Superscript,
+  TextStyleKit.configure({
+    fontSize: false,
+    fontFamily: false
+  })
+]);
 
 const customHandlers = {
+  imageUpload: {
+    canExecute: (editor: Editor) => editor.can().insertContent({ type: 'imageUpload' }),
+    execute: (editor: Editor) => editor.chain().focus().insertContent({ type: 'imageUpload' }),
+    isActive: (editor: Editor) => editor.isActive('imageUpload'),
+    isDisabled: undefined
+  },
   table: {
     canExecute: (editor: Editor) => editor.can().insertTable({ rows: 3, cols: 3, withHeaderRow: true }),
     execute: (editor: Editor) => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }),
@@ -55,6 +70,8 @@ const customHandlers = {
 
 const editorRef = ref<{ editor?: Editor }>();
 const vmodel = defineModel<string>({ default: '' });
+const content = ref('');
+const isFocused = ref(false);
 
 const {
   fixedToolbarItems,
@@ -62,16 +79,47 @@ const {
   suggestionItems,
   bubbleToolbarItems,
   dragHandleItems,
+  imageToolbarItems,
   selectedNode
 } = useEditorActions(editorRef);
-const isFocused = ref(false);
+
+const { emitFormBlur, emitFormInput, emitFormFocus, color } = useFormField(props, { deferInputValidation: true });
+const isError = computed(() => color.value === 'error');
+
+function onUpdateContent(value: string) {
+  vmodel.value = toText(value).length > 0 ? value : '';
+  emitFormInput();
+}
+
+function onFocus() {
+  isFocused.value = true;
+  emitFormFocus();
+}
+
+function onBlur() {
+  isFocused.value = false;
+  emitFormBlur();
+}
+
+function toText(value: string) {
+  return value.replace(/(<\/?[^>]+(>|$)|&nbsp;|\s)/g, '');
+}
+
+watchEffect(() => {
+  const isEqual = toText(vmodel.value) === toText(content.value);
+  if (isEqual) {
+    return;
+  }
+
+  content.value = vmodel.value;
+});
 </script>
 
 <template>
   <UEditor
     ref="editorRef"
     v-slot="{ editor, handlers }"
-    v-model="vmodel"
+    v-model="content"
     v-bind="props"
     :extensions="[...extensions, ...(props.extensions ?? [])]"
     :handlers="{ ...customHandlers, ...props.handlers }"
@@ -79,15 +127,21 @@ const isFocused = ref(false);
     :placeholder="props.placeholder"
     :editor-props="props.editorProps"
     :editable="!props.disabled"
+    :image="false"
     content-type="html"
-    :class="cn('w-full rounded-md ring ring-inset p-px', isFocused ? 'ring-primary' : 'ring-accented', props.class)"
+    :class="cn(
+      'w-full min-h-[150px] rounded-md ring ring-inset bg-white p-px',
+      !isError ? isFocused ? 'ring-primary' : 'ring-accented' : 'ring-error',
+      props.class
+    )"
     :ui="{
       root: props.ui?.root,
-      base: () => cn('content p-8 sm:pr-4 py-4', props.disabled ? 'sm:pl-4' : 'sm:pl-14', props.ui?.base),
-      content: cn('min-h-[150px]', props.ui?.content)
+      base: () => cn('prose min-h-[110px] p-8 sm:pr-4 py-4', props.disabled ? 'sm:pl-4' : 'sm:pl-14', props.ui?.base),
+      content: props.ui?.content
     }"
-    @focus="isFocused = true"
-    @blur="isFocused = false"
+    @focus="onFocus"
+    @blur="onBlur"
+    @update:model-value="onUpdateContent"
   >
     <UEditorToolbar
       v-if="!props.disabled"
@@ -98,11 +152,20 @@ const isFocused = ref(false);
       <template #table>
         <TextEditorActionTable :editor="editor" />
       </template>
+
       <template #link>
         <TextEditorActionLink
           :editor="editor"
           auto-open
         />
+      </template>
+
+      <template #color>
+        <TextEditorActionTextColor :editor="editor" />
+      </template>
+
+      <template #background>
+        <TextEditorActionBackgroundColor :editor="editor" />
       </template>
     </UEditorToolbar>
 
@@ -112,7 +175,7 @@ const isFocused = ref(false);
       :items="bubbleToolbarItems"
       layout="bubble"
       :should-show="({ editor, view, state }) => {
-        if (editor.isActive('imageUpload') || editor.isActive('image') || state.selection instanceof CellSelection) {
+        if (editor.isActive('imageUpload') || editor.isActive('imageResize') || state.selection instanceof CellSelection) {
           return false
         }
         const { selection } = state
@@ -125,6 +188,14 @@ const isFocused = ref(false);
           auto-open
         />
       </template>
+
+      <template #color>
+        <TextEditorActionTextColor :editor="editor" />
+      </template>
+
+      <template #background>
+        <TextEditorActionBackgroundColor :editor="editor" />
+      </template>
     </UEditorToolbar>
 
     <UEditorToolbar
@@ -132,9 +203,14 @@ const isFocused = ref(false);
       :editor="editor"
       :items="tableToolbarItems"
       layout="bubble"
-      :should-show="({ editor, view }: any) => {
-        return editor.state.selection instanceof CellSelection && view.hasFocus()
-      }"
+      :should-show="({ editor, view }: any) => editor.state.selection instanceof CellSelection && view.hasFocus()"
+    />
+
+    <UEditorToolbar
+      :editor="editor"
+      :items="imageToolbarItems"
+      layout="bubble"
+      :should-show="({ editor, view }: any) => editor.isActive('imageResize') && view.hasFocus()"
     />
 
     <UEditorDragHandle

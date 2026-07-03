@@ -11,6 +11,7 @@ const validation = z.object({
   address: z.string().trim().min(1, 'Enter your address'),
   phone: z.string().trim().min(1, 'Enter your phone number'),
   dob: z.string().min(1, 'Please enter date of birth'),
+  bio: z.string().trim().min(1, 'Write bio'),
   hobbies: z.string().array().min(1, 'Please select hobby'),
   file: z.any()
 });

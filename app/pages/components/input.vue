@@ -18,6 +18,7 @@ const formModel = reactive({
   address: '',
   phone: '',
   dob: '',
+  bio: '',
   file: undefined as File | undefined,
   hobbies: [] as string[]
 });
@@ -135,8 +136,11 @@ async function onSubmit() {
           />
         </UFormField>
 
-        <UFormField label="Note">
-          <TextEditor />
+        <UFormField
+          label="Bio"
+          name="bio"
+        >
+          <TextEditor v-model="formModel.bio" />
         </UFormField>
 
         <UFormField label="Tag Input">

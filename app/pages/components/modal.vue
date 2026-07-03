@@ -16,6 +16,7 @@ const fullscreen = ref(false);
 <template>
   <div class="w-full p-5">
     <UCard>
+      <UEditor />
       <div class="flex flex-wrap gap-4">
         <UButton
           @click="nested = true"
