@@ -72,7 +72,17 @@ export default defineNuxtConfig({
     optimizeDeps: {
       include: [
         '@internationalized/date',
+        '@tiptap/core',
+        '@tiptap/extension-subscript',
+        '@tiptap/extension-superscript',
+        '@tiptap/extension-table',
+        '@tiptap/extension-text-align',
+        '@tiptap/extension-text-style',
         '@nuxt/ui > prosemirror-state',
+        '@nuxt/ui > prosemirror-transform',
+        '@nuxt/ui > prosemirror-model',
+        '@nuxt/ui > prosemirror-view',
+        '@nuxt/ui > prosemirror-gapcursor',
         '@tanstack/vue-table',
         '@tanstack/vue-virtual',
         '@vueuse/core',
@@ -85,15 +95,6 @@ export default defineNuxtConfig({
         'theme-colors',
         'vue-imask',
         'zod'
-      ],
-      force: true
-    },
-    resolve: {
-      dedupe: [
-        'prosemirror-model',
-        'prosemirror-state',
-        'prosemirror-view',
-        'prosemirror-transform'
       ]
     }
   },

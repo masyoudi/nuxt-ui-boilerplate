@@ -67,6 +67,12 @@ export function useEditorActions(editorRef: Ref<{ editor?: Editor } | undefined>
         text: 'Inline Code',
         kbds: ['meta', 'E']
       }
+    },
+    {
+      slot: 'color'
+    },
+    {
+      slot: 'background'
     }
   ];
 
@@ -92,11 +98,15 @@ export function useEditorActions(editorRef: Ref<{ editor?: Editor } | undefined>
     [
       {
         icon: 'lucide:heading',
+        trailingIcon: 'lucide:chevron-down',
         tooltip: {
           text: 'Headings'
         },
         content: {
           align: 'start'
+        },
+        ui: {
+          base: 'gap-0.5'
         },
         items: [
           {
@@ -127,11 +137,15 @@ export function useEditorActions(editorRef: Ref<{ editor?: Editor } | undefined>
       },
       {
         icon: 'lucide:list',
+        trailingIcon: 'lucide:chevron-down',
         tooltip: {
           text: 'Lists'
         },
         content: {
           align: 'start'
+        },
+        ui: {
+          base: 'gap-0.5'
         },
         items: [
           {
@@ -174,6 +188,13 @@ export function useEditorActions(editorRef: Ref<{ editor?: Editor } | undefined>
         }
       },
       {
+        kind: 'imageUpload',
+        icon: 'lucide:image',
+        tooltip: {
+          text: 'Image'
+        }
+      },
+      {
         slot: 'link' as const,
         icon: 'lucide:link'
       }
@@ -181,11 +202,15 @@ export function useEditorActions(editorRef: Ref<{ editor?: Editor } | undefined>
     [
       {
         icon: 'lucide:align-justify',
+        trailingIcon: 'lucide:chevron-down',
         tooltip: {
           text: 'Text Align'
         },
         content: {
           align: 'end'
+        },
+        ui: {
+          base: 'gap-0.5'
         },
         items: [
           {
@@ -297,6 +322,13 @@ export function useEditorActions(editorRef: Ref<{ editor?: Editor } | undefined>
         icon: 'lucide:table'
       },
       {
+        kind: 'imageUpload',
+        icon: 'lucide:image',
+        tooltip: {
+          text: 'Image'
+        }
+      },
+      {
         slot: 'link',
         icon: 'lucide:link'
       }
@@ -304,11 +336,15 @@ export function useEditorActions(editorRef: Ref<{ editor?: Editor } | undefined>
     [
       {
         icon: 'lucide:align-justify',
+        trailingIcon: 'lucide:chevron-down',
         tooltip: {
           text: 'Text Align'
         },
         content: {
           align: 'end'
+        },
+        ui: {
+          base: 'gap-0.5'
         },
         items: [
           {
@@ -399,6 +435,11 @@ export function useEditorActions(editorRef: Ref<{ editor?: Editor } | undefined>
         kind: 'table',
         label: 'Table',
         icon: 'lucide:table'
+      },
+      {
+        kind: 'imageUpload',
+        label: 'Image',
+        icon: 'lucide:image'
       },
       {
         kind: 'horizontalRule',
@@ -622,12 +663,60 @@ export function useEditorActions(editorRef: Ref<{ editor?: Editor } | undefined>
     ]);
   });
 
+  const imageToolbarItems: EditorToolbarItem[][] = [
+    [
+      {
+        icon: 'lucide:refresh-cw',
+        tooltip: {
+          text: 'Replace'
+        },
+        onClick: () => {
+          if (!editor.value) {
+            return;
+          }
+
+          const { state } = editor.value;
+          const { selection } = state;
+
+          const pos = selection.from;
+          const node = state.doc.nodeAt(pos);
+
+          if (node && node.type.name === 'imageResize') {
+            editor.value.chain().focus().deleteRange({ from: pos, to: pos + node.nodeSize }).insertContentAt(pos, { type: 'imageUpload' }).run();
+          }
+        }
+      },
+      {
+        icon: 'lucide:trash',
+        tooltip: {
+          text: 'Delete'
+        },
+        onClick: () => {
+          if (!editor.value) {
+            return;
+          }
+
+          const { state } = editor.value;
+          const { selection } = state;
+
+          const pos = selection.from;
+          const node = state.doc.nodeAt(pos);
+
+          if (node && node.type.name === 'imageResize') {
+            editor.value.chain().focus().deleteRange({ from: pos, to: pos + node.nodeSize }).run();
+          }
+        }
+      }
+    ]
+  ];
+
   return {
     fixedToolbarItems,
     tableToolbarItems,
     suggestionItems,
     bubbleToolbarItems,
     dragHandleItems,
+    imageToolbarItems,
     selectedNode
   };
 }

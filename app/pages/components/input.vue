@@ -91,9 +91,6 @@ const formHandler = defineFormHandler({
           />
         </UFormField>
 
-        <UFormField label="UEditor">
-          <UEditor />
-        </UFormField>
         <UFormField
           label="Name"
           name="name"
