@@ -102,7 +102,7 @@ function onBlur() {
 }
 
 function toText(value: string) {
-  return value.replace(/(<\/?[^>]+(>|$)|&nbsp;|\s)/g, '');
+  return value.replace(/<\/?(?!img\b)[a-z][^>]*>|&nbsp;|\s/gi, '');
 }
 
 watchEffect(() => {

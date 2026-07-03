@@ -681,7 +681,7 @@ export function useEditorActions(editorRef: Ref<{ editor?: Editor } | undefined>
           const pos = selection.from;
           const node = state.doc.nodeAt(pos);
 
-          if (node && node.type.name === 'image') {
+          if (node && node.type.name === 'imageResize') {
             editor.value.chain().focus().deleteRange({ from: pos, to: pos + node.nodeSize }).insertContentAt(pos, { type: 'imageUpload' }).run();
           }
         }
@@ -702,7 +702,7 @@ export function useEditorActions(editorRef: Ref<{ editor?: Editor } | undefined>
           const pos = selection.from;
           const node = state.doc.nodeAt(pos);
 
-          if (node && node.type.name === 'image') {
+          if (node && node.type.name === 'imageResize') {
             editor.value.chain().focus().deleteRange({ from: pos, to: pos + node.nodeSize }).run();
           }
         }
