@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { H3Error } from 'h3';
+import type { H3Event, H3Error } from 'h3';
 import { authSessionConfig, authSessionRoles } from '~~/server/utils/session';
 import type { AuthSessionData } from '~~/server/types/session';
 
@@ -8,7 +8,7 @@ const validation = z.object({
   password: z.string().trim().min(1, 'Enter your password')
 });
 
-export default defineEventHandler(async (event) => {
+async function handler(event: H3Event) {
   try {
     const { data: raw } = await useValidateBody(event, { schema: validation });
 
@@ -32,4 +32,8 @@ export default defineEventHandler(async (event) => {
   catch (err) {
     throw sendErrorServer(event, err as H3Error);
   }
+}
+
+export default defineEventHandler({
+  handler
 });

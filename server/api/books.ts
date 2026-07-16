@@ -1,6 +1,7 @@
+import type { H3Event } from 'h3';
 import { faker } from '@faker-js/faker';
 
-export default authSessionHandler((event) => {
+async function handler(event: H3Event) {
   const q = getQuery(event);
   const perPage = (Number.parseInt(String(q.perpage)));
   const data = [...Array(!Number.isNaN(perPage) ? perPage : 10)].map(() => ({
@@ -17,4 +18,9 @@ export default authSessionHandler((event) => {
     data,
     total: 100
   };
+}
+
+export default defineEventHandler({
+  onRequest: [authSessionHandler],
+  handler
 });

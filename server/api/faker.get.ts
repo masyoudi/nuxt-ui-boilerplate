@@ -1,3 +1,4 @@
+import type { H3Event } from 'h3';
 import { faker } from '@faker-js/faker';
 
 const modules = {
@@ -53,7 +54,7 @@ const fakerGenerator = (_modules: (keyof typeof modules)[]) => {
   }, {} as Record<string, any>);
 };
 
-export default authSessionHandler((event) => {
+async function handler(event: H3Event) {
   const q = getQuery(event);
   const page = Number(q.page) || 1;
   const perPage = (Number.parseInt(String(q.perpage)));
@@ -67,4 +68,9 @@ export default authSessionHandler((event) => {
     data,
     total: data.length
   };
+}
+
+export default defineEventHandler({
+  onRequest: [authSessionHandler],
+  handler
 });

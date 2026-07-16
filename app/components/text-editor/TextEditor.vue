@@ -20,6 +20,7 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<Props>(), {
+  starterKit: true,
   placeholder: 'Write, type \'/\' for commands...',
   enableCoreExtensions: true,
   enableInputRules: true,
@@ -130,7 +131,7 @@ watchEffect(() => {
     :image="false"
     content-type="html"
     :class="cn(
-      'w-full min-h-[150px] rounded-md ring ring-inset bg-white p-px',
+      'w-full min-h-[150px] rounded-md ring ring-inset bg-white p-2',
       !isError ? isFocused ? 'ring-primary' : 'ring-accented' : 'ring-error',
       props.class
     )"

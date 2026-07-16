@@ -1,21 +1,28 @@
-import type { FetchOptions } from 'ofetch';
-import type { HTTPMethod } from 'h3';
 import { toArray } from '~~/shared/utils';
 
-interface Options extends Omit<FetchOptions, 'headers' | 'method' | 'body' | 'query'> {
-  headers?: Record<string, string>;
-  method?: Readonly<HTTPMethod>;
-  body?: Record<string, any>;
-  query?: Record<string, any>;
-}
+import type { NitroFetchRequest, TypedInternalResponse } from 'nitropack';
+import type { FetchResponse } from 'ofetch';
 
-/**
- * Fetch API request
- * @param path - API path
- * @param options - ofetch options
- * @returns object
- */
-export async function useRequest<T = any>(path: string, options?: Options) {
+type FetchOptions = Parameters<typeof $fetch>[1];
+
+type TypedResponse<T> = Promise<{
+  raw: FetchResponse<T>;
+  res: T;
+}>;
+
+type ApiRoute = Extract<NitroFetchRequest, `/api/${string}`>;
+
+type RemoveApiPrefix<T> = T extends `/api${infer R}` ? R : never;
+
+type AddApiPrefix<T> = T extends `${infer R}` ? `/api${R}` : never;
+
+type UnprefixedApiRoute = RemoveApiPrefix<ApiRoute>;
+
+export async function useRequest<R extends UnprefixedApiRoute>(url: R, options?: FetchOptions): TypedResponse<TypedInternalResponse<AddApiPrefix<R>>>;
+
+export async function useRequest<T>(url: string, options?: FetchOptions): TypedResponse<T>;
+
+export async function useRequest(url: string, options?: FetchOptions) {
   const _fetch = $fetch.create({
     baseURL: options?.baseURL ?? '/api',
     method: 'GET',
@@ -23,8 +30,8 @@ export async function useRequest<T = any>(path: string, options?: Options) {
     retry: false
   });
 
-  const raw = await _fetch.raw(path, options);
-  const res = raw._data as T;
+  const raw = await _fetch.raw(url, options);
+  const res = raw._data;
 
   return { raw, res };
 }

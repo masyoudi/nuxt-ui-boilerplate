@@ -771,6 +771,7 @@ function onClear() {
       >
         <FocusScope
           :trapped="!props.multiple"
+          :present="!props.multiple"
           data-slot="focusScope"
           :class="uiTheme.focusScope({ class: props.ui?.focusScope })"
         >

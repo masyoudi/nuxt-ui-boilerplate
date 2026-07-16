@@ -1,6 +1,7 @@
+import type { H3Event } from 'h3';
 import { faker } from '@faker-js/faker';
 
-export default authSessionHandler((event) => {
+async function handler(event: H3Event) {
   const q = getQuery(event);
   const page = Number.parseInt(String(q.page)) || 1;
   const perPage = Number.parseInt(String(q.perpage)) || 10;
@@ -14,4 +15,9 @@ export default authSessionHandler((event) => {
   return {
     data
   };
+}
+
+export default defineEventHandler({
+  onRequest: [authSessionHandler],
+  handler
 });
