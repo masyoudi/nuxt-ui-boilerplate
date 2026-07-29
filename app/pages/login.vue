@@ -58,7 +58,7 @@ const formHandler = defineFormHandler({
     }
     catch (err) {
       loading.value = false;
-      useRequestError(err);
+      displayError(err);
     }
   }
 });

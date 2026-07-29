@@ -400,7 +400,7 @@ async function fetchData() {
     _loading.value = false;
   }
   catch (err) {
-    useRequestError(err);
+    displayError(err);
     _loading.value = false;
   }
 }
@@ -781,9 +781,11 @@ function onClear() {
           />
           <div
             v-if="!!props.searchInput && !props.multiple"
+            data-slot="searchWrapper"
             :class="uiTheme.searchWrapper({ class: props.ui?.searchWrapper })"
           >
             <ComboboxInput
+              v-if="!!props.searchInput && !props.multiple"
               v-model="searchTerm"
               :display-value="() => searchTerm"
               as-child

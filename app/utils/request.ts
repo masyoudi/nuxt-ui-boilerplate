@@ -30,24 +30,3 @@ export async function useRequest<T = any>(path: string, options?: Options) {
     res
   };
 }
-
-/**
- * Parse error request
- * @param err - Error response
- */
-export function useRequestError(err: any) {
-  const toast = useToast();
-
-  if (err.response?._data) {
-    const description = typeof err.response._data.message === 'string' ? err.response._data.message : err.response.statusText;
-    toast.add({ description, color: 'danger' });
-    return;
-  }
-
-  if (typeof err === 'string') {
-    toast.add({ description: err, color: 'danger' });
-    return;
-  }
-
-  toast.add({ description: typeof err.message === 'string' ? err.message : 'Something went wrong', color: 'danger' });
-}
