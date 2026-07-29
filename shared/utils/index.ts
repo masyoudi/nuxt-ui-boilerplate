@@ -135,3 +135,17 @@ export function getObjectValue(object: Record<string, any> | undefined, path: (s
 export function keysOf<T extends object>(obj: T): (keyof T)[] {
   return Object.keys(obj) as (keyof T)[];
 }
+
+/**
+ * Parse JSON with default value
+ * @param val
+ * @param errorValue
+ */
+export function parseJSON<T = any, D = null>(val: any, errorValue?: D): T | D {
+  try {
+    return JSON.parse(val) as T;
+  }
+  catch {
+    return (errorValue === undefined ? null : errorValue) as T | D;
+  }
+};

@@ -19,7 +19,7 @@ const toast = useToast();
 async function onSubmit() {
   try {
     loading.value = true;
-    await useRequest('/login?ahs=s', {
+    await useRequest('/login', {
       method: 'POST',
       body: formModel
     });
@@ -28,7 +28,7 @@ async function onSubmit() {
   }
   catch (err) {
     loading.value = false;
-    useRequestErrorParser(err, formRef);
+    displayError(err, formRef);
   }
 }
 </script>

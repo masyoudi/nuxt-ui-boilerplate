@@ -37,7 +37,7 @@ async function onLogout() {
   }
   catch (err: any) {
     loadingLogout.value = false;
-    useRequestErrorParser(err);
+    displayError(err);
   }
 }
 

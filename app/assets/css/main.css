@@ -180,11 +180,33 @@ html {
   }
 
   ol {
-    @apply list-decimal marker:text-slate-800;
+    @apply marker:text-slate-800;
   }
 
   li {
     @apply my-1.5 ps-1.5;
+  }
+
+  ol {
+    list-style-type: none;
+    counter-reset: prose-item;
+    margin: 0;
+    padding: 0;
+  }
+
+  ol > li {
+    display: table;
+    counter-increment: prose-item;
+  }
+
+  ol > li:before {
+    content: counters(prose-item, '.') '. ';
+    display: table-cell;
+    padding-right: 0.6em;
+  }
+
+  ol > li ol > li:before {
+    content: counters(prose-item, '.') ' ';
   }
 
   /* Images */

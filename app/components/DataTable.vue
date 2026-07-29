@@ -895,7 +895,7 @@ async function fetchData() {
     total.value = isServerPagination.value ? result.total ?? 0 : result.data.length;
   }
   catch (err) {
-    useRequestErrorParser(err);
+    displayError(err);
   }
   finally {
     isLoading.value = false;

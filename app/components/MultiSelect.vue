@@ -400,7 +400,7 @@ async function fetchData() {
     _loading.value = false;
   }
   catch (err) {
-    useRequestErrorParser(err);
+    displayError(err);
     _loading.value = false;
   }
 }

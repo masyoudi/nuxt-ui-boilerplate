@@ -37,7 +37,7 @@ async function onSubmit() {
   }
   catch (err) {
     loading.value = false;
-    useRequestErrorParser(err, formRef);
+    displayError(err, formRef);
   }
 }
 </script>
