@@ -27,7 +27,7 @@ app/
   pages/                   File-based routing.
   theme/                   Nuxt UI component theme overrides (datepicker, modal, sidebar, multi-select)
   types/                   Shared TS types, app.d.ts is the global ambient types file
-  utils/                   auth.ts (zod schemas), request.ts (useRequest/useRequestError), form.ts, helpers.ts — all auto-imported
+  utils/                   auth.ts (zod schemas), request.ts (useRequest), form.ts, helpers.ts — all auto-imported
   assets/css/              main.css, colors.css
   app.config.ts            Nuxt UI theme/appearance config (colors, per-component slot overrides)
 shared/utils/              Utils shared between app/ and server/ (auto-imported everywhere)
@@ -42,8 +42,8 @@ config/                    colors.ts (theme color generation), .env (gitignored,
   or `components/` — check if it's already auto-importable before adding an import.
 - **Zod for schemas.** Validation/data shapes (e.g. `authSchema` in `utils/auth.ts`) are defined with `zod` and
   typed via `z.output<typeof schema>`. Follow this pattern for new schemas rather than hand-written interfaces.
-- **API calls** go through `useRequest()` / `useRequestError()` in `utils/request.ts`, not
-  raw `$fetch` or `useFetch` — this keeps timeout/retry/error-toast behavior consistent.
+- **API calls** go through `useRequest()` in `utils/request.ts`, not
+  raw `$fetch` or `useFetch` — this keeps timeout/retry behavior consistent.
 - **Auth state** is managed via `useAuth()` (backed by `useStorage` from `@vueuse/core`,
   key `_auth`). Route protection is done via the `auth` / `unauth` middleware, not inline checks in pages.
 - **Nuxt UI theming**: component-level visual overrides go in `app.config.ts` (slots/variants)

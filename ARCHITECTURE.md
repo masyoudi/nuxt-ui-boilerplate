@@ -43,7 +43,7 @@ Component → useRequest(path) → $fetch (ofetch) → [dev: Vite middleware /ap
                                                → [prod: real API — not yet implemented]
 ```
 
-`useRequest()` / `useRequestError()` (`app/utils/request.ts`) are the single chokepoint for
+`useRequest()` (`app/utils/request.ts`) are the single chokepoint for
 all HTTP calls — fixed timeout, no retry, and errors are funneled into a toast automatically.
 When wiring a real backend, this is the one place that needs a `baseURL`, not every call site.
 

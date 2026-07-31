@@ -13,7 +13,7 @@ const toast = useToast();
 const appToastBus = useAppToastBus();
 
 const tooltipState = useStateAppTooltip();
-const restTooltipState = computed(() => omit(tooltipState.value, 'open'));
+const tooltipOptions = computed(() => omit(tooltipState.value, 'open'));
 
 appToastBus.on('add', (payload) => {
   const result = toast.add({ ...omit(payload, 'callback') });
@@ -56,7 +56,7 @@ if (isValidColor) {
 
     <UTooltip
       v-model:open="tooltipState.open"
-      v-bind="restTooltipState"
+      v-bind="tooltipOptions"
     />
   </UApp>
 </template>
