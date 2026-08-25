@@ -4,7 +4,7 @@
  * @param keys - Object keys to remove
  * @returns object
  */
-export function omit<T extends object, Keys extends keyof T>(source: T, keys: Keys | Keys[]) {
+export function omit<T extends object, Keys extends keyof T>(source: T, keys: Keys | Keys[] | readonly Keys[]) {
   const filteredKeys = Object.keys(source).filter((key) => !toArray(keys as string[], true).includes(key));
   const result = filteredKeys.reduce((prev: Record<string, any>, key) => {
     prev[key] = (source as any)[key];
@@ -13,6 +13,23 @@ export function omit<T extends object, Keys extends keyof T>(source: T, keys: Ke
   }, {});
 
   return result as Omit<T, Keys>;
+}
+
+/**
+ * Pick object by key
+ * @param source - Source object
+ * @param keys - Object keys to pick
+ * @returns object
+ */
+export function pick<T extends object, Keys extends keyof T>(source: T, keys: Keys | Keys[] | readonly Keys[]) {
+  const filteredKeys = Object.keys(source).filter((key) => toArray(keys as string[], true).includes(key));
+  const result = filteredKeys.reduce((prev: Record<string, any>, key) => {
+    prev[key] = (source as any)[key];
+
+    return prev;
+  }, {});
+
+  return result as Pick<T, Keys>;
 }
 
 /**
@@ -137,11 +154,11 @@ export function keysOf<T extends object>(obj: T): (keyof T)[] {
 }
 
 /**
- * Parse JSON with default value
+ * Parse JSON
  * @param val
  * @param errorValue
  */
-export function parseJSON<T = any, D = null>(val: any, errorValue?: D): T | D {
+export const parseJSON = <T = any, D = null>(val: any, errorValue?: D): T | D => {
   try {
     return JSON.parse(val) as T;
   }
