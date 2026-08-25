@@ -42,3 +42,5 @@ minimumReleaseAgeExclude:
   - '@tiptap/pm@3.27.4'
   - '@tiptap/starter-kit@3.27.4'
   - '@tiptap/vue-3@3.27.4'
+  - '@iconify-json/lucide@1.2.126'
+  - eslint@10.9.1

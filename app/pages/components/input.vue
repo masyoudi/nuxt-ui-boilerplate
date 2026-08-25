@@ -193,7 +193,6 @@ const formHandler = defineFormHandler({
           <UFileUpload
             v-slot="{ open }"
             v-model="formModel.file"
-            class="mb-5"
           >
             <UFieldGroup
               class="w-full"

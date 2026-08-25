@@ -1,5 +1,5 @@
 /**
- * Show error message with toast/form field if applicable
+ * Show error message with toast
  * @param err - Error result
  */
 export function displayError(err: any) {
