@@ -45,7 +45,7 @@ const statistics = [
 <template>
   <div class="w-full p-5">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 mb-5">
-      <div class="relative lg:col-span-2">
+      <div class="lg:col-span-2">
         <UCard>
           <div class="text-xl font-semibold mb-5">
             Statistic
@@ -55,7 +55,7 @@ const statistics = [
             :key="`statistic-${i}`"
             class="w-full grid grid-cols-[max-content_1fr] gap-3 mb-5"
           >
-            <div class="relative">
+            <div>
               <div
                 class="inline-flex justify-center items-center rounded-lg p-2.5"
                 :class="[item.background.soft, item.color]"
@@ -66,7 +66,7 @@ const statistics = [
                 />
               </div>
             </div>
-            <div class="relative">
+            <div>
               <div class="flex justify-between">
                 <div class="text-sm font-medium">
                   {{ item.label }}
@@ -90,16 +90,16 @@ const statistics = [
           </div>
         </UCard>
       </div>
-      <div class="relative lg:col-span-3">
+      <div class="lg:col-span-3">
         <UCard>
           <div class="text-xl font-semibold mb-5">
             Topic
           </div>
           <div
-            class="relative block min-h-44"
+            class="block min-h-44"
             :style="[
               '--vis-tooltip-padding: 5px 7px',
-              ' --vis-axis-tick-color: var(--ui-border)',
+              '--vis-axis-tick-color: var(--ui-border)',
               '--vis-axis-grid-color: var(--ui-border)'
             ]"
           >
@@ -107,16 +107,16 @@ const statistics = [
           </div>
         </UCard>
       </div>
-      <div class="relative lg:col-span-3">
+      <div class="lg:col-span-3">
         <UCard>
           <div class="text-xl font-semibold mb-5">
             Activity
           </div>
           <div
-            class="relative block min-h-60"
+            class="block min-h-60"
             :style="[
               '--vis-tooltip-padding: 5px 7px',
-              ' --vis-axis-tick-color: var(--ui-border)',
+              '--vis-axis-tick-color: var(--ui-border)',
               '--vis-axis-grid-color: var(--ui-border)',
               '--vis-crosshair-line-stroke-color: transparent',
               '--vis-crosshair-circle-stroke-color: transparent'
@@ -126,8 +126,8 @@ const statistics = [
           </div>
         </UCard>
       </div>
-      <div class="relative lg:col-span-2">
-        <UCard>
+      <div class="flex flex-col lg:col-span-2">
+        <UCard class="h-full">
           <div class="text-xl font-semibold mb-8">
             Completed Task
           </div>

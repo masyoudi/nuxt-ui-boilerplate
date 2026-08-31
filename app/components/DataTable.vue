@@ -308,7 +308,7 @@ const tableThemeVariants = {
       td: 'whitespace-normal'
     },
     striped: {
-      tbody: '[&>tr]:even:bg-white [&>tr]:odd:bg-secondary-50',
+      tbody: '[&>tr]:even:bg-white dark:[&>tr]:even:bg-elevated [&>tr]:odd:bg-secondary-50 dark:[&>tr]:odd:bg-secondary-700/10',
       th: 'whitespace-normal',
       td: 'whitespace-normal'
     },
@@ -354,8 +354,8 @@ const tableThemeCompoundVariants = [
     class: {
       base: 'border-collapse lg:border-separate border-spacing-y-0 lg:border-spacing-y-3',
       tbody: 'space-y-3 lg:space-y-0',
-      tr: 'border border-neutral-300 lg:border-0 rounded-lg lg:rounded-none divide-y divide-neutral-100 lg:divide-y-0',
-      td: 'lg:border-y lg:first:border-l lg:last:border-r lg:border-neutral-300 lg:first:rounded-s-lg lg:last:rounded-e-lg'
+      tr: 'border border-default lg:border-0 rounded-lg lg:rounded-none divide-y divide-neutral-100 lg:divide-y-0',
+      td: 'lg:border-y lg:first:border-l lg:last:border-r lg:border-default lg:first:rounded-s-lg lg:last:rounded-e-lg'
     }
   },
   {
@@ -363,7 +363,7 @@ const tableThemeCompoundVariants = [
     mobileCards: false,
     class: {
       base: 'border-separate border-spacing-x-0 border-spacing-y-3',
-      td: 'border-y first:border-l last:border-r border-neutral-300 first:rounded-s-lg last:rounded-e-lg'
+      td: 'border-y first:border-l last:border-r border-default first:rounded-s-lg last:rounded-e-lg'
     }
   }
 ];

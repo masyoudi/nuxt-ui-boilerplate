@@ -10,16 +10,15 @@ const theme = tv({
       'inset-y-0',
       '-left-(--sidebar-width)',
       'lg:left-0',
-      'bg-(--ui-bg)',
-      'shadow-md',
+      'bg-default dark:bg-elevated',
       'transition-[left,width]',
       'ease-[cubic-bezier(0.5,1,0.89,1)]',
       'duration-200',
       'border-r',
-      'border-r-muted',
+      'border-r-default',
       'z-20'
     ],
-    menuWrapper: 'w-full px-2 mb-1',
+    menuWrapper: 'w-full px-3 mb-1',
     menu: [
       'relative',
       'flex',
@@ -27,31 +26,15 @@ const theme = tv({
       'min-h-8',
       'items-center',
       'rounded-md',
-      'hover:bg-elevated',
+      'hover:bg-primary-100 dark:hover:bg-primary-400/10 hover:text-primary dark:hover:text-primary-300',
       'cursor-pointer',
       'text-sm',
+      'text-toned',
       'py-2',
       'gap-x-1.5'
     ],
-    menuLabel: 'inline-flex items-center grow shrink',
-    menuIcon: 'inline-flex items-center grow-0 shrink-0',
-    toggle: [
-      'absolute',
-      'hidden',
-      'lg:inline-flex',
-      'justify-center',
-      'items-center',
-      'cursor-pointer',
-      'shadow-xs',
-      'ring',
-      'ring-accented',
-      'top-5',
-      '-right-2.5',
-      'rounded',
-      'bg-muted',
-      'p-1'
-    ],
-    toggleIcon: 'size-3 transition-transform duration-150'
+    menuLabel: 'inline-flex items-center grow shrink font-medium',
+    menuIcon: 'inline-flex items-center grow-0 shrink-0'
   },
   variants: {
     open: {
@@ -67,7 +50,7 @@ const theme = tv({
     },
     menuActive: {
       true: {
-        menu: 'bg-elevated text-(--ui-color-primary-500)'
+        menu: 'bg-primary-100 dark:bg-primary-400/10 text-primary dark:text-primary-300'
       }
     },
     childVisible: {

@@ -338,8 +338,8 @@ function globalFilterTodo(row: Row<(typeof todos.value)[number]>) {
         pagination="server"
         variant="bordered"
         :ui="{
-          th: 'data-[pinned=right]:bg-primary-50',
-          td: 'data-[pinned=right]:bg-primary-50'
+          th: 'data-[pinned=right]:bg-primary-50 dark:data-[pinned=right]:bg-muted',
+          td: 'data-[pinned=right]:bg-primary-50 dark:data-[pinned=right]:bg-muted'
         }"
       >
         <DataTableColumn

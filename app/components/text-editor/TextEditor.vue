@@ -131,7 +131,7 @@ watchEffect(() => {
     :image="false"
     content-type="html"
     :class="cn(
-      'w-full min-h-[150px] rounded-md ring ring-inset bg-white p-2',
+      'w-full min-h-[150px] rounded-md ring ring-inset bg-default p-2',
       !isError ? isFocused ? 'ring-primary' : 'ring-accented' : 'ring-error',
       props.class
     )"
