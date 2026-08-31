@@ -17,8 +17,59 @@ export default defineAppConfig({
       error: 'danger',
       neutral: 'slate'
     },
+    card: {
+      variants: {
+        variant: {
+          outline: {
+            root: 'dark:bg-elevated'
+          }
+        }
+      }
+    },
     icons: {
-      loading: 'lucide:loader'
+      arrowDown: 'ph:arrow-down-bold',
+      arrowLeft: 'ph:arrow-left-bold',
+      arrowRight: 'ph:arrow-right-bold',
+      arrowUp: 'ph:arrow-up-bold',
+      caution: 'ph:warning-circle-bold',
+      check: 'ph:check-bold',
+      chevronDoubleLeft: 'ph:caret-double-left-bold',
+      chevronDoubleRight: 'ph:caret-double-right-bold',
+      chevronDown: 'ph:caret-down-bold',
+      chevronLeft: 'ph:caret-left-bold',
+      chevronRight: 'ph:caret-right-bold',
+      chevronUp: 'ph:caret-up-bold',
+      close: 'ph:x-bold',
+      copy: 'ph:copy-simple-bold',
+      copyCheck: 'ph:check-square-offset-bold',
+      dark: 'ph:moon-bold',
+      drag: 'ph:dots-six-vertical-bold',
+      ellipsis: 'ph:dots-three-bold',
+      error: 'ph:x-circle-bold',
+      external: 'ph:arrow-up-right-bold',
+      eye: 'ph:eye-bold',
+      eyeOff: 'ph:eye-closed-bold',
+      file: 'ph:file-bold',
+      folder: 'ph:folder-simple-bold',
+      folderOpen: 'ph:folder-open-bold',
+      hash: 'ph:hash-bold',
+      info: 'ph:info-bold',
+      light: 'ph:sun-bold',
+      loading: 'ph:spinner-bold',
+      menu: 'ph:list-bold',
+      minus: 'ph:minus-bold',
+      panelClose: 'ph:caret-line-left-bold',
+      panelOpen: 'ph:caret-line-right-bold',
+      plus: 'ph:plus-bold',
+      reload: 'ph:arrow-counter-clockwise-bold',
+      search: 'ph:magnifying-glass-bold',
+      stop: 'ph:square-bold',
+      star: 'ph:star-bold',
+      success: 'ph:check-circle-bold',
+      system: 'ph:monitor-bold',
+      tip: 'ph:lightbulb-bold',
+      upload: 'ph:upload-simple-bold',
+      warning: 'ph:warning-bold'
     },
     button: {
       compoundVariants: [
@@ -26,6 +77,10 @@ export default defineAppConfig({
           variant: 'outline',
           color: 'error',
           class: 'ring-(--ui-error)'
+        },
+        {
+          color: ['primary', 'secondary', 'success', 'warning', 'error', 'danger'],
+          class: 'dark:text-default'
         }
       ]
     },

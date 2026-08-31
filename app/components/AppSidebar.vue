@@ -100,6 +100,10 @@ function isMenuActive(ids: string | string[]) {
 
   return ids.every((v) => metaActive.includes(v));
 }
+
+defineExpose({
+  toggleMinify: onMinify
+});
 </script>
 
 <template>
@@ -108,18 +112,23 @@ function isMenuActive(ids: string | string[]) {
     @mouseenter="() => onHovered(true)"
     @mouseleave="() => onHovered(false)"
   >
-    <div
-      :class="ui.toggle()"
-      @click="onMinify"
-    >
-      <UIcon
-        name="lucide:arrow-left-to-line"
-        :class="[ui.toggleIcon(), { 'rotate-180': mini }]"
-      />
-    </div>
-    <div class="flex h-16 grow-0 items-center shrink-0 px-3">
-      <div class="text-lg font-bold">
-        APP
+    <div class="flex h-16 grow-0 justify-center items-center shrink-0 gap-2 px-3">
+      <div>
+        <UButton
+          icon="ph:rocket-launch-fill"
+          color="primary"
+          size="sm"
+          class="hover:bg-primary p-1"
+          :ui="{
+            leadingIcon: 'size-5'
+          }"
+        />
+      </div>
+      <div
+        class="w-[200px] text-lg font-bold truncate text-primary"
+        :class="{ 'lg:hidden': !isChildVisible }"
+      >
+        NUXTAPP
       </div>
     </div>
     <div class="flex flex-col grow shrink overflow-y-auto py-4">

@@ -1,9 +1,7 @@
 export default defineNuxtRouteMiddleware(async () => {
   try {
-    const auth = useAuth();
-    if (!auth.valid()) {
-      auth.clear();
-
+    const { isValid: isAuthValid } = useAuth();
+    if (!isAuthValid.value) {
       if (import.meta.client) {
         window.location.replace('/login');
         return;

@@ -4,11 +4,11 @@
       :toaster="{ position: 'top-right', expand: true }"
       :tooltip="{ delayDuration: 150, skipDelayDuration: 100 }"
     >
-      <NuxtLayout :name="auth.valid() ? 'default' : 'blank'">
+      <NuxtLayout :name="isAuthValid ? 'default' : 'blank'">
         <div class="w-full px-4 mx-auto">
           <div
             class="flex w-full items-center"
-            :class="!auth.valid() ? 'min-h-screen' : ''"
+            :class="!isAuthValid ? 'min-h-screen' : ''"
           >
             <div class="relative block w-full py-6">
               <div class="text-6xl font-bold text-center">
@@ -19,7 +19,7 @@
               </div>
 
               <div
-                v-if="!auth.valid()"
+                v-if="!isAuthValid"
                 class="relative flex justify-center pt-10"
               >
                 <UButton
@@ -51,7 +51,7 @@ useHead({
   title: props.error ? (props.error?.message ? props.error.message : title) : title
 });
 
-const auth = useAuth();
+const { isValid: isAuthValid } = useAuth();
 
 function goToHome() {
   clearError({ redirect: '/' });

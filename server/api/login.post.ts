@@ -1,23 +1,16 @@
-import { z } from 'zod';
 import type { H3Event, H3Error } from 'h3';
-import { authSessionConfig, authSessionRoles } from '~~/server/utils/session';
+import { authSessionConfig } from '~~/server/utils/session';
 import type { AuthSessionData } from '~~/server/types/session';
-
-const validation = z.object({
-  email: z.email('Invalid email address'),
-  password: z.string().trim().min(1, 'Enter your password')
-});
+import { loginSchema as schema } from '~~/shared/schemas/auth';
 
 async function handler(event: H3Event) {
   try {
-    const { data: raw } = await useValidateBody(event, { schema: validation });
-
+    const { data: raw } = await useValidateBody(event, { schema });
     const session = await useSession<AuthSessionData>(event, authSessionConfig);
 
     await session.update({
       name: raw.email.split('@')[0],
       email: raw.email,
-      role: authSessionRoles.basic,
       expiry: new Date().valueOf() + (authSessionConfig.maxAge! * 1000)
     });
 

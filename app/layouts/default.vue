@@ -7,6 +7,7 @@ const sidebarMini = useCookie('sidebarmini', { default: () => false });
 const title = ref('');
 const openLogout = ref(false);
 const loadingLogout = ref(false);
+const sidebarRef = useTemplateRef('sidebarRef');
 
 const accountActions = shallowRef([
   {
@@ -65,6 +66,7 @@ onMounted(() => {
     style="--sidebar-width: 265px"
   >
     <AppSidebar
+      ref="sidebarRef"
       v-model:open="sidebarOpen"
       v-model:mini="sidebarMini"
     />
@@ -77,23 +79,35 @@ onMounted(() => {
     <div
       class="
         relative w-full h-full flex flex-col transition-[padding] ease-[cubic-bezier(0.5,1,0.89,1)]
-        duration-200 overflow-x-hidden overflow-y-auto bg-[#f2f7fb] dark:bg-muted
+        duration-200 overflow-x-hidden overflow-y-auto bg-muted dark:bg-muted
       "
       :class="sidebarMini ? 'lg:pl-[70px]' : 'lg:pl-(--sidebar-width)'"
     >
-      <header class="sticky flex grow-0 shrink-0 w-full h-16 bg-(--ui-bg)/80 backdrop-blur-xs top-0 shadow-sm px-2 z-10">
-        <div class="flex grow h-full">
-          <div
-            class="inline-flex lg:hidden h-full items-center cursor-pointer select-none p-2"
-            @click="sidebarOpen = true"
-          >
-            <UIcon name="lucide:menu" />
+      <header class="sticky flex grow-0 shrink-0 w-full h-16 bg-default dark:bg-elevated backdrop-blur-xs top-0 border-b border-b-default px-4 z-10">
+        <div class="flex grow h-full gap-x-3">
+          <div class="inline-flex lg:hidden h-full items-center">
+            <UButton
+              icon="lucide:menu"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              @click="sidebarOpen = true"
+            />
           </div>
-          <div class="inline-flex h-full items-center select-none p-2">
+          <div class="hidden lg:inline-flex h-full items-center">
+            <UButton
+              icon="lucide:menu"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              @click="sidebarRef?.toggleMinify()"
+            />
+          </div>
+          <div class="inline-flex h-full items-center select-none">
             <span class="text-lg font-semibold">{{ title }}</span>
           </div>
         </div>
-        <div class="flex grow h-full justify-end gap-x-2">
+        <div class="flex grow h-full justify-end gap-x-3">
           <div class="inline-flex items-center">
             <AppTheme />
           </div>
@@ -111,9 +125,12 @@ onMounted(() => {
               <UButton
                 color="neutral"
                 variant="ghost"
-                icon="lucide:circle-user-round"
+                icon="ph:user-circle-duotone"
                 size="xl"
-                class="text-slate-500 p-1"
+                class="text-dimmed p-0 rounded-full"
+                :ui="{
+                  leadingIcon: 'size-8'
+                }"
               />
             </UDropdownMenu>
           </div>

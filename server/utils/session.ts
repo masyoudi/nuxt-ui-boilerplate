@@ -11,7 +11,3 @@ export const authSessionConfig: SessionConfig = {
   },
   sessionHeader: false
 };
-
-export const authSessionRoles = {
-  basic: 55
-};

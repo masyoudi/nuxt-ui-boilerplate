@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { formDataBuilder } from '~/utils/helpers';
 import { toArray } from '~~/shared/utils';
+import { schema, MAX_LIMIT_FILE } from '~~/shared/schemas/profile';
+import z from 'zod';
+import type { MultiSelectItemValue } from '~/types/multi-select';
+import { formatDate } from '@vueuse/core';
 
 definePageMeta({
   middleware: 'auth',
@@ -9,6 +13,14 @@ definePageMeta({
 
 useHead({
   title: 'Input'
+});
+
+const _schema = schema.extend({
+  file: z.custom<File | undefined>((data) => data instanceof File).superRefine((input, ctx) => {
+    if ((input?.size ?? 0) > MAX_LIMIT_FILE) {
+      ctx.addIssue({ code: 'custom', message: 'Max file size 2mb', input });
+    }
+  })
 });
 
 const formModel = reactive({
@@ -20,26 +32,38 @@ const formModel = reactive({
   dob: '',
   bio: '',
   file: undefined as File | undefined,
-  hobbies: [] as string[]
+  hobbies: [] as MultiSelectItemValue[]
 });
+const formState = computed(() => ({
+  ...omit(formModel, 'hobbies'),
+  hobbies: formModel.hobbies.map((item) => item.value)
+}));
 const formRef = useTemplateRef('formRef');
 const loading = ref(false);
+const toast = useToast();
 
-async function onSubmit() {
-  try {
-    loading.value = true;
+const formHandler = defineFormHandler({
+  schema: _schema,
+  state: formState,
+  async onSubmit(body) {
+    try {
+      loading.value = true;
 
-    await useRequest('/profile', {
-      method: 'POST',
-      body: formDataBuilder(formModel)
-    });
-    loading.value = false;
+      await useRequest('/profile', {
+        method: 'POST',
+        body: formDataBuilder(body)
+      });
+
+      toast.add({ description: 'Data successfully saved', color: 'success' });
+    }
+    catch (err) {
+      displayError(err, formRef);
+    }
+    finally {
+      loading.value = false;
+    }
   }
-  catch (err) {
-    loading.value = false;
-    displayError(err, formRef);
-  }
-}
+});
 </script>
 
 <template>
@@ -49,10 +73,10 @@ async function onSubmit() {
         Input
       </div>
 
-      <FormRoot
+      <UForm
         ref="formRef"
+        v-bind="formHandler"
         class="space-y-6"
-        @submit="onSubmit"
       >
         <UFormField
           label="Name"
@@ -94,7 +118,10 @@ async function onSubmit() {
           label="Date of Birth"
           name="dob"
         >
-          <DatePicker v-model="formModel.dob" />
+          <DatePicker
+            v-model="formModel.dob"
+            :creator="(v) => formatDate(v, 'YYYY-MM-DD')"
+          />
         </UFormField>
 
         <UFormField
@@ -125,14 +152,17 @@ async function onSubmit() {
           name="hobbies"
         >
           <MultiSelect
+            v-model="formModel.hobbies"
             url="/todos"
             multiple
             paginated
             color="neutral"
             placeholder="Search anything..."
-            :transform-fetch-data="(res) => toArray(res.data).map((val) => ({ value: val.id, label: val.task }))"
+            :transform-fetch-data="(res) => toArray(res.data).map((val) => ({
+              value: val.id,
+              label: val.task
+            }))"
             :debounce="500"
-            @update:model-value="(val) => formModel.hobbies = toArray(val!).map((v) => String(v.value))"
           />
         </UFormField>
 
@@ -143,15 +173,6 @@ async function onSubmit() {
           <TextEditor v-model="formModel.bio" />
         </UFormField>
 
-        <UFormField label="Tag Input">
-          <UInputTags
-            placeholder="Input some item..."
-            color="error"
-            variant="ghost"
-            class="w-full"
-          />
-        </UFormField>
-
         <UFormField
           label="Resume"
           name="file"
@@ -159,7 +180,6 @@ async function onSubmit() {
           <UFileUpload
             v-slot="{ open }"
             v-model="formModel.file"
-            class="mb-5"
           >
             <UFieldGroup
               class="w-full"
@@ -188,7 +208,7 @@ async function onSubmit() {
             Submit
           </UButton>
         </div>
-      </FormRoot>
+      </UForm>
     </UCard>
   </div>
 </template>

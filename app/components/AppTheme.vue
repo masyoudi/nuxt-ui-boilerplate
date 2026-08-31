@@ -20,12 +20,24 @@ const colors = [
     value: '#4c0ae6'
   },
   {
+    label: 'Cyan',
+    value: '#00b8db'
+  },
+  {
+    label: 'Sky',
+    value: '#00a6f4'
+  },
+  {
     label: 'Blue',
     value: '#0159F9'
   },
   {
     label: 'Teal',
     value: '#00bba7'
+  },
+  {
+    label: 'Emerald',
+    value: '#00bc7d'
   },
   {
     label: 'Green',
@@ -68,11 +80,12 @@ async function onChangeColor(value: string) {
     <UButton
       icon="lucide:paintbrush"
       color="neutral"
-      variant="ghost"
+      variant="outline"
+      size="sm"
     />
 
     <template #content>
-      <div class="w-64 p-3.5">
+      <div class="w-68 p-3.5">
         <div class="text-sm font-bold mb-2">
           Primary Color
         </div>
@@ -86,17 +99,25 @@ async function onChangeColor(value: string) {
               size="xs"
               block
               class="justify-start"
-              color="neutral"
-              variant="outline"
+              :color="item.value === cookieTheme ? 'primary' : 'neutral'"
+              :variant="item.value === cookieTheme ? 'subtle' : 'outline'"
+              :ui="{
+                leadingIcon: 'size-2'
+              }"
               @click="onChangeColor(item.value)"
             >
-              <span
-                class="w-2 h-2 rounded-full"
-                :style="`background-color: ${chroma(item.value).css('oklch')}`"
-              />
-              <span>
-                {{ item.label }}
-              </span>
+              <template #leading>
+                <span
+                  class="size-2 rounded-full"
+                  :style="`background-color: ${chroma(item.value).css('oklch')}`"
+                />
+              </template>
+
+              <template #default>
+                <span>
+                  {{ item.label }}
+                </span>
+              </template>
             </UButton>
           </div>
         </div>
