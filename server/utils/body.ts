@@ -1,7 +1,7 @@
-import type { MultiPartData, H3Event, HTTPMethod, Encoding } from 'h3';
+import type { H3Event, HTTPMethod, Encoding } from 'h3';
 import { parseFormData as parseFormData } from 'parse-nested-form-data';
-import { readMultipartFormData } from 'h3';
-import { isObjectType } from '~~/shared/utils';
+import { getRequestHeader, readBody, readMultipartFormData, readRawBody } from 'h3';
+import { isObjectType, omit } from '~~/shared/utils';
 
 export interface FormDataOptions {
   parseNestedJSON?: boolean;
@@ -19,6 +19,11 @@ export interface FormDataFile {
 export type ParseBodyOptions = FormDataOptions;
 
 const PayloadMethods: HTTPMethod[] = ['POST', 'PUT', 'DELETE', 'PATCH'];
+const MultipartBodyCache = Symbol('multipart-body-cache');
+
+type MultipartBodyContext = H3Event['context'] & {
+  [MultipartBodyCache]?: Promise<Record<string, any>>;
+};
 
 /**
  * Check if value is file
@@ -38,7 +43,9 @@ export function isFormDataFile(value: any, isAfterParsed: boolean = true): value
     return false;
   }
 
-  return Object.values(omit(value, ['data', 'size'])).every((v) => typeof v === 'string') && Buffer.isBuffer(value.data);
+  const isMetadataValid = Object.values(omit(value, ['data', 'size'])).every((v) => typeof v === 'string');
+
+  return isMetadataValid && Buffer.isBuffer(value.data);
 }
 
 /**
@@ -48,16 +55,16 @@ export function isFormDataFile(value: any, isAfterParsed: boolean = true): value
  * @returns object
  */
 export async function parseBodyFormData(event: H3Event, options: FormDataOptions = { parseNestedJSON: true }) {
-  const data = await readMultipartFormData(event);
-  const arr = (Array.isArray(data) ? data : []) as MultiPartData[];
-
-  const result = arr.reduce((prev: Record<string, any>, curr) => {
+  const context = event.context as MultipartBodyContext;
+  context[MultipartBodyCache] ??= readMultipartFormData(event).then((data) => toArray(data).reduce((prev: Record<string, any>, curr) => {
     const isFile = isFormDataFile(curr, false);
 
     prev[String(curr.name)] = isFile ? { ...curr, size: Buffer.byteLength(curr.data.buffer) } : curr.data.toString('utf-8');
 
     return prev;
-  }, {});
+  }, {}));
+
+  const result = await context[MultipartBodyCache];
 
   return (options.parseNestedJSON ? parseFormData(Object.entries(result)) : result) as Record<string, any>;
 }
@@ -76,14 +83,25 @@ export async function parseBody(
   }
 ) {
   const contentType = getRequestHeader(event, 'content-type');
-  const CONTENT_TYPES = ['application/json', 'application/x-www-form-urlencoded', 'multipart/form-data', 'text/plain'];
+  const CONTENT_TYPES = [
+    'application/json',
+    'application/x-www-form-urlencoded',
+    'multipart/form-data',
+    'application/xml'
+  ];
+  const isText = contentType?.startsWith('text/');
+  const isSupportedContentType = CONTENT_TYPES.some((value) => contentType?.includes(value));
 
-  if (!contentType || !PayloadMethods.includes(event.method) || !CONTENT_TYPES.some((v) => contentType?.includes(v))) {
+  if (!contentType || !PayloadMethods.includes(event.method) || (!isText && !isSupportedContentType)) {
     return;
   }
 
   if (contentType.startsWith('multipart/form-data')) {
     return await parseBodyFormData(event, options);
+  }
+
+  if (contentType.includes('xml')) {
+    return await readRawBody(event, options.encoding);
   }
 
   return await readBody(event);

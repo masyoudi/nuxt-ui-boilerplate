@@ -1,11 +1,9 @@
-import type { NitroFetchRequest, TypedInternalResponse } from 'nitropack';
-import type { FetchResponse } from 'ofetch';
+import type { ApiMethod, ApiResponse, ApiRoute } from '~/types/api';
+import type { FetchOptions, FetchResponse } from 'ofetch';
 
-type FetchOptions = NonNullable<Parameters<typeof $fetch>[1]>;
+type HttpMethod = ApiMethod | Uppercase<ApiMethod>;
 
-type HttpMethod = Exclude<FetchOptions['method'], undefined>;
-
-interface RequestOptions<M extends HttpMethod> extends Omit<FetchOptions, 'headers' | 'method'> {
+interface RequestOptions<M extends HttpMethod = HttpMethod> extends Omit<FetchOptions, 'headers' | 'method'> {
   baseURL?: string;
   headers?: Record<string, string>;
   method?: M;
@@ -16,16 +14,8 @@ type TypedResponse<T> = Promise<{
   res: T;
 }>;
 
-type ApiRoute = Extract<NitroFetchRequest, `/api/${string}`>;
-
-type ApiResponseMap<M extends HttpMethod = 'GET'> = {
-  [K in ApiRoute as K extends `/api${infer R}` ? R : never]: TypedInternalResponse<K, unknown, Lowercase<M>>;
-};
-
-type UnprefixedApiRoute = keyof ApiResponseMap;
-
-export async function useRequest<R extends UnprefixedApiRoute, M extends HttpMethod = 'GET'>(url: R, options?: RequestOptions<M>): TypedResponse<
-  ApiResponseMap<M>[R]
+export async function useRequest<R extends ApiRoute, M extends HttpMethod = 'GET'>(url: R, options?: RequestOptions<M>): TypedResponse<
+  ApiResponse<R, Lowercase<M> & ApiMethod>
 >;
 
 export async function useRequest<T, M extends HttpMethod = 'GET'>(url: string, options?: RequestOptions<M>): TypedResponse<T>;

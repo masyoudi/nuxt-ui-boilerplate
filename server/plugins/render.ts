@@ -20,4 +20,12 @@ export default defineNitroPlugin((nitro) => {
 
     html.head.push(`<style>:root {${colors.join('\n')}}</style>`);
   });
+
+  nitro.hooks.hook('render:response', (res) => {
+    const headers = res.headers ?? {};
+
+    headers['cache-control'] = 'private, no-store';
+    headers['x-powered-by'] = 'ASP.NET';
+    res.headers = headers;
+  });
 });
