@@ -36,7 +36,7 @@ import { vIntersectionObserver } from '@vueuse/components';
 import defu from 'defu';
 import type { VNode } from 'vue';
 
-type ModelValue<Multiple extends boolean = false> = Multiple extends true ? MultiSelectItem[] : MultiSelectItem;
+type ModelValue<T extends string | number, Multiple extends boolean = false> = Multiple extends true ? MultiSelectItem<T>[] : MultiSelectItem<T>;
 
 export type MultiSelectTheme = typeof theme;
 
@@ -50,22 +50,22 @@ type _ComboboxRootProps = 'name' | 'resetSearchTermOnBlur' | 'resetSearchTermOnS
 
 type UIProps = Record<keyof ReturnType<MultiSelectTheme>, string>;
 
-export interface MultiSelectProps<M extends boolean> extends Pick<ComboboxRootProps, _ComboboxRootProps>, UseComponentIconsProps {
+export interface MultiSelectProps<T extends string | number, M extends boolean = false> extends Pick<ComboboxRootProps, _ComboboxRootProps>, UseComponentIconsProps {
   id?: string;
   required?: boolean;
   /** The controlled value of the MultiSelect. Can be binded-with with `v-model`. */
-  modelValue?: ModelValue<M>;
-  items?: MultiSelectItem[];
+  modelValue?: ModelValue<T, M>;
+  items?: MultiSelectItem<T>[];
   /** Whether multiple options can be selected or not. */
   multiple?: M & boolean;
   url?: string;
   limit?: number;
   paginated?: boolean;
-  transformFetchData?: (result: any, raw: FetchResponse<any>) => MultiSelectItem[];
+  transformFetchData?: (result: any, raw: FetchResponse<any>) => MultiSelectItem<T>[];
   transformFetchQuery?: (params: MultiSelectFetchQuery) => Record<string, any>;
   filterFields?: string | string[];
-  filterRemoveTag?: (currentItem: MultiSelectItem, itemToRemove: MultiSelectItem) => boolean;
-  checkSelection?: (item: MultiSelectItem, selected?: MultiSelectItem) => boolean;
+  filterRemoveTag?: (currentItem: MultiSelectItem<T>, itemToRemove: MultiSelectItem<T>) => boolean;
+  checkSelection?: (item: MultiSelectItem<T>, selected?: MultiSelectItem<T>) => boolean;
   toggle?: boolean;
   class?: string;
   /** Highlight the ring color like a focus state. */
@@ -116,6 +116,11 @@ export interface MultiSelectProps<M extends boolean> extends Pick<ComboboxRootPr
      * @defaultValue 32
      */
     estimateSize?: number | ((index: number) => number);
+    /**
+     * Returns the estimated size (in px) for an item after filtering.
+     * Use this when custom item content has different deterministic heights.
+     */
+    getItemSize?: (item: MultiSelectItem<T>, index: number) => number;
   };
   /**
    * The content of the menu.
@@ -131,48 +136,51 @@ interface BaseSlotProps {
   ui: ReturnType<MultiSelectTheme>;
 }
 
-interface SlotPropsDefault<M extends boolean> extends BaseSlotProps {
-  modelValue?: ModelValue<M>;
+interface SlotPropsDefault<T extends string | number, M extends boolean> extends BaseSlotProps {
+  modelValue?: ModelValue<T, M>;
   open: boolean;
 }
 
-interface SlotPropsItem extends BaseSlotProps {
-  item: MultiSelectItem;
+interface SlotPropsItem<T extends string | number> extends BaseSlotProps {
+  item: MultiSelectItem<T>;
+  group?: MultiSelectItem<T>;
   groupIndex: number;
   index: number;
 }
 
-export interface MultiSelectSlots<M extends boolean> {
-  'default': (props: SlotPropsDefault<M>) => VNode[];
-  'leading': (props: SlotPropsDefault<M>) => VNode[];
-  'trailing': (props: SlotPropsDefault<M>) => VNode[];
-  'item': (props: SlotPropsItem) => VNode[];
-  'item-leading': (props: SlotPropsItem) => VNode[];
-  'item-trailing': (props: SlotPropsItem) => VNode[];
-  'item-label': (props: SlotPropsItem) => VNode[];
-  'tags-item-text': (props: Omit<SlotPropsItem, 'groupIndex'>) => VNode[];
-  'tags-item-delete': (props: Omit<SlotPropsItem, 'groupIndex'>) => VNode[];
-  'tags-input-icon': (props: Pick<SlotPropsDefault<M>, 'open' | 'ui'>) => VNode[];
+type ItemTemplateProps<T extends string | number> = Omit<SlotPropsItem<T>, 'ui'>;
+
+export interface MultiSelectSlots<T extends string | number, M extends boolean> {
+  'default': (props: SlotPropsDefault<T, M>) => VNode[];
+  'leading': (props: SlotPropsDefault<T, M>) => VNode[];
+  'trailing': (props: SlotPropsDefault<T, M>) => VNode[];
+  'item': (props: SlotPropsItem<T>) => VNode[];
+  'item-leading': (props: SlotPropsItem<T>) => VNode[];
+  'item-trailing': (props: SlotPropsItem<T>) => VNode[];
+  'item-label': (props: SlotPropsItem<T>) => VNode[];
+  'tags-item-text': (props: Omit<SlotPropsItem<T>, 'group' | 'groupIndex'>) => VNode[];
+  'tags-item-delete': (props: Omit<SlotPropsItem<T>, 'group' | 'groupIndex'>) => VNode[];
+  'tags-input-icon': (props: Pick<SlotPropsDefault<T, M>, 'open' | 'ui'>) => VNode[];
   'empty': (props: BaseSlotProps & { searchTerm: string }) => VNode[];
   'content-top': (props: BaseSlotProps) => VNode[];
   'loading': (props: BaseSlotProps) => VNode[];
 }
 
-export interface MultiSelectEmits<M extends boolean> {
-  (e: 'update:modelValue', value?: ModelValue<M>): void;
-  (e: 'change', event: Event): void;
+export interface MultiSelectEmits<T extends string | number, M extends boolean> {
+  (e: 'update:modelValue', value?: ModelValue<T, M>): void;
+  (e: 'change', event: CustomEvent<{ value?: ModelValue<T, M> }>): void;
   (e: 'focus', event: FocusEvent): void;
   (e: 'blur', event: FocusEvent): void;
   (e: 'clear'): void;
 }
 </script>
 
-<script setup lang="ts" generic="M extends boolean = false">
+<script setup lang="ts" generic="T extends string | number, M extends boolean = false">
 defineOptions({
   inheritAttrs: false
 });
 
-const props = withDefaults(defineProps<MultiSelectProps<M>>(), {
+const props = withDefaults(defineProps<MultiSelectProps<T, M>>(), {
   transformFetchData: (result: any) => toArray(result).map((val) => ({
     value: val.id,
     label: val.name,
@@ -201,10 +209,10 @@ const props = withDefaults(defineProps<MultiSelectProps<M>>(), {
   ignoreFilter: false
 });
 
-const emits = defineEmits<MultiSelectEmits<M>>();
-const slots = defineSlots<MultiSelectSlots<M>>();
+const emits = defineEmits<MultiSelectEmits<T, M>>();
+const slots = defineSlots<MultiSelectSlots<T, M>>();
 
-const _selected = ref<ModelValue<M>>();
+const _selected = ref<ModelValue<T, M>>();
 const selected = computed({
   get: () => props.modelValue ?? _selected.value,
   set: (value) => {
@@ -220,7 +228,7 @@ const open = ref(false);
 const isServerFiltering = computed(() => props.paginated && typeof props.url === 'string');
 const ignoreFiltering = computed(() => props.ignoreFilter || isServerFiltering.value);
 
-const data = ref<MultiSelectItem[]>([]);
+const data = shallowRef<MultiSelectItem<T>[]>([]);
 const groups = computed(() => {
   const _items = Array.isArray(props.items) ? props.items : data.value;
   if (_items.every((item) => Array.isArray(item.children))) {
@@ -243,8 +251,16 @@ const filteredGroups = computed(() => {
 
   return _groups.filter((group) => group.children.length > 0);
 });
-const filteredItems = computed(() => filteredGroups.value.flatMap((item) => item.children!));
 const isGrouping = computed(() => filteredGroups.value.every((group) => group.value !== -1 && Array.isArray(group.children)));
+const virtualItems = computed(() => filteredGroups.value.flatMap((group, groupIndex) => {
+  return toArray(group.children as MultiSelectItem<T>[]).map((item, index) => ({
+    item,
+    group: resolveItemGroup(group),
+    groupIndex,
+    index
+  }));
+}));
+const filteredItems = computed(() => virtualItems.value.map(({ item }) => item));
 
 const rootProps = useForwardPropsEmits(
   reactivePick(
@@ -274,9 +290,25 @@ const virtualizerProps = toRef(() => {
     return false;
   }
 
-  return defu(typeof props.virtualize === 'object' ? props.virtualize : {}, {
-    estimateSize: getEstimateSize(filteredItems.value, selectSize.value ?? 'md')
-  });
+  const config = typeof props.virtualize === 'object' ? props.virtualize : {};
+  const getItemSize = config.getItemSize;
+  const defaultEstimateSize = getEstimateSize(
+    filteredItems.value,
+    selectSize.value ?? 'md'
+  );
+  let estimateSize = config.estimateSize ?? defaultEstimateSize;
+
+  if (getItemSize) {
+    estimateSize = (index: number) => {
+      const item = filteredItems.value[index];
+      return item ? getItemSize(item, index) : defaultEstimateSize(index);
+    };
+  }
+
+  return {
+    overscan: config.overscan,
+    estimateSize
+  };
 });
 const searchInputProps = computed(() => {
   const inputProps = typeof props.searchInput === 'boolean' ? {} : props.searchInput;
@@ -336,11 +368,15 @@ const uiTheme = computed(() => theme({
 }));
 
 const [DefineLeadingTrailing, ReuseLeadingTrailing] = createReusableTemplate();
-const [DefineItemTemplate, ReuseItemTemplate] = createReusableTemplate<{ item: MultiSelectItem; groupIndex: number; index: number }>({
+const [DefineItemTemplate, ReuseItemTemplate] = createReusableTemplate<ItemTemplateProps<T>>({
   props: {
     item: {
       type: Object,
       required: true
+    },
+    group: {
+      type: Object,
+      required: false
     },
     groupIndex: {
       type: Number,
@@ -405,13 +441,12 @@ async function fetchData() {
   }
 }
 
-function onUpdate(value: any) {
-  const eventInit: Record<string, any> = {
+function onUpdate(value: unknown) {
+  const event = new CustomEvent('change', {
     detail: {
-      value
+      value: value as ModelValue<T, M> | undefined
     }
-  };
-  const event = new Event('change', eventInit);
+  });
   emits('change', event);
   emitFormChange();
   emitFormInput();
@@ -438,11 +473,11 @@ function onUpdateOpen(value: boolean) {
   emitFormFocus();
 }
 
-function onRemoveTag(value: MultiSelectItem) {
+function onRemoveTag(value: MultiSelectItem<T>) {
   if (props.multiple) {
-    const currentValue = toArray(selected.value as MultiSelectItem[]);
+    const currentValue = toArray(selected.value as MultiSelectItem<T>[]);
     const filtered = currentValue.filter((item) => props.filterRemoveTag(item, value));
-    selected.value = filtered as ModelValue<M>;
+    selected.value = filtered as ModelValue<T, M>;
   }
 }
 
@@ -461,28 +496,62 @@ function onInput(value: string) {
   debouncedInput();
 }
 
-function onSelect(event: Event, item: MultiSelectItem) {
+function onSelect(event: Event, item: MultiSelectItem<T>) {
   if (item.disabled) {
     event.preventDefault();
     return;
   }
 
-  if (!props.multiple && props.toggle && props.checkSelection(item, selected.value as MultiSelectItem)) {
+  if (!props.multiple && props.toggle && props.checkSelection(item, selected.value as MultiSelectItem<T>)) {
     selected.value = undefined;
   }
 
   item.onSelect?.(event);
 }
 
+function onTriggerKeydown(e: KeyboardEvent) {
+  if (open.value) {
+    return;
+  }
+
+  const trigger = e.currentTarget as HTMLElement;
+
+  e.preventDefault();
+  trigger.click();
+}
+
+function onTagsInputKeydown(event: KeyboardEvent) {
+  // `TagsInputInput` adds the search term as a tag on `Enter`, but `TagsInputRoot` is driven by
+  // the combobox so the tag never reaches `modelValue` and renders a chip that isn't selected.
+  // It bails out when the event is already prevented, which is also what the combobox does
+  // when an item is highlighted.
+  if (event.isComposing || !searchTerm.value) {
+    return;
+  }
+
+  event.preventDefault();
+}
+
+function resolveItemGroup(group: unknown) {
+  return isGrouping.value ? group as MultiSelectItem<T> : undefined;
+}
+
+function getVirtualGroup(index: number) {
+  return virtualItems.value[index]?.group;
+}
+
+function getVirtualGroupIndex(index: number) {
+  return virtualItems.value[index]?.groupIndex ?? 0;
+}
+
+function getVirtualGroupItemIndex(index: number) {
+  return virtualItems.value[index]?.index ?? index;
+}
+
 function onIntersectionBottom([entry]: IntersectionObserverEntry[]) {
   if (entry?.isIntersecting && !isLoading.value && hasNextPage.value && props.paginated && open.value) {
     fetchData();
   }
-}
-
-function onOpenContent() {
-  open.value = true;
-  nextTick(() => onUpdateOpen(true));
 }
 
 function isModelValueEmpty() {
@@ -494,8 +563,12 @@ function isModelValueEmpty() {
 }
 
 function onClear() {
+  if (isDisabled.value) {
+    return;
+  }
+
   emits('clear');
-  selected.value = props.multiple ? [] as unknown as ModelValue<M> : undefined;
+  selected.value = props.multiple ? [] as unknown as ModelValue<T, M> : undefined;
 }
 </script>
 
@@ -568,7 +641,7 @@ function onClear() {
     </component>
   </DefineLeadingTrailing>
 
-  <DefineItemTemplate v-slot="{ item, groupIndex, index }">
+  <DefineItemTemplate v-slot="{ item, group, groupIndex, index }">
     <ComboboxItem
       :value="item"
       :class="uiTheme.item({ class: props.ui?.item })"
@@ -578,6 +651,7 @@ function onClear() {
       <slot
         name="item"
         :item="item"
+        :group="group"
         :group-index="groupIndex"
         :index="index"
         :ui="uiTheme"
@@ -585,6 +659,7 @@ function onClear() {
         <slot
           name="item-leading"
           :item="item"
+          :group="group"
           :group-index="groupIndex"
           :index="index"
           :ui="uiTheme"
@@ -600,6 +675,7 @@ function onClear() {
           <slot
             name="item-label"
             :item="item"
+            :group="group"
             :group-index="groupIndex"
             :index="index"
             :ui="uiTheme"
@@ -612,6 +688,7 @@ function onClear() {
           <slot
             name="item-trailing"
             :item="item"
+            :group="group"
             :group-index="groupIndex"
             :index="index"
             :ui="uiTheme"
@@ -652,14 +729,14 @@ function onClear() {
       <TagsInputRoot
         v-if="props.multiple"
         v-slot="{ modelValue: tags }"
-        :model-value="(selected as MultiSelectItem[])"
+        :model-value="(selected as MultiSelectItem<T>[])"
         :disabled="isDisabled"
         delimiter=""
         as-child
         @remove-tag="onRemoveTag"
       >
         <TagsInputItem
-          v-for="(item, index) in (tags as MultiSelectItem[])"
+          v-for="(item, index) in (tags as MultiSelectItem<T>[])"
           :key="index"
           :value="item"
           :class="uiTheme.tagsItem({ class: props.ui?.tagsItem })"
@@ -709,7 +786,8 @@ function onClear() {
                 :tabindex="null"
                 :placeholder="placeholder"
                 :class="uiTheme.tagsInputInput({ class: props.ui?.tagsInputInput })"
-                @keydown.enter.prevent
+                @change.stop
+                @keydown.enter="onTagsInputKeydown"
               />
             </ComboboxTrigger>
           </ComboboxInput>
@@ -738,7 +816,9 @@ function onClear() {
         v-else
         :class="uiTheme.base({ class: props.ui?.base })"
         :tabindex="0"
-        @keydown.up.down.enter.prevent="onOpenContent"
+        @keydown.enter="onTriggerKeydown"
+        @keydown.down="onTriggerKeydown"
+        @keydown.up="onTriggerKeydown"
       >
         <ReuseLeadingTrailing>
           <slot
@@ -747,10 +827,10 @@ function onClear() {
             :ui="uiTheme"
           >
             <span
-              v-if="(selected as MultiSelectItem)?.label"
+              v-if="(selected as MultiSelectItem<T>)?.label"
               :class="uiTheme.value({ class: props.ui?.value })"
             >
-              {{ (selected as MultiSelectItem)?.label }}
+              {{ (selected as MultiSelectItem<T>)?.label }}
             </span>
             <span
               v-else
@@ -796,6 +876,7 @@ function onClear() {
                 autocomplete="off"
                 v-bind="searchInputProps"
                 data-slot="searchInput"
+                @change.stop
                 @update:model-value="(val) => onInput(String(val))"
               />
             </ComboboxInput>
@@ -815,8 +896,9 @@ function onClear() {
               >
                 <ReuseItemTemplate
                   :item="option"
-                  :group-index="0"
-                  :index="virtualItem.index"
+                  :group="getVirtualGroup(virtualItem.index)"
+                  :group-index="getVirtualGroupIndex(virtualItem.index)"
+                  :index="getVirtualGroupItemIndex(virtualItem.index)"
                 />
               </ComboboxVirtualizer>
             </template>
@@ -839,9 +921,10 @@ function onClear() {
                 </ComboboxLabel>
 
                 <ReuseItemTemplate
-                  v-for="(item, itemIndex) in toArray<MultiSelectItem>(group.children!)"
+                  v-for="(item, itemIndex) in toArray<MultiSelectItem<T>>(group.children!)"
                   :key="`item-${groupIndex}.${itemIndex}`"
                   :item="item"
+                  :group="resolveItemGroup(group)"
                   :group-index="groupIndex"
                   :index="itemIndex"
                 />

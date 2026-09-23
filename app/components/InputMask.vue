@@ -2,8 +2,8 @@
   <div :class="classes.root({ class: [props.class, props.ui?.root] })">
     <IMaskComponent
       :id="id"
-      ref="inputRef"
-      v-model:typed="vmodel"
+      ref="maskInputRef"
+      v-model:unmasked="model"
       type="text"
       :name="name"
       :placeholder="placeholder"
@@ -50,13 +50,21 @@
 
 <script setup lang="ts">
 import { tv } from 'tailwind-variants';
-import type { FactoryArg } from 'imask';
+import type {
+  MaskedNumberOptions,
+  MaskedPatternOptions,
+  MaskedRegExpOptions
+} from 'imask';
 import type { InputProps } from '@nuxt/ui/components/Input.vue';
 import { IMaskComponent } from 'vue-imask';
-import type { InputHTMLAttributes, VNode } from 'vue';
+import type { ComponentPublicInstance, InputHTMLAttributes, VNode } from 'vue';
 import _appConfig from '#build/app.config';
 import theme from '#build/ui/input';
 import { useComponentIcons, useFieldGroup } from '@nuxt/ui/composables';
+
+defineOptions({
+  inheritAttrs: false
+});
 
 type AppConfig = typeof _appConfig & {
   ui: {
@@ -66,9 +74,10 @@ type AppConfig = typeof _appConfig & {
 
 const input = tv({ extend: tv(theme), ...((_appConfig as AppConfig).ui?.input || {}) });
 
+type InputMaskOptions = MaskedNumberOptions | MaskedPatternOptions | MaskedRegExpOptions;
+
 interface Props {
-  modelValue?: string | number;
-  mask?: Partial<FactoryArg>;
+  mask?: InputMaskOptions;
   name?: string;
   placeholder?: string;
   color?: InputProps['color'];
@@ -99,9 +108,9 @@ const props = withDefaults(defineProps<Props>(), {
   mask: () => ({ mask: Number, lazy: false }),
   disabled: false
 });
+const model = defineModel<string>({ default: '' });
 
 const emits = defineEmits<{
-  (e: 'update:modelValue', value: string | number): void;
   (e: 'focus', event: FocusEvent): void;
   (e: 'blur', event: FocusEvent): void;
   (e: 'change', event: Event): void;
@@ -111,15 +120,6 @@ const slots = defineSlots<{
   default(): VNode[];
   trailing(): VNode[];
 }>();
-
-const _value = ref('');
-const vmodel = computed({
-  get: () => String(props.modelValue ?? _value.value),
-  set: (val) => {
-    _value.value = String(val);
-    emits('update:modelValue', String(val));
-  }
-});
 
 const {
   emitFormFocus,
@@ -151,8 +151,13 @@ const classes = computed(() => input({
   fieldGroup: orientation.value
 }));
 
-const inputRef = ref<HTMLInputElement | null>(null);
-const attrs: Record<string, any> = useAttrs();
+const maskInputRef = useTemplateRef<ComponentPublicInstance>('maskInputRef');
+const inputRef = computed<HTMLInputElement | null>(() => {
+  const element = maskInputRef.value?.$el;
+
+  return element instanceof HTMLInputElement ? element : null;
+});
+const attrs = useAttrs();
 
 const attributes = computed(() => ({
   ...attrs,
@@ -171,15 +176,9 @@ function autoFocus() {
 
 /**
  * Handler accept event
- * @param _value - Unmasked value
- * @param event - Event
  */
-function onAccept(_value?: string, event?: Event) {
+function onAccept() {
   emitFormInput();
-
-  if (event) {
-    onChange(event);
-  }
 }
 
 /**
@@ -213,7 +212,19 @@ defineExpose({
   inputRef
 });
 
+let autofocusTimer: ReturnType<typeof setTimeout> | undefined;
+
 onMounted(() => {
-  setTimeout(autoFocus, props.autofocusDelay);
+  if (!props.autofocus) {
+    return;
+  }
+
+  autofocusTimer = setTimeout(autoFocus, props.autofocusDelay);
+});
+
+onBeforeUnmount(() => {
+  if (autofocusTimer) {
+    clearTimeout(autofocusTimer);
+  }
 });
 </script>

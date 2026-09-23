@@ -2,6 +2,7 @@ import type { TooltipOptions } from '~/directives/tooltip';
 
 interface AppTooltipState extends Omit<TooltipOptions, 'getReference'> {
   open: boolean;
+  reference?: HTMLElement;
 }
 
 export function useStateAppTooltip() {

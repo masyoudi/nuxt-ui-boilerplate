@@ -63,7 +63,11 @@ onMounted(() => {
 <template>
   <div
     class="relative w-full h-svh flex overflow-hidden"
-    style="--sidebar-width: 265px"
+    :style="{
+      '--sidebar-width': '265px',
+      '--sidebar-mini-width': '65px',
+      '--sidebar-ease': 'cubic-bezier(0.22, 1, 0.36, 1)'
+    }"
   >
     <AppSidebar
       ref="sidebarRef"
@@ -72,16 +76,16 @@ onMounted(() => {
     />
     <BackDrop
       v-model="sidebarOpen"
-      class="lg:hidden bg-slate-500/30 backdrop-blur-xs lg:pointer-events-none z-[18] lg:-z-10"
+      class="lg:hidden bg-slate-500/30 backdrop-blur-xs lg:pointer-events-none z-18 lg:-z-10"
       :portal="false"
       @click.prevent.stop="sidebarOpen = false"
     />
     <div
       class="
-        relative w-full h-full flex flex-col transition-[padding] ease-[cubic-bezier(0.5,1,0.89,1)]
-        duration-200 overflow-x-hidden overflow-y-auto bg-muted dark:bg-muted
+        relative w-full h-full flex flex-col transition-[padding] ease-(--sidebar-ease)
+        duration-300 overflow-x-hidden overflow-y-auto bg-muted dark:bg-muted
       "
-      :class="sidebarMini ? 'lg:pl-[70px]' : 'lg:pl-(--sidebar-width)'"
+      :class="sidebarMini ? 'lg:pl-(--sidebar-mini-width)' : 'lg:pl-(--sidebar-width)'"
     >
       <header class="sticky flex grow-0 shrink-0 w-full h-16 bg-default dark:bg-elevated backdrop-blur-xs top-0 border-b border-b-default px-4 z-10">
         <div class="flex grow h-full gap-x-3">

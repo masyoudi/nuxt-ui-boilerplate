@@ -3,7 +3,7 @@ import { formDataBuilder } from '~/utils/helpers';
 import { toArray } from '~~/shared/utils';
 import { schema, MAX_LIMIT_FILE } from '~~/shared/schemas/profile';
 import z from 'zod';
-import type { MultiSelectItemValue } from '~/types/multi-select';
+import type { MultiSelectItem } from '~/types/multi-select';
 import { formatDate } from '@vueuse/core';
 
 definePageMeta({
@@ -32,7 +32,7 @@ const formModel = reactive({
   dob: '',
   bio: '',
   file: undefined as File | undefined,
-  hobbies: [] as MultiSelectItemValue[]
+  hobbies: [] as MultiSelectItem<number>[]
 });
 const formState = computed(() => ({
   ...omit(formModel, 'hobbies'),

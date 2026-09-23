@@ -30,7 +30,7 @@ html {
   /* Background */
   --ui-bg: #ffffff;
   --ui-bg-muted: #f7f8fb;
-  --ui-bg-elevated: #ffffff;
+  --ui-bg-elevated: #f6f7f9;
   --ui-bg-accented: #f0f1f5;
   --ui-bg-inverted: #172033;
 
@@ -142,7 +142,7 @@ html {
     & > code {
       @apply border-dashed;
     }
-    
+
     &:hover > code {
       @apply border-primary text-primary;
     }

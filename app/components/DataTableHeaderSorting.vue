@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import type { Column } from '@tanstack/vue-table';
+import type { SortDirection } from '@tanstack/vue-table';
+
+interface SortableColumn {
+  getIsSorted: () => false | SortDirection;
+  toggleSorting: (desc?: boolean, multi?: boolean) => void;
+  clearSorting: () => void;
+}
 
 interface Props {
   label?: string;
-  column: Column<any>;
+  column: SortableColumn;
   multiple?: boolean;
   iconSortAsc?: string;
   iconSortDesc?: string;

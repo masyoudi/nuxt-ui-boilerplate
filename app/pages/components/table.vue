@@ -1,7 +1,22 @@
 <script setup lang="ts">
 import { refDebounced } from '@vueuse/core';
 import { cn } from 'tailwind-variants';
-import type { Row } from '@tanstack/vue-table';
+import type { DataTableRow } from '~/components/DataTable.vue';
+
+interface ColumnOrderExampleColumn {
+  label: string;
+  accessorKey: string;
+}
+
+type SizingHeader = {
+  getSize: () => number;
+};
+
+type SizingCell = {
+  column: {
+    getSize: () => number;
+  };
+};
 
 definePageMeta({
   middleware: 'auth',
@@ -30,8 +45,8 @@ const openDebounced = refDebounced(open, 10);
 const selectedRow = ref<Record<string, any> | null>(null);
 
 const columnPinning = ref({
-  left: [],
-  right: ['person.jobType', 'person.jobTitle']
+  start: [],
+  end: ['person.jobType', 'person.jobTitle']
 });
 const columnOrder = ref(['__numbering', '__selection', 'todo', 'description', 'status.label']);
 
@@ -69,6 +84,59 @@ const virtualItems = ref(Array.from({ length: 1000 }, (_, i) => ({
   amount: 594
 })));
 
+const clientFeatureItems = shallowRef<Record<string, any>[]>([]);
+const clientFeatureLoading = ref(false);
+const groupingExample = ref<string[]>(['person.gender']);
+
+const columnOrderExampleColumns: ColumnOrderExampleColumn[] = [
+  {
+    label: 'Full Name',
+    accessorKey: 'person.fullName'
+  },
+  {
+    label: 'Email',
+    accessorKey: 'internet.email'
+  },
+  {
+    label: 'Gender',
+    accessorKey: 'person.gender'
+  },
+  {
+    label: 'Job Title',
+    accessorKey: 'person.jobTitle'
+  }
+];
+const defaultColumnOrderExample = columnOrderExampleColumns.map((column) => column.accessorKey);
+const columnOrderExample = ref([...defaultColumnOrderExample]);
+
+const defaultColumnSizingExample = {
+  'person.fullName': 260,
+  'internet.email': 320,
+  'person.gender': 160,
+  'person.jobTitle': 280
+};
+const columnSizingExample = ref({ ...defaultColumnSizingExample });
+
+function getColumnSizeStyle(size: number) {
+  const width = `${size}px`;
+  return { width, minWidth: width, maxWidth: width };
+}
+
+const columnSizingMeta = {
+  class: {
+    th: 'relative'
+  },
+  style: {
+    th: (header: SizingHeader) => getColumnSizeStyle(header.getSize()),
+    td: (cell: SizingCell) => getColumnSizeStyle(cell.column.getSize())
+  }
+};
+
+const columnResizeHandleClass = [
+  'absolute inset-y-0 -end-1 z-10 w-2 cursor-col-resize touch-none select-none',
+  'after:absolute after:inset-y-0 after:start-1/2 after:w-px after:-translate-x-1/2'
+];
+
 const tableClientPagingRef = useTemplateRef('tableClientPagingRef');
 
 const filterTodo = ref({
@@ -89,6 +157,38 @@ async function fetchData(params: Record<string, any>) {
   return { data: toArray(res.data), total: 200 };
 }
 
+async function fetchClientFeatureItems() {
+  try {
+    clientFeatureLoading.value = true;
+    const query = {
+      page: 1,
+      perpage: 500,
+      modules: 'person,internet'
+    };
+    const { res } = await useRequest('/faker', {
+      method: 'GET',
+      query
+    });
+
+    clientFeatureItems.value = toArray(res.data);
+  }
+  finally {
+    clientFeatureLoading.value = false;
+  }
+}
+
+function toggleGroupingExample() {
+  groupingExample.value = groupingExample.value.length > 0 ? [] : ['person.gender'];
+}
+
+function resetColumnOrderExample() {
+  columnOrderExample.value = [...defaultColumnOrderExample];
+}
+
+function resetColumnSizingExample() {
+  columnSizingExample.value = { ...defaultColumnSizingExample };
+}
+
 function onPointermove(ev: PointerEvent) {
   anchor.value.x = ev.clientX;
   anchor.value.y = ev.clientY;
@@ -107,7 +207,7 @@ function bindSearchTable(columnId: string) {
   };
 }
 
-function globalFilterTodo(row: Row<(typeof todos.value)[number]>) {
+function globalFilterTodo(row: DataTableRow<(typeof todos.value)[number]>) {
   const { status } = filterTodo.value;
   const isMatches = [
     status && status.value > 0 ? row.original.status.value === status.value : true
@@ -115,6 +215,8 @@ function globalFilterTodo(row: Row<(typeof todos.value)[number]>) {
 
   return isMatches.some((isMatching) => isMatching);
 }
+
+onMounted(fetchClientFeatureItems);
 </script>
 
 <template>
@@ -129,6 +231,9 @@ function globalFilterTodo(row: Row<(typeof todos.value)[number]>) {
         :numbering="false"
         pagination="server"
         mobile-cards
+        :ui="{
+          tr: 'data-[hovered=true]:[&_td]:bg-primary-50 dark:data-[hovered=true]:[&_td]:bg-primary-800/10 [&_td]:transition-[background]'
+        }"
         @pointermove="onPointermove"
         @hover="onHover"
       >
@@ -328,6 +433,250 @@ function globalFilterTodo(row: Row<(typeof todos.value)[number]>) {
     </UCard>
 
     <UCard class="mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div>
+          <div class="text-lg font-semibold">
+            Client Pagination with Grouping
+          </div>
+          <div class="text-sm text-muted">
+            Shared dataset: {{ clientFeatureItems.length }} rows
+          </div>
+        </div>
+
+        <UButton
+          :label="groupingExample.length > 0 ? 'Clear grouping' : 'Group by gender'"
+          color="neutral"
+          variant="outline"
+          @click="toggleGroupingExample"
+        />
+      </div>
+
+      <DataTable
+        v-model:grouping="groupingExample"
+        :items="clientFeatureItems"
+        :loading="clientFeatureLoading"
+        :numbering="false"
+        :grouping-options="{
+          groupedColumnMode: false
+        }"
+        pagination="client"
+        variant="bordered"
+      >
+        <DataTableColumn
+          v-slot="{ cell, row }"
+          label="Gender"
+          accessor-key="person.gender"
+          enable-grouping
+        >
+          <UButton
+            v-if="cell.getIsGrouped()"
+            :icon="row.getIsExpanded() ? 'lucide:chevron-down' : 'lucide:chevron-right'"
+            :label="`${String(cell.getValue())} (${row.subRows.length})`"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            @click="row.toggleExpanded()"
+          />
+          <span v-else>{{ String(cell.getValue()) }}</span>
+        </DataTableColumn>
+        <DataTableColumn
+          v-slot="{ item, row }"
+          label="Full Name"
+          accessor-key="person.fullName"
+          :enable-grouping="false"
+        >
+          {{ row.getIsGrouped() ? `${row.subRows.length} rows` : item.person.fullName }}
+        </DataTableColumn>
+        <DataTableColumn
+          v-slot="{ item, row }"
+          label="Email"
+          accessor-key="internet.email"
+          :enable-grouping="false"
+        >
+          {{ row.getIsGrouped() ? '—' : item.internet.email }}
+        </DataTableColumn>
+        <DataTableColumn
+          v-slot="{ item, row }"
+          label="Job Title"
+          accessor-key="person.jobTitle"
+          :enable-grouping="false"
+        >
+          {{ row.getIsGrouped() ? '—' : item.person.jobTitle }}
+        </DataTableColumn>
+      </DataTable>
+    </UCard>
+
+    <UCard class="mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div>
+          <div class="text-lg font-semibold">
+            Client Pagination with Column Order
+          </div>
+          <div class="text-sm text-muted">
+            Drag a header handle to reorder {{ clientFeatureItems.length }} rows
+          </div>
+        </div>
+
+        <UButton
+          label="Reset order"
+          color="neutral"
+          variant="outline"
+          @click="resetColumnOrderExample"
+        />
+      </div>
+
+      <DataTable
+        v-model:column-order="columnOrderExample"
+        :items="clientFeatureItems"
+        :loading="clientFeatureLoading"
+        :numbering="false"
+        column-reordering
+        pagination="client"
+        variant="bordered"
+      >
+        <DataTableColumn
+          v-for="column in columnOrderExampleColumns"
+          :key="column.accessorKey"
+          :label="column.label"
+          :accessor-key="column.accessorKey"
+        />
+      </DataTable>
+    </UCard>
+
+    <UCard class="mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div>
+          <div class="text-lg font-semibold">
+            Client Pagination with Column Sizing
+          </div>
+          <div class="text-sm text-muted">
+            Drag the right edge of a header to resize it
+          </div>
+        </div>
+
+        <UButton
+          label="Reset widths"
+          color="neutral"
+          variant="outline"
+          @click="resetColumnSizingExample"
+        />
+      </div>
+
+      <DataTable
+        v-model:column-sizing="columnSizingExample"
+        :items="clientFeatureItems"
+        :loading="clientFeatureLoading"
+        :numbering="false"
+        :column-sizing-options="{
+          columnResizeMode: 'onChange',
+          enableColumnResizing: true
+        }"
+        pagination="client"
+        variant="bordered"
+        :ui="{
+          root: 'overflow-x-auto'
+        }"
+      >
+        <DataTableColumn
+          label="Full Name"
+          accessor-key="person.fullName"
+          enable-resizing
+          :size="260"
+          :min-size="160"
+          :max-size="500"
+          :meta="columnSizingMeta"
+        >
+          <template #header="{ header, column }">
+            <div class="flex items-center w-full h-full pe-3">
+              Full Name
+              <div
+                :class="[
+                  columnResizeHandleClass,
+                  column.getIsResizing() ? 'after:bg-primary' : 'after:bg-transparent hover:after:bg-primary'
+                ]"
+                @mousedown="header.getResizeHandler()($event)"
+                @touchstart="header.getResizeHandler()($event)"
+                @dblclick="column.resetSize()"
+              />
+            </div>
+          </template>
+        </DataTableColumn>
+        <DataTableColumn
+          label="Email"
+          accessor-key="internet.email"
+          enable-resizing
+          :size="320"
+          :min-size="180"
+          :max-size="600"
+          :meta="columnSizingMeta"
+        >
+          <template #header="{ header, column }">
+            <div class="flex items-center w-full h-full pe-3">
+              Email
+              <div
+                :class="[
+                  columnResizeHandleClass,
+                  column.getIsResizing() ? 'after:bg-primary' : 'after:bg-transparent hover:after:bg-primary'
+                ]"
+                @mousedown="header.getResizeHandler()($event)"
+                @touchstart="header.getResizeHandler()($event)"
+                @dblclick="column.resetSize()"
+              />
+            </div>
+          </template>
+        </DataTableColumn>
+        <DataTableColumn
+          label="Gender"
+          accessor-key="person.gender"
+          enable-resizing
+          :size="160"
+          :min-size="120"
+          :max-size="280"
+          :meta="columnSizingMeta"
+        >
+          <template #header="{ header, column }">
+            <div class="flex items-center w-full h-full pe-3">
+              Gender
+              <div
+                :class="[
+                  columnResizeHandleClass,
+                  column.getIsResizing() ? 'after:bg-primary' : 'after:bg-transparent hover:after:bg-primary'
+                ]"
+                @mousedown="header.getResizeHandler()($event)"
+                @touchstart="header.getResizeHandler()($event)"
+                @dblclick="column.resetSize()"
+              />
+            </div>
+          </template>
+        </DataTableColumn>
+        <DataTableColumn
+          label="Job Title"
+          accessor-key="person.jobTitle"
+          enable-resizing
+          :size="280"
+          :min-size="180"
+          :max-size="500"
+          :meta="columnSizingMeta"
+        >
+          <template #header="{ header, column }">
+            <div class="flex items-center w-full h-full pe-3">
+              Job Title
+              <div
+                :class="[
+                  columnResizeHandleClass,
+                  column.getIsResizing() ? 'after:bg-primary' : 'after:bg-transparent hover:after:bg-primary'
+                ]"
+                @mousedown="header.getResizeHandler()($event)"
+                @touchstart="header.getResizeHandler()($event)"
+                @dblclick="column.resetSize()"
+              />
+            </div>
+          </template>
+        </DataTableColumn>
+      </DataTable>
+    </UCard>
+
+    <UCard class="mb-5">
       <div class="text-lg font-semibold mb-5">
         With Column Pinning
       </div>
@@ -337,8 +686,8 @@ function globalFilterTodo(row: Row<(typeof todos.value)[number]>) {
         pagination="server"
         variant="bordered"
         :ui="{
-          th: 'data-[pinned=right]:bg-primary-50 dark:data-[pinned=right]:bg-muted',
-          td: 'data-[pinned=right]:bg-primary-50 dark:data-[pinned=right]:bg-muted'
+          th: 'data-[pinned=end]:bg-primary-50 dark:data-[pinned=end]:bg-muted',
+          td: 'data-[pinned=end]:bg-primary-50 dark:data-[pinned=end]:bg-muted'
         }"
       >
         <DataTableColumn

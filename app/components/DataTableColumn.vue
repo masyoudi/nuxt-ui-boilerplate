@@ -1,21 +1,26 @@
 <script lang="ts">
-import type { CellContext, ColumnDef, FilterFnOption as _FilterFnOption, HeaderContext } from '@tanstack/vue-table';
 import type { VNode } from 'vue';
+import type { RowData } from '@tanstack/vue-table';
+import type {
+  DataTableCellContext,
+  DataTableColumnDef,
+  DataTableFilterFnOption,
+  DataTableHeaderContext
+} from '~/utils/data-table';
 
-type FilterFnOption = _FilterFnOption<any> | 'nestedIncludeString';
-
-export interface DataTableColumnProps extends Omit<ColumnDef<any, any>, 'cell' | 'header' | 'footer' | 'filterFn'> {
+export interface DataTableColumnProps<T extends RowData = any> extends /* @vue-ignore */ Omit<DataTableColumnDef<T, any>, 'cell' | 'header' | 'footer' | 'filterFn'> {
   accessorKey?: string;
-  accessorFn?: (originalRow: unknown, index: number) => unknown;
-  filterFn?: FilterFnOption;
+  accessorFn?: (originalRow: T, index: number) => unknown;
+  enableOrdering?: boolean;
+  filterFn?: DataTableFilterFnOption<T>;
   label?: string;
   visible?: boolean;
 }
 
-export interface DataTableColumnSlots {
-  header: (slotProps: HeaderContext<any, any>) => VNode[];
-  default: (slotProps: CellContext<any, any> & { item: Record<string, any> }) => VNode[];
-  footer: (slotProps: HeaderContext<any, any>) => VNode[];
+export interface DataTableColumnSlots<T extends RowData = any> {
+  header: (slotProps: DataTableHeaderContext<T, any>) => VNode[];
+  default: (slotProps: DataTableCellContext<T, any> & { item: T }) => VNode[];
+  footer: (slotProps: DataTableHeaderContext<T, any>) => VNode[];
   columns: () => VNode[];
 }
 </script>

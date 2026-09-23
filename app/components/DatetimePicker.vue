@@ -1,59 +1,120 @@
 <script setup lang="ts">
-import { CalendarDateTime, getLocalTimeZone } from '@internationalized/date';
-import { formatDate } from '@vueuse/core';
+import { CalendarDate, Time } from '@internationalized/date';
+import type { MaskedPatternOptions } from 'imask';
+import { IMaskComponent } from 'vue-imask';
+import type { TimeValue } from 'reka-ui';
+import { cn } from 'tailwind-variants';
 import type { ButtonProps } from '#ui/components/Button.vue';
 import type { CalendarProps } from '#ui/components/Calendar.vue';
-import type { DatepickerValue } from '~/types/datepicker';
-import theme from '~/theme/datepicker';
+import type { InputTimeProps } from '#ui/components/InputTime.vue';
 import { useFieldGroup } from '@nuxt/ui/composables';
+import type { DatepickerPopoverProps, DatepickerValue } from '~/types/datepicker';
+import theme from '~/theme/datepicker';
+
+defineOptions({
+  inheritAttrs: false
+});
+
+type Granularity = NonNullable<InputTimeProps['granularity']>;
+
+type DatetimePickerCalendarProps = Omit<
+  CalendarProps,
+  | 'modelValue'
+  | 'defaultValue'
+  | 'range'
+  | 'multiple'
+  | 'minValue'
+  | 'maxValue'
+  | 'disabled'
+  | 'readonly'
+  | 'type'
+>;
+
+type DatetimePickerTimeProps = Omit<
+  InputTimeProps,
+  | 'modelValue'
+  | 'defaultValue'
+  | 'range'
+  | 'minValue'
+  | 'maxValue'
+  | 'hourCycle'
+  | 'granularity'
+  | 'locale'
+  | 'disabled'
+  | 'readonly'
+  | 'id'
+  | 'name'
+>;
+
+type DatetimePickerUISlots = Pick<
+  typeof theme.slots,
+  | 'root'
+  | 'input'
+  | 'leading'
+  | 'leadingIcon'
+  | 'trailing'
+  | 'trailingIcon'
+  | 'clearAction'
+  | 'clearIcon'
+  | 'calendarAction'
+>;
 
 interface Props {
   id?: string;
-  modelValue?: DatepickerValue;
+  name?: string;
   size?: ButtonProps['size'];
   color?: ButtonProps['color'];
   variant?: ButtonProps['variant'];
-  calendarSize?: CalendarProps<any, any>['size'];
+  calendar?: DatetimePickerCalendarProps;
+  time?: DatetimePickerTimeProps;
   icon?: string;
   trailingIcon?: string;
   min?: Date;
   max?: Date;
+  hourCycle?: 12 | 24;
+  granularity?: Granularity;
+  locale?: string;
   creator?: (value: Date) => DatepickerValue;
   formatter?: (value: Date) => string;
+  mask?: Partial<MaskedPatternOptions>;
   placeholder?: string;
-  dismissable?: boolean;
+  popover?: DatepickerPopoverProps;
   clearable?: boolean;
   clearIcon?: string;
-  portal?: boolean | string | HTMLElement;
+  readonly?: boolean;
   disabled?: boolean;
+  ui?: Partial<DatetimePickerUISlots>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   color: 'neutral',
   variant: 'outline',
-  placeholder: 'Select date',
-  creator: (value: Date) => value as DatepickerValue,
-  dismissable: true,
+  hourCycle: 24,
+  granularity: 'minute',
+  creator: (value: Date) => value,
+  trailingIcon: 'lucide:calendar',
   clearable: true,
   clearIcon: 'lucide:x',
-  portal: true,
+  readonly: false,
   disabled: false
 });
 
-const emits = defineEmits<{
-  (e: 'update:modelValue', value?: DatepickerValue): void;
-  (e: 'focus', event: FocusEvent): void;
+const model = defineModel<DatepickerValue>();
 
+const emits = defineEmits<{
+  (e: 'focus', event: FocusEvent): void;
   (e: 'blur', event: FocusEvent): void;
   (e: 'change', event: Event): void;
 }>();
 
+const open = ref(false);
 const {
   emitFormChange,
   emitFormInput,
   emitFormBlur,
   emitFormFocus,
   id,
+  name,
   size: formGroupSize,
   color,
   ariaAttrs,
@@ -61,248 +122,433 @@ const {
 } = useFormField<Props>(props, { deferInputValidation: true });
 const { size: fieldGroupSize } = useFieldGroup<Props>(props);
 
-const buttonSize = computed(() => fieldGroupSize.value || formGroupSize.value);
-const buttonId = ref(id.value ?? useId());
-const buttonElement = ref<HTMLButtonElement>();
+const inputSize = computed(() => fieldGroupSize.value || formGroupSize.value);
+const inputId = ref(id.value ?? useId());
+const rootElement = useTemplateRef<HTMLDivElement>('rootElement');
+const popoverReference = computed(() => rootElement.value ? rootElement.value : undefined);
+const inputValue = ref('');
 
-const open = ref(false);
+const ui = computed(() => theme({
+  size: inputSize.value,
+  color: color.value,
+  variant: props.variant
+}));
 
-const _model = ref();
-const vmodel = computed({
-  get: () => {
-    const value = props.modelValue ?? _model.value;
-    if (!value || (Number.isNaN(new Date(value).valueOf()))) {
+const popoverContent = computed(() => ({
+  align: 'end' as const,
+  ...props.popover?.content
+}));
+
+const popoverUi = computed(() => ({
+  ...props.popover?.ui,
+  content: cn('z-50', props.popover?.ui?.content)
+}));
+
+const timeSegmentCount = computed(() => {
+  if (props.granularity === 'hour') {
+    return 1;
+  }
+
+  return props.granularity === 'second' ? 3 : 2;
+});
+
+const timeMaskPattern = computed(() => {
+  const segments = Array.from({ length: timeSegmentCount.value }, () => '00').join('{:}');
+  return props.hourCycle === 12 ? `${segments} aa` : segments;
+});
+
+const datetimeMaskOptions = computed(() => ({
+  mask: `00{/}00{/}0000 ${timeMaskPattern.value}`,
+  overwrite: true,
+  prepareChar: (value: string) => value.toUpperCase(),
+  ...props.mask
+}) as MaskedPatternOptions);
+
+const inputPlaceholder = computed(() => {
+  if (props.placeholder) {
+    return props.placeholder;
+  }
+
+  const segments = [
+    'HH',
+    ...(timeSegmentCount.value >= 2 ? ['MM'] : []),
+    ...(timeSegmentCount.value === 3 ? ['SS'] : [])
+  ];
+
+  const suffix = props.hourCycle === 12 ? ' AM/PM' : '';
+  return `DD/MM/YYYY ${segments.join(':')}${suffix}`;
+});
+
+const calendarValue = computed(() => {
+  const value = getModelDate();
+  if (!value) {
+    return undefined;
+  }
+
+  return new CalendarDate(value.getFullYear(), value.getMonth() + 1, value.getDate());
+});
+
+const timeValue = computed(() => {
+  const value = getModelDate();
+  if (!value) {
+    return undefined;
+  }
+
+  return new Time(value.getHours(), value.getMinutes(), value.getSeconds());
+});
+
+const minDate = computed(() => toCalendarDate(props.min));
+const maxDate = computed(() => toCalendarDate(props.max));
+const minTime = computed(() => getBoundaryTime(props.min));
+const maxTime = computed(() => getBoundaryTime(props.max));
+const isClearable = computed(() => props.clearable && !props.readonly && inputValue.value !== '');
+
+function normalizeDate(value?: Date) {
+  if (!value || Number.isNaN(value.valueOf())) {
+    return undefined;
+  }
+
+  return new Date(value);
+}
+
+function getModelDate() {
+  if (model.value === undefined) {
+    return undefined;
+  }
+
+  return normalizeDate(new Date(model.value));
+}
+
+function toCalendarDate(value?: Date) {
+  const date = normalizeDate(value);
+  if (!date) {
+    return undefined;
+  }
+
+  return new CalendarDate(date.getFullYear(), date.getMonth() + 1, date.getDate());
+}
+
+function isSameDate(left: Date, right: Date) {
+  return left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth() && left.getDate() === right.getDate();
+}
+
+function getBoundaryTime(boundary?: Date) {
+  const date = normalizeDate(boundary);
+  const selected = getModelDate();
+  if (!date || !selected || !isSameDate(date, selected)) {
+    return undefined;
+  }
+
+  return new Time(date.getHours(), date.getMinutes(), date.getSeconds());
+}
+
+function clampDate(value: Date) {
+  const min = normalizeDate(props.min);
+  const max = normalizeDate(props.max);
+
+  if (min && value < min) {
+    return min;
+  }
+  if (max && value > max) {
+    return max;
+  }
+
+  return value;
+}
+
+function parseDatePart(value: string) {
+  const [day, month, year] = value.split('/').map(Number);
+  if (!day || !month || !year) {
+    return undefined;
+  }
+
+  const date = new Date(year, month - 1, day);
+  const isValid = date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+
+  return isValid ? { day, month, year } : undefined;
+}
+
+function parseTimePart(value: string) {
+  const parts = value.trim().split(' ');
+  const period = props.hourCycle === 12 ? parts.pop()?.toUpperCase() : undefined;
+  const segments = parts.join(' ').split(':').map(Number);
+
+  if (segments.length !== timeSegmentCount.value || segments.some(Number.isNaN)) {
+    return undefined;
+  }
+
+  const [rawHour = -1, minute = 0, second = 0] = segments;
+  let hour = rawHour;
+  if (minute > 59 || second > 59) {
+    return undefined;
+  }
+
+  if (props.hourCycle === 12) {
+    if (hour < 1 || hour > 12 || !['AM', 'PM'].includes(period ?? '')) {
       return undefined;
     }
 
-    const d = new Date(value);
-    return new CalendarDateTime(d.getFullYear(), d.getMonth() + 1, d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds());
-  },
-  set: (val) => {
-    if (val) {
-      const value = (val as CalendarDateTime).toDate(getLocalTimeZone());
-      _model.value = value;
-      emits('update:modelValue', props.creator(value));
-    }
+    hour = hour % 12 + (period === 'PM' ? 12 : 0);
   }
-});
-
-const timeModel = computed(() => {
-  if (!vmodel.value) {
+  else if (hour < 0 || hour > 23) {
     return undefined;
   }
 
-  return vmodel.value.toDate(getLocalTimeZone());
-});
-
-const minDate = computed(() => {
-  if (!props.min || (props.min && Number.isNaN(new Date(props.min).valueOf()))) {
-    return undefined;
-  }
-
-  const d = new Date(props.min);
-  return new CalendarDateTime(d.getFullYear(), d.getMonth() + 1, d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds());
-});
-
-const maxDate = computed(() => {
-  if (!props.max || (props.max && Number.isNaN(new Date(props.max).valueOf()))) {
-    return undefined;
-  }
-
-  const d = new Date(props.max);
-  return new CalendarDateTime(d.getFullYear(), d.getMonth() + 1, d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds());
-});
-
-const displayDate = computed(() => {
-  if (!vmodel.value || (vmodel.value && typeof vmodel.value.toDate !== 'function')) {
-    return '';
-  }
-
-  const val = vmodel.value as CalendarDateTime;
-  return format(val.toDate(getLocalTimeZone()));
-});
-
-const isClearable = computed(() => displayDate.value !== '' && props.clearable);
-
-const ui = computed(() => theme({
-  size: props.size,
-  hasValue: displayDate.value !== ''
-}));
-
-/**
- * Format display date
- * @param date - Date value
- */
-function format(date: Date) {
-  if (!props.formatter || (props.formatter && typeof props.formatter !== 'function')) {
-    return formatDate(date, 'DD/MM/YYYY h:mm A');
-  }
-
-  return props.formatter(date);
+  return { hour, minute, second };
 }
 
-/**
- * Update v-model for time value
- * @param val - Date value
- */
-function onUpdateTime(val: Date) {
-  vmodel.value = new CalendarDateTime(
-    val.getFullYear(),
-    val.getMonth() + 1,
-    val.getDate(),
-    val.getHours(),
-    val.getMinutes(),
-    val.getSeconds()
+function parseInputDate(value: string) {
+  const separatorIndex = value.indexOf(' ');
+  if (separatorIndex < 0) {
+    return undefined;
+  }
+
+  const date = parseDatePart(value.slice(0, separatorIndex));
+  const time = parseTimePart(value.slice(separatorIndex + 1));
+  if (!date || !time) {
+    return undefined;
+  }
+
+  const result = new Date(
+    date.year,
+    date.month - 1,
+    date.day,
+    time.hour,
+    time.minute,
+    time.second
   );
+  const min = normalizeDate(props.min);
+  const max = normalizeDate(props.max);
 
-  onUpdate(val);
-}
-
-/**
- * Handle blur event
- * @param event - Focus event
- */
-function onBlur(event: FocusEvent) {
-  emitFormBlur();
-  emits('blur', event);
-}
-
-/**
- * Listener on update open popover
- */
-function onUpdateOpen(isOpen: boolean) {
-  if (!isOpen) {
-    const blurEvent = new FocusEvent('blur', {
-      relatedTarget: buttonElement.value
-    });
-    onBlur(blurEvent);
-    return;
+  if ((min && result < min) || (max && result > max)) {
+    return undefined;
   }
 
-  const focusEvent = new FocusEvent('focus', {
-    relatedTarget: buttonElement.value
-  });
-  emits('focus', focusEvent);
-  emitFormFocus();
+  return result;
 }
 
-/**
- * Handler on update value calendar
- * @param value - Calendar value
- */
-function onUpdate(value: any) {
-  const eventInit = {
-    target: {
-      value
-    }
-  };
+function formatInputDate(value: Date) {
+  const date = [value.getDate(), value.getMonth() + 1, value.getFullYear()]
+    .map((part, index) => index === 2 ? String(part).padStart(4, '0') : String(part).padStart(2, '0'))
+    .join('/');
 
-  const event = new CustomEvent('change', eventInit as any);
+  const hour = props.hourCycle === 12 ? value.getHours() % 12 || 12 : value.getHours();
+  const time = [hour, value.getMinutes(), value.getSeconds()]
+    .slice(0, timeSegmentCount.value)
+    .map((part) => String(part).padStart(2, '0'))
+    .join(':');
+  const period = props.hourCycle === 12 ? ` ${value.getHours() >= 12 ? 'PM' : 'AM'}` : '';
+
+  return `${date} ${time}${period}`;
+}
+
+function syncInputValue(value?: Date) {
+  inputValue.value = value ? formatInputDate(value) : '';
+}
+
+function onUpdate(value: unknown) {
+  const event = new Event('change');
+  Object.defineProperty(event, 'target', { value: { value } });
+
   emits('change', event);
-
   emitFormChange();
   emitFormInput();
 }
 
-/**
- * Handle keyboard arrow up & down
- */
-function onKeydownArrowUpAndDown() {
-  if (!open.value) {
-    open.value = true;
+function commitDate(value: Date) {
+  const date = clampDate(value);
+  model.value = props.creator(date);
+  syncInputValue(date);
+  onUpdate(date);
+}
+
+function onInputAccept() {
+  emitFormInput();
+}
+
+function onInputComplete(value: string) {
+  const date = parseInputDate(value);
+  if (date) {
+    commitDate(date);
   }
 }
 
-/**
- * Close popover
- */
+function onInputBlur() {
+  if (inputValue.value === '') {
+    onClear();
+    return;
+  }
+
+  const date = parseInputDate(inputValue.value);
+  if (!date) {
+    syncInputValue(getModelDate());
+  }
+}
+
+function onCalendarUpdate(value: unknown) {
+  if (!(value instanceof CalendarDate)) {
+    return;
+  }
+
+  const current = getModelDate() ?? new Date();
+  commitDate(new Date(
+    value.year,
+    value.month - 1,
+    value.day,
+    current.getHours(),
+    current.getMinutes(),
+    current.getSeconds(),
+    current.getMilliseconds()
+  ));
+}
+
+function onTimeUpdate(value?: TimeValue) {
+  if (!value) {
+    return;
+  }
+
+  const current = getModelDate() ?? new Date();
+  current.setHours(value.hour, value.minute, value.second, 0);
+  commitDate(current);
+}
+
+function onBlur(event: FocusEvent) {
+  emits('blur', event);
+  emitFormBlur();
+}
+
+function onUpdateOpen(isOpen: boolean) {
+  if (!isOpen) {
+    onBlur(new FocusEvent('blur', { relatedTarget: rootElement.value }));
+    return;
+  }
+
+  emits('focus', new FocusEvent('focus', { relatedTarget: rootElement.value }));
+  emitFormFocus();
+}
+
 function close() {
   open.value = false;
 }
 
 function onClear() {
-  _model.value = undefined;
-  emits('update:modelValue', undefined);
+  model.value = undefined;
+  syncInputValue();
   onUpdate(undefined);
 }
 
-onMounted(() => {
-  buttonElement.value = document.getElementById(buttonId.value) as HTMLButtonElement;
+watch(model, () => {
+  syncInputValue(getModelDate());
+}, { immediate: true });
+
+watch([() => props.hourCycle, () => props.granularity], () => {
+  syncInputValue(getModelDate());
 });
 </script>
 
 <template>
-  <UPopover
-    v-model:open="open"
-    :content="{ align: 'start' }"
-    :dismissible="props.dismissable"
-    :portal="props.portal"
-    @update:open="onUpdateOpen"
+  <div
+    ref="rootElement"
+    v-bind="{ ...$attrs, ...ariaAttrs }"
+    :class="ui.root({ class: props.ui?.root })"
   >
-    <slot
-      :open="open"
-      :display-date="displayDate"
-      :disabled="disabled"
+    <span
+      v-if="props.icon"
+      :class="ui.leading({ class: props.ui?.leading })"
     >
-      <UButton
-        v-bind="{ ...$attrs, ...ariaAttrs }"
-        :id="buttonId"
-        :color="color"
-        :variant="props.variant"
-        :class="ui.trigger()"
-        :ui="{
-          leadingIcon: ui.triggerIcon(),
-          trailingIcon: ui.triggerTrailingIcon()
-        }"
-        block
-        :icon="props.icon"
-        :trailing-icon="props.trailingIcon"
-        :size="buttonSize"
+      <UIcon
+        :name="props.icon"
+        :class="ui.leadingIcon({ class: props.ui?.leadingIcon })"
+      />
+    </span>
+
+    <IMaskComponent
+      :id="inputId"
+      v-model="inputValue"
+      v-bind="datetimeMaskOptions"
+      type="text"
+      inputmode="text"
+      autocomplete="off"
+      :name="name"
+      :placeholder="inputPlaceholder"
+      :class="ui.input({ class: props.ui?.input })"
+      :readonly="props.readonly"
+      :disabled="disabled"
+      @accept:masked="onInputAccept"
+      @complete:masked="onInputComplete($event)"
+      @blur="onInputBlur"
+    />
+
+    <span :class="ui.trailing({ class: props.ui?.trailing })">
+      <button
+        v-if="isClearable"
+        type="button"
+        aria-label="Clear datetime"
+        :class="ui.clearAction({ class: props.ui?.clearAction })"
         :disabled="disabled"
-        @keydown.up.prevent="onKeydownArrowUpAndDown"
-        @keydown.down.prevent="onKeydownArrowUpAndDown"
+        @click.prevent.stop="onClear"
       >
-        <span :class="ui.value()">
-          {{ displayDate ? displayDate : props.placeholder }}
-        </span>
-
-        <template
-          v-if="isClearable"
-          #trailing
-        >
-          <span
-            :class="ui.clearAction()"
-            @click.prevent.stop="onClear"
-          >
-            <UIcon
-              :name="props.clearIcon"
-              :class="ui.clearIcon()"
-            />
-          </span>
-        </template>
-      </UButton>
-    </slot>
-
-    <template #content>
-      <UCalendar
-        v-model="vmodel"
-        class="p-2"
-        :min-value="minDate"
-        :max-value="maxDate"
-        :size="props.calendarSize"
-        @update:model-value="onUpdate"
-      />
-      <div class="w-full flex justify-center px-2 pt-2 pb-4">
-        <TimePicker
-          :model-value="timeModel"
-          @update:model-value="(val) => onUpdateTime(val as Date)"
+        <UIcon
+          :name="props.clearIcon"
+          :class="ui.clearIcon({ class: props.ui?.clearIcon })"
         />
-      </div>
+      </button>
 
-      <slot
-        name="footer"
-        :onclose="close"
-      />
-    </template>
-  </UPopover>
+      <UPopover
+        v-bind="props.popover"
+        v-model:open="open"
+        mode="click"
+        :reference="popoverReference"
+        :ui="popoverUi"
+        :content="popoverContent"
+        @update:open="onUpdateOpen"
+      >
+        <button
+          type="button"
+          aria-label="Toggle datetime picker"
+          :aria-expanded="open"
+          :class="ui.calendarAction({ class: props.ui?.calendarAction })"
+          :disabled="disabled"
+        >
+          <UIcon
+            :name="props.trailingIcon"
+            :class="ui.trailingIcon({ class: props.ui?.trailingIcon })"
+          />
+        </button>
+
+        <template #content>
+          <UCalendar
+            v-bind="props.calendar"
+            :model-value="calendarValue"
+            class="p-2"
+            :min-value="minDate"
+            :max-value="maxDate"
+            :disabled="disabled"
+            :readonly="props.readonly"
+            @update:model-value="onCalendarUpdate"
+          />
+
+          <div class="flex w-full justify-center px-2 pt-2 pb-4">
+            <UInputTime
+              v-bind="props.time"
+              :model-value="timeValue"
+              :hour-cycle="props.hourCycle"
+              :granularity="props.granularity"
+              :locale="props.locale"
+              :min-value="minTime"
+              :max-value="maxTime"
+              :disabled="disabled"
+              :readonly="props.readonly"
+              @update:model-value="onTimeUpdate($event as TimeValue)"
+            />
+          </div>
+
+          <slot
+            name="footer"
+            :on-close="close"
+          />
+        </template>
+      </UPopover>
+    </span>
+  </div>
 </template>

@@ -122,7 +122,7 @@ async function onChangeColor(value: string) {
           </div>
         </div>
 
-        <div class="h-px bg-(--ui-border) mb-3.5" />
+        <div class="h-px bg-border mb-3.5" />
 
         <div class="text-sm font-bold mb-2">
           Mode

@@ -12,11 +12,16 @@ const theme = tv({
       'lg:left-0',
       'bg-default dark:bg-elevated',
       'transition-[left,width]',
-      'ease-[cubic-bezier(0.5,1,0.89,1)]',
-      'duration-200',
+      'ease-(--sidebar-ease)',
+      'duration-300',
+      'overflow-hidden',
       'border-r',
       'border-r-default',
       'z-20'
+    ],
+    brandLabel: [
+      'w-[200px] max-w-[200px] overflow-hidden whitespace-nowrap truncate text-lg font-bold text-primary',
+      'transition-[max-width,opacity,transform] duration-200 ease-(--sidebar-ease)'
     ],
     menuWrapper: 'w-full px-3 mb-1',
     menu: [
@@ -31,10 +36,22 @@ const theme = tv({
       'text-sm',
       'text-toned',
       'py-2',
-      'gap-x-1.5'
+      'gap-x-1.5',
+      'transition-[gap] duration-200 ease-(--sidebar-ease)'
     ],
-    menuLabel: 'inline-flex items-center grow shrink font-medium',
-    menuIcon: 'inline-flex items-center grow-0 shrink-0'
+    menuLabel: [
+      'inline-flex items-center grow shrink max-w-52 overflow-hidden whitespace-nowrap font-medium',
+      'transition-[max-width,opacity,transform] duration-200 ease-(--sidebar-ease)'
+    ],
+    menuIcon: 'inline-flex items-center grow-0 shrink-0',
+    menuTrailing: [
+      'inline-flex items-center grow-0 shrink-0 max-w-5 overflow-hidden',
+      'transition-[max-width,opacity,transform] duration-200 ease-(--sidebar-ease)'
+    ],
+    submenu: [
+      'grid grid-rows-[1fr] overflow-hidden py-0.5 opacity-100',
+      'transition-[grid-template-rows,opacity] duration-200 ease-(--sidebar-ease)'
+    ]
   },
   variants: {
     open: {
@@ -44,8 +61,8 @@ const theme = tv({
     },
     mini: {
       true: {
-        root: 'lg:w-[70px]',
-        menu: 'lg:justify-center'
+        root: 'lg:w-(--sidebar-mini-width)',
+        menu: 'lg:justify-center lg:gap-x-0'
       }
     },
     menuActive: {
@@ -53,9 +70,18 @@ const theme = tv({
         menu: 'bg-primary-100 dark:bg-primary-400/10 text-primary dark:text-primary-300'
       }
     },
-    childVisible: {
+    expanded: {
+      true: {
+        brandLabel: 'lg:max-w-[200px] lg:opacity-100 lg:translate-x-0',
+        menuLabel: 'lg:max-w-52 lg:opacity-100 lg:translate-x-0',
+        menuTrailing: 'lg:max-w-5 lg:opacity-100 lg:translate-x-0',
+        submenu: 'lg:grid-rows-[1fr] lg:opacity-100'
+      },
       false: {
-        menuLabel: 'lg:hidden'
+        brandLabel: 'lg:max-w-0 lg:opacity-0 lg:-translate-x-1',
+        menuLabel: 'lg:max-w-0 lg:opacity-0 lg:-translate-x-1 lg:pointer-events-none',
+        menuTrailing: 'lg:max-w-0 lg:opacity-0 lg:-translate-x-1 lg:pointer-events-none',
+        submenu: 'lg:grid-rows-[0fr] lg:opacity-0 lg:pointer-events-none'
       }
     }
   }
