@@ -1,11 +1,8 @@
-export type MultiSelectItemValue = {
+export type MultiSelectItem<T = string | number> = {
   label: string;
-  value: number | string;
+  value: T;
   disabled?: boolean;
   onSelect?(e?: Event): void;
+  children?: MultiSelectItem<T>[];
   [key: string]: any;
-};
-
-export type MultiSelectItem = MultiSelectItemValue & {
-  children?: MultiSelectItem[];
 };

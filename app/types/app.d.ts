@@ -12,10 +12,4 @@ declare module 'vue' {
   }
 }
 
-declare global {
-  interface HTMLElement {
-    __tooltipCleanup?: () => void;
-  }
-}
-
 export {};

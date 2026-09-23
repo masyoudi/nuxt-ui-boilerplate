@@ -4,7 +4,7 @@
       <slot
         name="trailing"
         :ui="ui"
-        :visibility="visible"
+        :visible="visible"
         :toggle-visibility="toggleVisibilty"
       >
         <UButton

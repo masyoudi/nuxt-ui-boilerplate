@@ -1,12 +1,18 @@
 <script setup lang="ts" generic="IsRange extends boolean = false">
 import { CalendarDate, getLocalTimeZone } from '@internationalized/date';
 import { formatDate } from '@vueuse/core';
+import type { MaskedDateOptions, MaskedPatternOptions } from 'imask';
+import { IMaskComponent } from 'vue-imask';
+import { cn } from 'tailwind-variants';
 import type { ButtonProps } from '#ui/components/Button.vue';
 import type { CalendarProps } from '#ui/components/Calendar.vue';
-import type { DatepickerValue } from '~/types/datepicker';
-import { toArray } from '~~/shared/utils';
+import type { DatepickerPopoverProps, DatepickerValue } from '~/types/datepicker';
 import theme from '~/theme/datepicker';
 import { useFieldGroup } from '@nuxt/ui/composables';
+
+defineOptions({
+  inheritAttrs: false
+});
 
 type RangeValue = {
   start: CalendarDate;
@@ -17,58 +23,83 @@ type Hours = [number, number, number, number];
 
 type TModel<R extends boolean = false> = R extends true ? DatepickerValue[] : DatepickerValue;
 
+type DatePickerCalendarProps<R extends boolean> = Omit<
+  CalendarProps<R>,
+  | 'modelValue'
+  | 'defaultValue'
+  | 'range'
+  | 'multiple'
+  | 'minValue'
+  | 'maxValue'
+  | 'disabled'
+  | 'type'
+>;
+
+type DatePickerUISlots = Pick<
+  typeof theme.slots,
+  | 'root'
+  | 'input'
+  | 'leading'
+  | 'leadingIcon'
+  | 'trailing'
+  | 'trailingIcon'
+  | 'clearAction'
+  | 'clearIcon'
+  | 'calendarAction'
+>;
+
 interface Props<R extends boolean> {
   id?: string;
-  modelValue?: TModel<R>;
+  name?: string;
   range?: R & boolean;
   size?: ButtonProps['size'];
   color?: ButtonProps['color'];
   variant?: ButtonProps['variant'];
-  calendarSize?: CalendarProps<any, any>['size'];
+  calendar?: DatePickerCalendarProps<R>;
   icon?: string;
   trailingIcon?: string;
   timeRange?: 'start' | 'end';
   min?: Date;
   max?: Date;
-  creator?: (value: Date) => TModel<R>;
+  creator?: (value: Date) => DatepickerValue;
   formatter?: (value: Date) => string;
+  mask?: Partial<MaskedDateOptions>;
   placeholder?: string;
-  dismissable?: boolean;
+  rangePlaceholder?: string;
+  popover?: DatepickerPopoverProps;
   clearable?: boolean;
   clearIcon?: string;
-  portal?: boolean | string | HTMLElement;
   disabled?: boolean;
+  ui?: Partial<DatePickerUISlots>;
 }
 
 const props = withDefaults(defineProps<Props<IsRange>>(), {
   color: 'neutral',
   variant: 'outline',
-  placeholder: 'Select date',
-  creator: (value: Date) => value as TModel<IsRange>,
+  placeholder: 'DD/MM/YYYY',
+  rangePlaceholder: 'DD/MM/YYYY - DD/MM/YYYY',
+  creator: (value: Date) => value,
   trailingIcon: 'lucide:calendar',
-  dismissable: true,
   clearable: true,
   clearIcon: 'lucide:x',
-  portal: true,
   disabled: false
 });
+const model = defineModel<TModel<IsRange>>();
 
 const emits = defineEmits<{
-  (e: 'update:modelValue', value?: DatepickerValue | DatepickerValue[]): void;
   (e: 'focus', event: FocusEvent): void;
-
   (e: 'blur', event: FocusEvent): void;
   (e: 'change', event: Event): void;
 }>();
 
 const open = ref(false);
-const hasModel = ref(!props.range ? typeof props.modelValue !== 'undefined' : Array.isArray(props.modelValue));
 const {
   emitFormChange,
   emitFormInput,
   emitFormBlur,
   emitFormFocus,
   id,
+  name,
   size: formGroupSize,
   color,
   ariaAttrs,
@@ -79,61 +110,50 @@ const { size: fieldGroupSize } = useFieldGroup<Props<IsRange>>(props);
 const startHours: Hours = [0, 0, 0, 0];
 const endHours: Hours = [23, 59, 59, 999];
 
-const buttonSize = computed(() => fieldGroupSize.value || formGroupSize.value);
-const buttonId = ref(id.value ?? useId());
-const buttonElement = ref<HTMLButtonElement>();
+const inputSize = computed(() => fieldGroupSize.value || formGroupSize.value);
+const inputId = ref(id.value ?? useId());
+const rootElement = useTemplateRef<HTMLDivElement>('rootElement');
 
-const _model = ref();
-const vmodel = computed({
-  get: () => {
-    const value = hasModel.value ? props.modelValue : _model.value;
-    if (
-      !value
-      || (!props.range && Number.isNaN(new Date(value).valueOf()))
-      || (props.range && !Array.isArray(value))
-      || (props.range && Array.isArray(value) && value.length !== 2)
-      || (props.range && Array.isArray(value) && value.some((val) => Number.isNaN(new Date(val !== null ? val : undefined).valueOf())))
-    ) {
-      return undefined as any;
-    }
+const inputValue = ref('');
+const inputDate = ref<Date>();
 
-    if (props.range) {
-      const [start, end] = toArray(value).map((v) => new Date(v)) as [Date, Date];
-
-      return {
-        start: new CalendarDate(start.getFullYear(), start.getMonth() + 1, start.getDate()),
-        end: new CalendarDate(end.getFullYear(), end.getMonth() + 1, end.getDate())
-      };
-    }
-
-    const d = new Date(value);
-    return new CalendarDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
-  },
-  set: (val) => {
-    if (props.range && isValueRange(val as RangeValue)) {
-      const { start, end } = val as RangeValue;
-      const values = [
-        new Date(start.toDate(getLocalTimeZone()).setHours(...startHours)),
-        new Date(end.toDate(getLocalTimeZone()).setHours(...endHours))
-      ];
-      const formatted = values.map((v) => props.creator(v)) as DatepickerValue[];
-
-      _model.value = values;
-      emits('update:modelValue', formatted);
-      open.value = false;
-    }
-
-    if (!props.range && val instanceof CalendarDate) {
-      const d = new Date();
-      const currentHours: Hours = [d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()];
-      const hours = props.timeRange === 'start' ? startHours : props.timeRange === 'end' ? endHours : currentHours;
-      const value = new Date(val.toDate(getLocalTimeZone()).setHours(...hours));
-
-      _model.value = value;
-      emits('update:modelValue', props.creator(value));
-      open.value = false;
-    }
+const singleCalendarValue = computed(() => {
+  if (props.range) {
+    return undefined;
   }
+
+  const value = model.value;
+  if (value === undefined || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.valueOf())) {
+    return undefined;
+  }
+
+  return new CalendarDate(date.getFullYear(), date.getMonth() + 1, date.getDate());
+});
+
+const rangeCalendarValue = computed<RangeValue | null>(() => {
+  if (!props.range) {
+    return null;
+  }
+
+  const value = model.value;
+  if (!Array.isArray(value) || value.length !== 2) {
+    return null;
+  }
+
+  const [start, end] = value.map((item) => new Date(item));
+  if (!start || !end || Number.isNaN(start.valueOf()) || Number.isNaN(end.valueOf())) {
+    return null;
+  }
+
+  return {
+    start: new CalendarDate(start.getFullYear(), start.getMonth() + 1, start.getDate()),
+    end: new CalendarDate(end.getFullYear(), end.getMonth() + 1, end.getDate())
+  };
 });
 
 const minDate = computed(() => {
@@ -154,31 +174,205 @@ const maxDate = computed(() => {
   return new CalendarDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
 });
 
-const displayDate = computed(() => {
-  if (!vmodel.value || (props.range && !isValueRange(vmodel.value as RangeValue))) {
-    return '';
-  }
+const dateMaskOptions = computed(() => ({
+  mask: Date,
+  pattern: 'd{/}`m{/}`Y',
+  format: formatInputDate,
+  parse: parseInputDate,
+  min: normalizeDateLimit(props.min),
+  max: normalizeDateLimit(props.max),
+  autofix: 'pad' as const,
+  overwrite: true,
+  ...props.mask
+}) as MaskedDateOptions);
 
-  if (props.range) {
-    const { start, end } = vmodel.value as RangeValue;
+const rangeDateMaskOptions: MaskedPatternOptions = {
+  mask: '00{/}00{/}0000 - 00{/}00{/}0000',
+  overwrite: true
+};
+
+const displayDate = computed(() => {
+  if (rangeCalendarValue.value) {
+    const { start, end } = rangeCalendarValue.value;
     return `${format(start.toDate(getLocalTimeZone()))} - ${format(end.toDate(getLocalTimeZone()))}`;
   }
 
-  const val = vmodel.value as CalendarDate;
-  return format(val.toDate(getLocalTimeZone()));
+  if (singleCalendarValue.value) {
+    return format(singleCalendarValue.value.toDate(getLocalTimeZone()));
+  }
+
+  return '';
 });
 
-const isClearable = computed(() => displayDate.value !== '' && props.clearable);
+const isClearable = computed(() => props.clearable && inputValue.value !== '');
 
 const ui = computed(() => theme({
-  size: props.size,
+  size: inputSize.value,
+  color: color.value,
+  variant: props.variant,
   hasValue: displayDate.value !== ''
 }));
 
-/**
- * Format display date
- * @param date - Date value
- */
+const popoverReference = computed(() => rootElement.value ? rootElement.value : undefined);
+const popoverContent = computed(() => ({
+  align: 'end' as const,
+  ...props.popover?.content
+}));
+
+const popoverUi = computed(() => ({
+  ...props.popover?.ui,
+  content: cn('z-50', props.popover?.ui?.content)
+}));
+
+function normalizeDateLimit(value?: Date) {
+  if (!value || Number.isNaN(new Date(value).valueOf())) {
+    return undefined;
+  }
+
+  const date = new Date(value);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function formatInputDate(value: Date | null) {
+  if (!value) {
+    return '';
+  }
+
+  return formatDate(value, 'DD/MM/YYYY');
+}
+
+function parseInputDate(value: string) {
+  const [day, month, year] = value.split('/').map(Number);
+  if (!day || !month || !year) {
+    return null;
+  }
+
+  const date = new Date(year, month - 1, day);
+  const isValid = date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+
+  return isValid ? date : null;
+}
+
+function isWithinDateLimits(value: Date) {
+  const min = normalizeDateLimit(props.min);
+  const max = normalizeDateLimit(props.max);
+  const date = normalizeDateLimit(value);
+
+  return !!date && (!min || date >= min) && (!max || date <= max);
+}
+
+function parseRangeInput(value: string) {
+  const [startValue, endValue, ...rest] = value.split(' - ');
+  if (!startValue || !endValue || rest.length > 0) {
+    return undefined;
+  }
+
+  const start = parseInputDate(startValue);
+  const end = parseInputDate(endValue);
+  if (!start || !end || !isWithinDateLimits(start) || !isWithinDateLimits(end) || start > end) {
+    return undefined;
+  }
+
+  return [start, end] as const;
+}
+
+function syncInputValues(values: Date[]) {
+  const [start, end] = values;
+  const dates = props.range && start && end ? [start, end] : start ? [start] : [];
+
+  inputDate.value = props.range ? undefined : start;
+  inputValue.value = dates.map(formatInputDate).join(' - ');
+}
+
+function getModelDates() {
+  const modelValue = model.value;
+
+  if (props.range) {
+    if (!Array.isArray(modelValue) || modelValue.length !== 2) {
+      return [];
+    }
+
+    const values = modelValue.map((value) => new Date(value));
+    return values.every((value) => !Number.isNaN(value.valueOf())) ? values : [];
+  }
+
+  if (modelValue === undefined || Array.isArray(modelValue)) {
+    return [];
+  }
+
+  const value = new Date(modelValue);
+  return Number.isNaN(value.valueOf()) ? [] : [value];
+}
+
+function getInputHours(position: 'start' | 'end'): Hours {
+  if (props.range) {
+    return position === 'start' ? startHours : endHours;
+  }
+
+  const current = new Date();
+  const currentHours: Hours = [
+    current.getHours(),
+    current.getMinutes(),
+    current.getSeconds(),
+    current.getMilliseconds()
+  ];
+  return props.timeRange === 'start' ? startHours : props.timeRange === 'end' ? endHours : currentHours;
+}
+
+function withInputHours(value: Date, position: 'start' | 'end') {
+  const date = new Date(value);
+  date.setHours(...getInputHours(position));
+  return date;
+}
+
+function onInputAccept(value: string) {
+  emitFormInput();
+
+  if (!props.range && value.length !== 10) {
+    inputDate.value = undefined;
+  }
+}
+
+function onInputComplete(value: Date | null) {
+  if (!value || Number.isNaN(value.valueOf())) {
+    return;
+  }
+
+  inputDate.value = value;
+  const date = withInputHours(value, 'start');
+  model.value = props.creator(date) as TModel<IsRange>;
+  onUpdate(date);
+}
+
+function onRangeInputComplete(value: string) {
+  const range = parseRangeInput(value);
+  if (!range) {
+    return;
+  }
+
+  const values = [
+    withInputHours(range[0], 'start'),
+    withInputHours(range[1], 'end')
+  ];
+  model.value = values.map((date) => props.creator(date)) as TModel<IsRange>;
+  onUpdate(values);
+}
+
+function onMaskedInputBlur() {
+  const isValid = props.range ? !!parseRangeInput(inputValue.value) : !!inputDate.value;
+
+  if (inputValue.value !== '' && isValid) {
+    return;
+  }
+
+  if (inputValue.value === '') {
+    onClear();
+    return;
+  }
+
+  syncInputValues(getModelDates());
+}
+
 function format(date: Date) {
   if (!props.formatter || (props.formatter && typeof props.formatter !== 'function')) {
     return formatDate(date, 'DD/MM/YYYY');
@@ -187,171 +381,219 @@ function format(date: Date) {
   return props.formatter(date);
 }
 
-/**
- * Check is range date
- * @param value - Range date value
- */
-function isValueRange(value: RangeValue) {
-  const checks = [
-    Object.keys(value).length === 2,
-    Object.keys(value).every((k) => ['start', 'end'].includes(k)),
-    value?.start instanceof CalendarDate,
-    value?.end instanceof CalendarDate
-  ];
+function isValueRange(value: unknown): value is RangeValue {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
 
-  return checks.every((isValid) => isValid);
+  const range = value as Partial<RangeValue>;
+  return range.start instanceof CalendarDate && range.end instanceof CalendarDate;
 }
 
-/**
- * Close popover
- */
 function close() {
   open.value = false;
 }
 
-/**
- * Handle blur event
- * @param event - Focus event
- */
 function onBlur(event: FocusEvent) {
   emits('blur', event);
   emitFormBlur();
 }
 
-/**
- * Listener on update open popover
- */
 function onUpdateOpen(isOpen: boolean) {
   if (!isOpen) {
     const blurEvent = new FocusEvent('blur', {
-      relatedTarget: buttonElement.value
+      relatedTarget: rootElement.value
     });
     onBlur(blurEvent);
     return;
   }
 
   const focusEvent = new FocusEvent('focus', {
-    relatedTarget: buttonElement.value
+    relatedTarget: rootElement.value
   });
   emits('focus', focusEvent);
   emitFormFocus();
 }
 
-/**
- * Handler on update value calendar
- * @param value - Calendar value
- */
-function onUpdate(value: any) {
-  const eventInit = {
-    target: {
-      value
-    }
-  };
+function onSingleCalendarUpdate(value: unknown) {
+  if (!(value instanceof CalendarDate)) {
+    return;
+  }
 
-  const event = new Event('change', eventInit as any);
+  const current = new Date();
+  const currentHours: Hours = [
+    current.getHours(),
+    current.getMinutes(),
+    current.getSeconds(),
+    current.getMilliseconds()
+  ];
+  const hours = props.timeRange === 'start' ? startHours : props.timeRange === 'end' ? endHours : currentHours;
+  const date = new Date(value.toDate(getLocalTimeZone()).setHours(...hours));
+
+  model.value = props.creator(date) as TModel<IsRange>;
+  syncInputValues([date]);
+  open.value = false;
+  onUpdate(date);
+}
+
+function onRangeCalendarUpdate(value: unknown) {
+  if (!isValueRange(value)) {
+    return;
+  }
+
+  const values = [
+    new Date(value.start.toDate(getLocalTimeZone()).setHours(...startHours)),
+    new Date(value.end.toDate(getLocalTimeZone()).setHours(...endHours))
+  ];
+
+  model.value = values.map((date) => props.creator(date)) as TModel<IsRange>;
+  syncInputValues(values);
+  open.value = false;
+  onUpdate(values);
+}
+
+function onUpdate(value: unknown) {
+  const event = new Event('change');
+  Object.defineProperty(event, 'target', { value: { value } });
   emits('change', event);
 
   emitFormChange();
   emitFormInput();
 }
 
-/**
- * Handle keyboard arrow up & down
- */
-function onKeydownArrowUpAndDown() {
-  if (!open.value) {
-    open.value = true;
-  }
-}
-
 function onClear() {
-  _model.value = undefined;
-  emits('update:modelValue', props.range ? [] : undefined);
+  model.value = (props.range ? [] : undefined) as TModel<IsRange> | undefined;
+  syncInputValues([]);
   onUpdate(undefined);
 }
 
-watch(() => props.modelValue, () => {
-  if (
-    (props.range && Array.isArray(props.modelValue))
-    || (!props.range && typeof props.modelValue !== 'undefined')
-  ) {
-    hasModel.value = true;
-  }
-});
+function onWatch() {
+  syncInputValues(getModelDates());
+}
 
-onMounted(() => {
-  buttonElement.value = document.getElementById(buttonId.value) as HTMLButtonElement;
+watch(model, onWatch, {
+  immediate: true,
+  deep: true
 });
 </script>
 
 <template>
-  <UPopover
-    v-model:open="open"
-    :ui="{ content: 'z-50' }"
-    :content="{ align: 'start' }"
-    :dismissible="props.dismissable"
-    :portal="props.portal"
-    @update:open="onUpdateOpen"
+  <div
+    ref="rootElement"
+    v-bind="{ ...$attrs, ...ariaAttrs }"
+    :class="ui.root({ class: props.ui?.root })"
   >
-    <slot
-      :open="open"
-      :display-date="displayDate"
-      :disabled="disabled"
+    <span
+      v-if="props.icon"
+      :class="ui.leading({ class: props.ui?.leading })"
     >
-      <UButton
-        v-bind="{ ...$attrs, ...ariaAttrs }"
-        :id="buttonId"
-        :color="color"
-        :variant="props.variant"
-        :class="ui.trigger()"
-        :ui="{
-          leadingIcon: ui.triggerIcon(),
-          trailingIcon: ui.triggerTrailingIcon()
-        }"
-        block
-        :icon="props.icon"
-        :trailing-icon="props.trailingIcon"
-        :size="buttonSize"
+      <UIcon
+        :name="props.icon"
+        :class="ui.leadingIcon({ class: props.ui?.leadingIcon })"
+      />
+    </span>
+
+    <IMaskComponent
+      v-if="props.range"
+      :id="inputId"
+      v-model="inputValue"
+      v-bind="rangeDateMaskOptions"
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      :name="name"
+      :placeholder="props.rangePlaceholder"
+      :class="ui.input({ class: props.ui?.input })"
+      :disabled="disabled"
+      @accept:masked="onInputAccept($event)"
+      @complete:masked="onRangeInputComplete($event)"
+      @blur="onMaskedInputBlur"
+    />
+
+    <IMaskComponent
+      v-else
+      :id="inputId"
+      v-model="inputValue"
+      v-bind="dateMaskOptions"
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      :name="name"
+      :placeholder="props.placeholder"
+      :class="ui.input({ class: props.ui?.input })"
+      :disabled="disabled"
+      @accept:masked="onInputAccept($event)"
+      @complete:typed="onInputComplete($event)"
+      @blur="onMaskedInputBlur"
+    />
+
+    <span :class="ui.trailing({ class: props.ui?.trailing })">
+      <button
+        v-if="isClearable"
+        type="button"
+        aria-label="Clear date"
+        :class="ui.clearAction({ class: props.ui?.clearAction })"
         :disabled="disabled"
-        @keydown.up.prevent="onKeydownArrowUpAndDown"
-        @keydown.down.prevent="onKeydownArrowUpAndDown"
+        @click.prevent.stop="onClear"
       >
-        <span :class="ui.value()">
-          {{ displayDate ? displayDate : props.placeholder }}
-        </span>
+        <UIcon
+          :name="props.clearIcon"
+          :class="ui.clearIcon({ class: props.ui?.clearIcon })"
+        />
+      </button>
 
-        <template
-          v-if="isClearable"
-          #trailing
+      <UPopover
+        v-bind="props.popover"
+        v-model:open="open"
+        mode="click"
+        :reference="popoverReference"
+        :ui="popoverUi"
+        :content="popoverContent"
+        @update:open="onUpdateOpen"
+      >
+        <button
+          type="button"
+          aria-label="Toggle calendar"
+          :aria-expanded="open"
+          :class="ui.calendarAction({ class: props.ui?.calendarAction })"
+          :disabled="disabled"
         >
-          <span
-            :class="ui.clearAction()"
-            @click.prevent.stop="onClear"
-          >
-            <UIcon
-              :name="props.clearIcon"
-              :class="ui.clearIcon()"
-            />
-          </span>
+          <UIcon
+            :name="props.trailingIcon"
+            :class="ui.trailingIcon({ class: props.ui?.trailingIcon })"
+          />
+        </button>
+
+        <template #content>
+          <UCalendar
+            v-if="props.range"
+            v-bind="props.calendar"
+            :model-value="rangeCalendarValue"
+            class="p-2"
+            :min-value="minDate"
+            :max-value="maxDate"
+            range
+            :disabled="disabled"
+            @update:model-value="onRangeCalendarUpdate"
+          />
+
+          <UCalendar
+            v-else
+            v-bind="props.calendar"
+            :model-value="singleCalendarValue"
+            class="p-2"
+            :min-value="minDate"
+            :max-value="maxDate"
+            :disabled="disabled"
+            @update:model-value="onSingleCalendarUpdate"
+          />
+
+          <slot
+            name="footer"
+            :on-close="close"
+          />
         </template>
-      </UButton>
-    </slot>
-
-    <template #content>
-      <UCalendar
-        v-model="vmodel"
-        class="p-2"
-        :min-value="minDate"
-        :max-value="maxDate"
-        :range="props.range"
-        :size="props.calendarSize"
-        @update:model-value="onUpdate"
-      />
-
-      <slot
-        name="footer"
-        :on-close="close"
-      />
-    </template>
-  </UPopover>
+      </UPopover>
+    </span>
+  </div>
 </template>

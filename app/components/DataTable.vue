@@ -1,107 +1,114 @@
 <script lang="ts">
 import type {
-  CellContext,
-  ColumnDef,
-  ColumnFiltersOptions,
   ColumnFiltersState,
   ColumnOrderState,
-  ColumnPinningOptions,
   ColumnPinningState,
-  ColumnSizingOptions,
   ColumnSizingState,
-  ColumnSizingInfoState,
-  CoreOptions,
-  ExpandedOptions,
+  columnResizingState as ColumnSizingInfoState,
   ExpandedState,
-  FacetedOptions,
-  FilterFnOption,
-  GlobalFilterOptions,
-  GroupingOptions,
   GroupingState,
-  HeaderContext,
-  PaginationOptions,
   PaginationState,
-  Row,
   RowData,
-  RowPinningOptions,
   RowPinningState,
-  RowSelectionOptions,
   RowSelectionState,
-  SortingOptions,
   SortingState,
   SortDirection,
+  TableOptions_ColumnFiltering as ColumnFilteringOptions,
+  TableOptions_ColumnGrouping as ColumnGroupingOptions,
+  TableOptions_ColumnPinning as ColumnPinningOptions,
+  TableOptions_ColumnResizing as ColumnResizingOptions,
+  TableOptions_ColumnSizing as ColumnSizingOptions,
+  TableOptions_ColumnVisibility as ColumnVisibilityOptions,
+  TableOptions_GlobalFiltering as GlobalFilteringOptions,
+  TableOptions_RowExpanding as RowExpandingOptions,
+  TableOptions_RowPagination as RowPaginationOptions,
+  TableOptions_RowPinning as RowPinningOptions,
+  TableOptions_RowSelection as RowSelectionOptions,
+  TableOptions_RowSorting as RowSortingOptions,
   Updater,
-  VisibilityOptions,
-  VisibilityState,
-  Column,
-  Table
+  ColumnVisibilityState as VisibilityState
 } from '@tanstack/vue-table';
 import type { AppConfig } from '@nuxt/schema';
-import type { ComponentConfig, PaginationProps, TableRow } from '@nuxt/ui';
+import type { ComponentConfig, PaginationProps } from '@nuxt/ui';
 import type { DataTableColumnProps, DataTableColumnSlots } from './DataTableColumn.vue';
-import {
-  FlexRender,
-  getCoreRowModel,
-  getExpandedRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useVueTable
-} from '@tanstack/vue-table';
+import { FlexRender, useTable } from '@tanstack/vue-table';
 import type { VirtualizerOptions } from '@tanstack/vue-virtual';
 import { useVirtualizer } from '@tanstack/vue-virtual';
 import { createRef, createReusableTemplate, reactivePick } from '@vueuse/core';
 import theme from '#build/ui/table';
 import { Primitive, useForwardProps } from 'reka-ui';
 import { cn, tv, type ClassValue } from 'tailwind-variants';
-import { camelize } from 'vue-demi';
+import { Fragment, camelize, h } from 'vue-demi';
 import type { WatchOptions, TransitionProps, VNode } from 'vue-demi';
 import DataTableHeaderSorting from './DataTableHeaderSorting.vue';
 import defu from 'defu';
+import type { ButtonProps } from '@nuxt/ui/components/Button.vue';
 import type { CheckboxProps } from '@nuxt/ui/components/Checkbox.vue';
 import UCheckbox from '#build/ui/checkbox';
-
-declare module '@tanstack/vue-table' {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  interface TableState extends SelectedRowsTableState {
-  }
-}
-
-interface SelectedRowsTableState {
-  selectedRows: Record<string, any>[];
-}
+import { dataTableFeatures } from '~/utils/data-table';
+import type {
+  DataTableApi,
+  DataTableCellContext,
+  DataTableColumn,
+  DataTableColumnDef as TanStackDataTableColumnDef,
+  DataTableColumnMeta,
+  DataTableFeatures,
+  DataTableFilterFnOption,
+  DataTableHeader,
+  DataTableHeaderContext,
+  DataTableMeta,
+  DataTableRow as TanStackDataTableRow,
+  DataTableTanStackOptions
+} from '~/utils/data-table';
 
 export type DataTableItem = RowData;
 
-export type DataTableRow<T> = Row<T>;
+export type DataTableRow<T extends DataTableItem> = TanStackDataTableRow<T>;
 
-export type DataTableColumnDef<T extends DataTableItem, D = unknown> = ColumnDef<T, D> & {
+export type DataTableColumnDef<T extends DataTableItem, D = unknown> = TanStackDataTableColumnDef<T, D> & {
+  enableOrdering?: boolean;
   label?: string;
   visible?: boolean;
   columns?: DataTableColumnDef<T, unknown>[];
 };
 
-export interface DataTableOptions<T extends DataTableItem = DataTableItem> extends Omit<CoreOptions<T>, 'data' | 'columns' | 'getCoreRowModel' | 'state' | 'onStateChange' | 'renderFallbackValue'> {
-  state?: CoreOptions<T>['state'];
-  onStateChange?: CoreOptions<T>['onStateChange'];
-  renderFallbackValue?: CoreOptions<T>['renderFallbackValue'];
-}
+export type DataTableOptions<T extends DataTableItem = DataTableItem> = Omit<
+  Partial<DataTableTanStackOptions<T>>,
+  'features'
+  | 'data'
+  | 'columns'
+  | 'state'
+  | 'atoms'
+  | 'onGlobalFilterChange'
+  | 'onColumnFiltersChange'
+  | 'onColumnOrderChange'
+  | 'onColumnPinningChange'
+  | 'onColumnSizingChange'
+  | 'onColumnResizingChange'
+  | 'onColumnVisibilityChange'
+  | 'onSortingChange'
+  | 'onGroupingChange'
+  | 'onExpandedChange'
+  | 'onRowSelectionChange'
+  | 'onRowPinningChange'
+  | 'onPaginationChange'
+>;
 
 type DataTableTheme = ComponentConfig<typeof theme, AppConfig, 'table'>;
 
 type DataTableThemeUIProps = DataTableTheme['slots'];
 
-interface DataTableColumnNumbering<T> {
+interface DataTableColumnNumbering<T extends DataTableItem> {
   label?: string;
   meta?: DataTableColumnDef<T>['meta'];
 }
 
 type SelectionCheckboxProps = Omit<CheckboxProps, 'modelValue' | 'defaultValue'>;
 
-interface DataTableColumnSelection<T> {
+interface DataTableColumnSelection<T extends DataTableItem> {
   label?: string;
-  checkboxHeaderProps?: SelectionCheckboxProps | ((cell: HeaderContext<T, unknown>) => SelectionCheckboxProps);
-  checkboxCellProps?: SelectionCheckboxProps | ((cell: CellContext<T, unknown>) => SelectionCheckboxProps);
+  checkboxHeaderProps?: SelectionCheckboxProps | ((cell: DataTableHeaderContext<T, unknown>) => SelectionCheckboxProps);
+  checkboxCellProps?: SelectionCheckboxProps | ((cell: DataTableCellContext<T, unknown>) => SelectionCheckboxProps);
   meta?: DataTableColumnDef<T>['meta'];
 }
 
@@ -109,11 +116,38 @@ interface UILayout {
   pagination?: string;
 }
 
-export interface DataTableProps<T extends DataTableItem = DataTableItem> extends DataTableOptions<T> {
+export interface DataTableColumnReorderingOptions {
+  animationDuration?: number;
+  handleProps?: ButtonProps;
+}
+
+export interface DataTableColumnReorderEvent {
+  columnId: string;
+  targetColumnId: string;
+  oldIndex: number;
+  newIndex: number;
+  columnOrder: ColumnOrderState;
+}
+
+export interface DataTableProps<T extends DataTableItem = DataTableItem> {
+  autoResetAll?: DataTableTanStackOptions<T>['autoResetAll'];
+  debugAll?: DataTableTanStackOptions<T>['debugAll'];
+  debugCells?: DataTableTanStackOptions<T>['debugCells'];
+  debugColumns?: DataTableTanStackOptions<T>['debugColumns'];
+  debugHeaders?: DataTableTanStackOptions<T>['debugHeaders'];
+  debugRows?: DataTableTanStackOptions<T>['debugRows'];
+  debugTable?: DataTableTanStackOptions<T>['debugTable'];
+  defaultColumn?: DataTableTanStackOptions<T>['defaultColumn'];
+  getRowId?: DataTableTanStackOptions<T>['getRowId'];
+  getSubRows?: DataTableTanStackOptions<T>['getSubRows'];
+  initialState?: DataTableTanStackOptions<T>['initialState'];
+  mergeOptions?: DataTableTanStackOptions<T>['mergeOptions'];
+  renderFallbackValue?: DataTableTanStackOptions<T>['renderFallbackValue'];
   as?: any;
   items?: T[];
   getData?: (params: GetDataParams) => GetDataResult<T> | Promise<GetDataResult<T>>;
-  columns?: ColumnDef<T>[];
+  columns?: DataTableColumnDef<T>[];
+  meta?: DataTableMeta<T>;
   sticky?: boolean | 'header' | 'footer';
   loading?: boolean;
   /**
@@ -150,67 +184,55 @@ export interface DataTableProps<T extends DataTableItem = DataTableItem> extends
     estimateSize?: number | ((index: number) => number);
   });
   /**
-   * @see [API](https://tanstack.com/table/v8/docs/api/features/global-filtering#table-options)
-   * @see [Guide](https://tanstack.com/table/v8/docs/guide/global-filtering)
+   * @see [Guide](https://tanstack.com/table/latest/docs/guide/global-filtering)
    */
-  globalFilterOptions?: Omit<GlobalFilterOptions<T>, 'onGlobalFilterChange'>;
+  globalFilterOptions?: Omit<GlobalFilteringOptions<DataTableFeatures, T>, 'onGlobalFilterChange'>;
   /**
-   * @see [API](https://tanstack.com/table/v8/docs/api/features/column-filtering#table-options)
-   * @see [Guide](https://tanstack.com/table/v8/docs/guide/column-filtering)
+   * @see [Guide](https://tanstack.com/table/latest/docs/guide/column-filtering)
    */
-  columnFiltersOptions?: Omit<ColumnFiltersOptions<T>, 'getFilteredRowModel' | 'onColumnFiltersChange'>;
+  columnFiltersOptions?: Omit<ColumnFilteringOptions<DataTableFeatures, T>, 'onColumnFiltersChange'>;
   /**
-   * @see [API](https://tanstack.com/table/v8/docs/api/features/column-pinning#table-options)
-   * @see [Guide](https://tanstack.com/table/v8/docs/guide/column-pinning)
+   * @see [Guide](https://tanstack.com/table/latest/docs/guide/column-pinning)
    */
   columnPinningOptions?: Omit<ColumnPinningOptions, 'onColumnPinningChange'>;
   /**
-   * @see [API](https://tanstack.com/table/v8/docs/api/features/column-sizing#table-options)
-   * @see [Guide](https://tanstack.com/table/v8/docs/guide/column-sizing)
+   * @see [Guide](https://tanstack.com/table/latest/docs/guide/column-sizing)
    */
-  columnSizingOptions?: Omit<ColumnSizingOptions, 'onColumnSizingChange' | 'onColumnSizingInfoChange'>;
+  columnSizingOptions?: Omit<ColumnSizingOptions & ColumnResizingOptions, 'onColumnSizingChange' | 'onColumnResizingChange'>;
   /**
-   * @see [API](https://tanstack.com/table/v8/docs/api/features/column-visibility#table-options)
-   * @see [Guide](https://tanstack.com/table/v8/docs/guide/column-visibility)
+   * Enable drag-and-drop column reordering for unpinned leaf columns.
    */
-  visibilityOptions?: Omit<VisibilityOptions, 'onColumnVisibilityChange'>;
+  columnReordering?: boolean | DataTableColumnReorderingOptions;
   /**
-   * @see [API](https://tanstack.com/table/v8/docs/api/features/sorting#table-options)
-   * @see [Guide](https://tanstack.com/table/v8/docs/guide/sorting)
+   * @see [Guide](https://tanstack.com/table/latest/docs/guide/column-visibility)
    */
-  sortingOptions?: Omit<SortingOptions<T>, 'getSortedRowModel' | 'onSortingChange'>;
+  visibilityOptions?: Omit<ColumnVisibilityOptions, 'onColumnVisibilityChange'>;
   /**
-   * @see [API](https://tanstack.com/table/v8/docs/api/features/grouping#table-options)
-   * @see [Guide](https://tanstack.com/table/v8/docs/guide/grouping)
+   * @see [Guide](https://tanstack.com/table/latest/docs/guide/sorting)
    */
-  groupingOptions?: Omit<GroupingOptions, 'onGroupingChange'>;
+  sortingOptions?: Omit<RowSortingOptions, 'onSortingChange'>;
   /**
-   * @see [API](https://tanstack.com/table/v8/docs/api/features/expanding#table-options)
-   * @see [Guide](https://tanstack.com/table/v8/docs/guide/expanding)
+   * @see [Guide](https://tanstack.com/table/latest/docs/guide/grouping)
    */
-  expandedOptions?: Omit<ExpandedOptions<T>, 'getExpandedRowModel' | 'onExpandedChange'>;
+  groupingOptions?: Omit<ColumnGroupingOptions, 'onGroupingChange'>;
+  /**
+   * @see [Guide](https://tanstack.com/table/latest/docs/guide/expanding)
+   */
+  expandedOptions?: Omit<RowExpandingOptions<DataTableFeatures, T>, 'onExpandedChange'>;
   expandedTransition?: TransitionProps;
   /**
-   * @see [API](https://tanstack.com/table/v8/docs/api/features/row-selection#table-options)
-   * @see [Guide](https://tanstack.com/table/v8/docs/guide/row-selection)
+   * @see [Guide](https://tanstack.com/table/latest/docs/guide/row-selection)
    */
-  rowSelectionOptions?: Omit<RowSelectionOptions<T>, 'onRowSelectionChange'>;
+  rowSelectionOptions?: Omit<RowSelectionOptions<DataTableFeatures, T>, 'onRowSelectionChange'>;
   /**
-   * @see [API](https://tanstack.com/table/v8/docs/api/features/row-pinning#table-options)
-   * @see [Guide](https://tanstack.com/table/v8/docs/guide/row-pinning)
+   * @see [Guide](https://tanstack.com/table/latest/docs/guide/row-pinning)
    */
-  rowPinningOptions?: Omit<RowPinningOptions<T>, 'onRowPinningChange'>;
-  /**
-   * @see [API](https://tanstack.com/table/v8/docs/api/features/column-faceting#table-options)
-   * @see [Guide](https://tanstack.com/table/v8/docs/guide/column-faceting)
-   */
-  facetedOptions?: FacetedOptions<T>;
+  rowPinningOptions?: Omit<RowPinningOptions<DataTableFeatures, T>, 'onRowPinningChange'>;
   pagination?: false | 'client' | 'server';
   /**
-   * @see [API](https://tanstack.com/table/v8/docs/api/features/pagination#table-options)
-   * @see [Guide](https://tanstack.com/table/v8/docs/guide/pagination)
+   * @see [Guide](https://tanstack.com/table/latest/docs/guide/pagination)
    */
-  paginationOptions?: Omit<PaginationOptions, 'onPaginationChange'>;
+  paginationOptions?: Omit<RowPaginationOptions, 'onPaginationChange'>;
   numbering?: false | DataTableColumnNumbering<T>;
   selection?: boolean | DataTableColumnSelection<T>;
   class?: any;
@@ -218,27 +240,28 @@ export interface DataTableProps<T extends DataTableItem = DataTableItem> extends
    * Display the table as card on mobile screen
    */
   mobileCards?: boolean;
-  onSelect?: (e: Event, row: TableRow<T>) => void;
-  onHover?: (e: Event, row: TableRow<T> | null) => void;
-  onContextmenu?: ((e: Event, row: TableRow<T>) => void) | Array<((e: Event, row: TableRow<T>) => void)>;
+  onSelect?: (e: Event, row: DataTableRow<T>) => void;
+  onHover?: (e: Event, row: DataTableRow<T> | null) => void;
+  onContextmenu?: ((e: Event, row: DataTableRow<T>) => void) | Array<((e: Event, row: DataTableRow<T>) => void)>;
+  onColumnReorder?: (event: DataTableColumnReorderEvent) => void;
   variant?: 'striped' | 'bordered' | 'separated';
   ui?: Partial<Record<keyof DataTableThemeUIProps, ClassValue>>;
   uiPagination?: PaginationProps['ui'];
   uiLayout?: UILayout;
 }
 
-interface ExpoandedSlotProps<T> {
-  table: Table<T>;
-  row: Row<T>;
+interface ExpoandedSlotProps<T extends DataTableItem> {
+  table: DataTableApi<T>;
+  row: DataTableRow<T>;
   ui: Record<'tr' | 'td', string>;
 }
 
-interface BodySlotProps<T> {
-  table: Table<T>;
+interface BodySlotProps<T extends DataTableItem> {
+  table: DataTableApi<T>;
   ui: Record<'tr' | 'td', string>;
 }
 
-export interface DataTableSlots<T> {
+export interface DataTableSlots<T extends DataTableItem> {
   'default': () => VNode[];
   'caption': () => VNode[];
   'expanded': (props: ExpoandedSlotProps<T>) => VNode[];
@@ -398,6 +421,7 @@ const columnNumbering = computed<DataTableColumnDef<T>>(() => ({
   enableColumnFilter: false,
   enableGlobalFilter: false,
   enableGrouping: false,
+  enableOrdering: false,
   visible: props.numbering !== false,
   header: () => numberingProps.value?.label ?? '#',
   cell: ({ row, table }) => {
@@ -419,6 +443,7 @@ const columnNumbering = computed<DataTableColumnDef<T>>(() => ({
 const selectionProps = toRef(() => defu(typeof props.selection === 'boolean' ? {} : props.selection, {
   label: 'Selection'
 }));
+
 const columnSelection = computed<DataTableColumnDef<T>>(() => ({
   accessorKey: '__selection',
   id: '__selection',
@@ -428,24 +453,22 @@ const columnSelection = computed<DataTableColumnDef<T>>(() => ({
   enableColumnFilter: false,
   enableGlobalFilter: false,
   enableGrouping: false,
+  enableOrdering: false,
   visible: props.selection === true || typeof props.selection === 'object',
   header: (ctx) => {
+    const isAllRowsSelected = ctx.table.getIsAllPageRowsSelected();
+    const isSomeRowsSelected = ctx.table.getIsSomePageRowsSelected();
     const checkboxProps: CheckboxProps = {
-      modelValue: ctx.table.getIsSomePageRowsSelected() ? 'indeterminate' : ctx.table.getIsAllPageRowsSelected(),
+      modelValue: isAllRowsSelected ? true : isSomeRowsSelected ? 'indeterminate' : false,
       size: 'lg',
       ...resolveValue(selectionProps.value.checkboxHeaderProps, ctx)
     };
 
-    if (props.pagination === 'server') {
-      const rowIds = ctx.table.getRowModel().rows.map((item) => String(item.id));
-      const selectedIds = Object.keys(selectedRows.value);
-      const isSelected = rowIds.length > 0 && rowIds.every((id) => selectedIds.includes(id));
-      checkboxProps.modelValue = isSelected ? true : selectedIds.length > 0 ? 'indeterminate' : false;
-    }
-
     return h(UCheckbox, {
       ...checkboxProps,
-      'onUpdate:modelValue': (val: boolean | 'indeterminate') => ctx.table.toggleAllRowsSelected(!!val)
+      'onUpdate:modelValue': (val: boolean | 'indeterminate') => {
+        ctx.table.toggleAllRowsSelected(val !== false);
+      }
     });
   },
   cell: (ctx) => {
@@ -532,9 +555,10 @@ const isPaginated = computed(() => props.pagination === 'client' || props.pagina
 const isServerPagination = computed(() => props.pagination === 'server');
 
 const data = createRef(props.items ?? [], props.watchOptions?.deep !== false);
+const meta = computed(() => props.meta ?? {});
 const total = ref(0);
 
-const _loading = ref(false);
+const _loading = ref(isServerPagination.value);
 const isLoading = computed({
   get: () => props.loading || _loading.value,
   set: (value) => {
@@ -543,7 +567,6 @@ const isLoading = computed({
 });
 
 const TABLE_OPTIONS = [
-  '_features',
   'autoResetAll',
   'debugAll',
   'debugCells',
@@ -552,7 +575,6 @@ const TABLE_OPTIONS = [
   'debugRows',
   'debugTable',
   'defaultColumn',
-  'getRowId',
   'getSubRows',
   'initialState',
   'mergeOptions',
@@ -560,8 +582,32 @@ const TABLE_OPTIONS = [
 ] as const;
 
 const tableProps = useForwardProps(reactivePick(props, ...TABLE_OPTIONS));
+const getResolvedRowId: NonNullable<DataTableTanStackOptions<T>['getRowId']> = (row, index, parent) => {
+  const rowId = props.getRowId?.(row, index, parent) ?? (row as Record<string, any>).id;
+  if (rowId === undefined || rowId === null || rowId === '') {
+    throw new Error('[DataTable] Each row must have an id or getRowId must return a stable, non-empty ID.');
+  }
 
-const tableApi = useVueTable({
+  return String(rowId);
+};
+const tableState = computed(() => ({
+  ...(globalFilter.value !== undefined && { globalFilter: globalFilter.value }),
+  ...(columnFilters.value !== undefined && { columnFilters: columnFilters.value }),
+  ...(columnVisibility.value !== undefined && { columnVisibility: columnVisibility.value }),
+  ...(columnPinning.value !== undefined && { columnPinning: columnPinning.value }),
+  ...(expanded.value !== undefined && { expanded: expanded.value }),
+  rowSelection: rowSelection.value,
+  ...(rowPinning.value !== undefined && { rowPinning: rowPinning.value }),
+  sorting: sorting.value,
+  ...(grouping.value !== undefined && { grouping: grouping.value }),
+  ...(columnOrder.value !== undefined && { columnOrder: columnOrder.value }),
+  ...(columnSizing.value !== undefined && { columnSizing: columnSizing.value }),
+  ...(columnSizingInfo.value !== undefined && { columnResizing: columnSizingInfo.value }),
+  pagination: paginationState.value
+}));
+
+const tableApi = useTable({
+  features: dataTableFeatures,
   ...tableProps.value,
   get data() {
     return data.value;
@@ -569,21 +615,17 @@ const tableApi = useVueTable({
   get columns() {
     return columnDefs.value;
   },
-  filterFns: {
-    nestedIncludeString: (row, columnId, filterValue) => {
-      const value = getObjectValue(row.original, columnId);
-      return String(value ?? '').toLowerCase().includes(String(filterValue).toLowerCase());
-    }
+  get getRowId() {
+    return getResolvedRowId;
   },
-  getCoreRowModel: getCoreRowModel(),
+  get meta() {
+    return meta.value;
+  },
   ...(props.globalFilterOptions || {}),
   ...(globalFilter.value !== undefined && {
     onGlobalFilterChange: (updaterOrValue: any) => valueUpdater(updaterOrValue, globalFilter)
   }),
   ...(props.columnFiltersOptions || {}),
-  ...(!isServerPagination.value && {
-    getFilteredRowModel: getFilteredRowModel()
-  }),
   get manualFiltering() {
     return isServerPagination.value;
   },
@@ -602,7 +644,7 @@ const tableApi = useVueTable({
     onColumnSizingChange: (updaterOrValue: any) => valueUpdater(updaterOrValue, columnSizing)
   }),
   ...(columnSizingInfo.value !== undefined && {
-    onColumnSizingInfoChange: (updaterOrValue: any) => valueUpdater(updaterOrValue, columnSizingInfo)
+    onColumnResizingChange: (updaterOrValue: any) => valueUpdater(updaterOrValue, columnSizingInfo)
   }),
   ...(props.rowSelectionOptions || {}),
   ...(rowSelection.value !== undefined && {
@@ -617,9 +659,6 @@ const tableApi = useVueTable({
     onColumnVisibilityChange: (updaterOrValue: any) => valueUpdater(updaterOrValue, columnVisibility)
   }),
   ...(props.sortingOptions || {}),
-  ...(!isServerPagination.value && {
-    getSortedRowModel: getSortedRowModel()
-  }),
   get manualSorting() {
     return isServerPagination.value;
   },
@@ -629,66 +668,21 @@ const tableApi = useVueTable({
     onGroupingChange: (updaterOrValue: any) => valueUpdater(updaterOrValue, grouping)
   }),
   ...(props.expandedOptions || {}),
-  getExpandedRowModel: getExpandedRowModel(),
+  get getRowCanExpand() {
+    return props.expandedOptions?.getRowCanExpand ?? (typeof slots.expanded === 'function' ? () => true : undefined);
+  },
   ...(expanded.value !== undefined && {
     onExpandedChange: (updaterOrValue: any) => valueUpdater(updaterOrValue, expanded)
   }),
   get manualPagination() {
-    return isPaginated.value && isServerPagination.value;
+    return !isPaginated.value || isServerPagination.value;
   },
   get rowCount() {
     return isServerPagination.value ? total.value : undefined;
   },
-  ...((isPaginated.value && !isServerPagination.value) && {
-    getPaginationRowModel: getPaginationRowModel()
-  }),
   ...(props.paginationOptions || {}),
   onPaginationChange: (updaterOrValue: any) => valueUpdater(updaterOrValue, paginationState),
-  ...(props.facetedOptions || {}),
-  state: {
-    get globalFilter() {
-      return globalFilter.value;
-    },
-    get columnFilters() {
-      return columnFilters.value;
-    },
-    get columnVisibility() {
-      return columnVisibility.value;
-    },
-    get columnPinning() {
-      return columnPinning.value;
-    },
-    get expanded() {
-      return expanded.value;
-    },
-    get rowSelection() {
-      return rowSelection.value;
-    },
-    get rowPinning() {
-      return rowPinning.value;
-    },
-    get sorting() {
-      return sorting.value;
-    },
-    get grouping() {
-      return grouping.value;
-    },
-    get columnOrder() {
-      return columnOrder.value;
-    },
-    get columnSizing() {
-      return columnSizing.value;
-    },
-    get columnSizingInfo() {
-      return columnSizingInfo.value;
-    },
-    get pagination() {
-      return paginationState.value;
-    },
-    get selectedRows() {
-      return Object.values(selectedRows.value);
-    }
-  }
+  state: tableState
 });
 
 const rows = computed(() => tableApi.getRowModel().rows);
@@ -724,6 +718,27 @@ const virtualPaddingBottom = computed(() => {
   return virtualizer.value.getTotalSize() - (virtualItems.value[itemsLength - 1]?.end ?? 0);
 });
 
+const hoveredRowId = ref<string | undefined>();
+const columnReorderingOptions = computed(() => {
+  if (!props.columnReordering) {
+    return undefined;
+  }
+
+  const handleProps = {
+    icon: 'lucide:grip-vertical',
+    color: 'neutral' as const,
+    variant: 'ghost' as const,
+    size: 'xs' as const
+  };
+
+  return defu(typeof props.columnReordering === 'object' ? props.columnReordering : {}, {
+    animationDuration: 240,
+    handleProps
+  });
+});
+const draggedColumnId = ref<string | null>(null);
+const dropTargetColumnId = ref<string | null>(null);
+
 const [DefineTableTemplate, ReuseTableTemplate] = createReusableTemplate();
 const [DefineRowTemplate, ReuseRowTemplate] = createReusableTemplate<{ row: DataTableRow<T>; style?: Record<string, string> }>({
   props: {
@@ -740,22 +755,22 @@ const [DefineRowTemplate, ReuseRowTemplate] = createReusableTemplate<{ row: Data
 
 function defineColumn(node: VNode, index: number, depth = 0): DataTableColumnDef<T, unknown> {
   const camelizeProps = Object.entries(node.props || {}).map(([k, v]) => [camelize(k), v]);
-  const props = Object.fromEntries(camelizeProps) as DataTableColumnProps;
+  const props = Object.fromEntries(camelizeProps) as DataTableColumnProps<T>;
 
   const visible = normalizeBoolProps(props.visible) ?? true;
   const accessorKey = props.accessorKey ?? '';
   const accessorFn = typeof props.accessorFn === 'function' ? props.accessorFn : (row: T) => getObjectValue(row as any, accessorKey);
-  const filterFn = typeof props.filterFn === 'function' || typeof props.filterFn === 'string' ? props.filterFn as FilterFnOption<T> : 'auto';
+  const filterFn = typeof props.filterFn === 'function' || typeof props.filterFn === 'string' ? props.filterFn as DataTableFilterFnOption<T> : 'auto';
   const label = props.label ?? '';
   const enableHiding = visible ? normalizeBoolProps(props.enableHiding) : false;
   const enablePinning = normalizeBoolProps(props.enablePinning);
   const enableSorting = normalizeBoolProps(props.enableSorting);
   const enableMultiSort = normalizeBoolProps(props.enableMultiSort);
-  const slot = (node.children || {} as unknown) as DataTableColumnSlots;
+  const slot = (node.children || {} as unknown) as DataTableColumnSlots<T>;
   const columns = toArray(slot?.columns?.());
-  const header = (ctx: HeaderContext<T, unknown>) => {
+  const header = (ctx: DataTableHeaderContext<T, unknown>) => {
     if (!enableSorting) {
-      return slot?.header?.({ ...ctx }) ?? label;
+      return typeof slot.header === 'function' ? h(Fragment, null, slot.header({ ...ctx })) : label;
     }
 
     const sortingProps = {
@@ -767,14 +782,15 @@ function defineColumn(node: VNode, index: number, depth = 0): DataTableColumnDef
     return h(DataTableHeaderSorting, sortingProps);
   };
 
-  const cell = (ctx: CellContext<T, unknown>) => {
-    const item = ctx.row.original as Record<string, any>;
-    return slot?.default?.({ ...ctx, item }) ?? getObjectValue(ctx.row.original as any, accessorKey);
+  const cell = (ctx: DataTableCellContext<T, unknown>) => {
+    if (typeof slot.default === 'function') {
+      return h(Fragment, null, slot.default({ ...ctx, item: ctx.row.original }));
+    }
+
+    return getObjectValue(ctx.row.original as any, accessorKey);
   };
 
-  const footer = (ctx: HeaderContext<any, any>) => {
-    return slot?.footer({ ...ctx });
-  };
+  const footer = (ctx: DataTableHeaderContext<T, any>) => h(Fragment, null, slot.footer({ ...ctx }));
 
   return {
     ...props,
@@ -792,6 +808,7 @@ function defineColumn(node: VNode, index: number, depth = 0): DataTableColumnDef
     enableSorting,
     enableMultiSort,
     enableGrouping: normalizeBoolProps(props.enableGrouping),
+    enableOrdering: normalizeBoolProps(props.enableOrdering),
     enableColumnFilter: normalizeBoolProps(props.enableColumnFilter),
     enableGlobalFilter: normalizeBoolProps(props.enableGlobalFilter),
     enableResizing: normalizeBoolProps(props.enableResizing),
@@ -822,7 +839,7 @@ function valueUpdater<U extends Updater<any>>(updaterOrValue: U, ref: Ref) {
 
 function onChangePage(value: number) {
   const index = value - 1;
-  if (index === tableApi.getState().pagination.pageIndex) {
+  if (index === paginationState.value.pageIndex) {
     return;
   }
 
@@ -902,13 +919,149 @@ async function fetchData() {
   }
 }
 
-function onRowSelect(e: Event, row: TableRow<T>) {
+function isColumnReorderable(header: DataTableHeader<T>) {
+  const column = header.column;
+  const columnDef = column.columnDef as DataTableColumnDef<T>;
+
+  return !!columnReorderingOptions.value
+    && !header.isPlaceholder
+    && header.subHeaders.length === 0
+    && !column.id.startsWith('__')
+    && !column.getIsPinned()
+    && columnDef.enableOrdering !== false;
+}
+
+function getColumnReorderLabel(header: DataTableHeader<T>) {
+  return (header.column.columnDef as DataTableColumnDef<T>)?.label ?? header.column.id;
+}
+
+function resetColumnReorderState() {
+  draggedColumnId.value = null;
+  dropTargetColumnId.value = null;
+}
+
+function getColumnHeaderPositions() {
+  const positions = new Map<string, number>();
+
+  tableRef.value?.querySelectorAll<HTMLTableRowElement>('[data-column-order-id]').forEach((element) => {
+    const columnId = element.dataset.columnOrderId;
+    if (columnId) {
+      positions.set(columnId, element.getBoundingClientRect().left);
+    }
+  });
+
+  return positions;
+}
+
+function animateTableRow(element: HTMLTableRowElement, prevPositions: Map<string, number>, duration: number) {
+  const columnId = element.dataset.columnOrderId;
+  const previousLeft = columnId ? prevPositions.get(columnId) : undefined;
+  if (previousLeft === undefined) {
+    return;
+  }
+
+  const offsetX = previousLeft - element.getBoundingClientRect().left;
+  if (offsetX === 0) {
+    return;
+  }
+
+  const keyframes = [
+    {
+      transform: `translateX(${offsetX}px)`
+    },
+    {
+      transform: 'translateX(0)'
+    }
+  ];
+
+  element.animate(keyframes, {
+    duration,
+    easing: 'cubic-bezier(0.22, 1, 0.36, 1)'
+  });
+}
+
+async function animateColumnOrder(previousPositions: Map<string, number>) {
+  await nextTick();
+
+  const duration = columnReorderingOptions.value?.animationDuration ?? 0;
+  if (duration <= 0 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return;
+  }
+
+  tableRef.value?.querySelectorAll<HTMLTableRowElement>('[data-column-order-id]').forEach((element) => {
+    animateTableRow(element, previousPositions, duration);
+  });
+}
+
+function onColumnDragStart(event: DragEvent, columnId: string) {
+  draggedColumnId.value = columnId;
+
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', columnId);
+  }
+}
+
+function onColumnDragEnter(event: DragEvent, header: DataTableHeader<T>) {
+  if (!isColumnReorderable(header)) {
+    return;
+  }
+
+  event.preventDefault();
+  dropTargetColumnId.value = header.column.id;
+}
+
+function onColumnDragOver(event: DragEvent, header: DataTableHeader<T>) {
+  if (!isColumnReorderable(header)) {
+    return;
+  }
+
+  event.preventDefault();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move';
+  }
+}
+
+async function onColumnDrop(event: DragEvent, targetColumnId: string) {
+  event.preventDefault();
+
+  const sourceColumnId = draggedColumnId.value ?? event.dataTransfer?.getData('text/plain');
+  if (!sourceColumnId || sourceColumnId === targetColumnId) {
+    resetColumnReorderState();
+    return;
+  }
+
+  const nextOrder = tableApi.getAllLeafColumns().map((column) => column.id);
+  const oldIndex = nextOrder.indexOf(sourceColumnId);
+  const targetIndex = nextOrder.indexOf(targetColumnId);
+  if (oldIndex === -1 || targetIndex === -1) {
+    resetColumnReorderState();
+    return;
+  }
+
+  const previousPositions = getColumnHeaderPositions();
+  nextOrder.splice(oldIndex, 1);
+  nextOrder.splice(targetIndex, 0, sourceColumnId);
+  columnOrder.value = nextOrder;
+
+  await animateColumnOrder(previousPositions);
+  props.onColumnReorder?.({
+    columnId: sourceColumnId,
+    targetColumnId,
+    oldIndex,
+    newIndex: nextOrder.indexOf(sourceColumnId),
+    columnOrder: nextOrder
+  });
+  resetColumnReorderState();
+}
+
+function onRowSelect(e: Event, row: DataTableRow<T>) {
   if (typeof props.onSelect !== 'function') {
     return;
   }
 
   const target = e.target as HTMLElement;
-  const isInteractive = target.closest('button') || target.closest('a');
+  const isInteractive = target.closest('a, button, input, label, select, textarea');
   if (isInteractive) {
     return;
   }
@@ -916,18 +1069,23 @@ function onRowSelect(e: Event, row: TableRow<T>) {
   e.preventDefault();
   e.stopPropagation();
 
+  if ((e as KeyboardEvent).repeat) {
+    return;
+  }
+
   props.onSelect(e, row);
 }
 
-function onRowHover(e: Event, row: TableRow<T> | null) {
+function onRowHover(e: Event, row: DataTableRow<T> | null) {
   if (typeof props.onHover !== 'function') {
     return;
   }
 
+  hoveredRowId.value = row ? getResolvedRowId(row.original, row.index) : undefined;
   props.onHover(e, row);
 }
 
-function onRowContextmenu(e: Event, row: TableRow<T>) {
+function onRowContextmenu(e: Event, row: DataTableRow<T>) {
   if (!props.onContextmenu) {
     return;
   }
@@ -939,27 +1097,31 @@ function onRowContextmenu(e: Event, row: TableRow<T>) {
   props.onContextmenu(e, row);
 }
 
-function getColumnStyles(column: Column<T>): Record<string, string> {
+function getColumnStyles(column: DataTableColumn<T>): Record<string, string> {
   const styles: Record<string, string> = {};
   const pinned = column.getIsPinned();
 
-  if (pinned === 'left' || pinned === 'right') {
-    const fnName = pinned === 'left' ? 'getStart' : 'getAfter';
-    styles[pinned] = `${column[fnName](pinned)}px`;
+  if (pinned === 'start') {
+    styles.insetInlineStart = `${column.getStart(pinned)}px`;
+  }
+  else if (pinned === 'end') {
+    styles.insetInlineEnd = `${column.getAfter(pinned)}px`;
   }
 
   return styles;
 }
 
-function getColumnPinningSection(column: Column<T>) {
-  if (!column.getIsPinned()) {
+function getColumnPinningSection(column: DataTableColumn<T>) {
+  const position = column.getIsPinned();
+  if (!position) {
     return undefined;
   }
 
-  const left = tableApi.getState().columnPinning.left ?? [];
-  const position = left.length > 0 && left.includes(column.id) ? 'left' : 'right';
-
   return column.getIsFirstColumn(position) ? 'start' : column.getIsLastColumn(position) ? 'end' : 'middle';
+}
+
+function getColumnMeta(column: DataTableColumn<T>): DataTableColumnMeta<T> | undefined {
+  return column.columnDef.meta as DataTableColumnMeta<T> | undefined;
 }
 
 function resolveValue<T, Arg = undefined>(prop: T | ((arg: Arg) => T), arg?: Arg): T | undefined {
@@ -968,6 +1130,18 @@ function resolveValue<T, Arg = undefined>(prop: T | ((arg: Arg) => T), arg?: Arg
     return prop(arg);
   }
   return prop;
+}
+
+function resolveHeaderClass(header: DataTableHeader<T>) {
+  const isDragged = draggedColumnId.value === header.column.id;
+  const isDropped = dropTargetColumnId.value === header.column.id && draggedColumnId.value !== header.column.id;
+  return [
+    isColumnReorderable(header) && 'p-0 transition-[opacity,background-color,box-shadow] duration-200',
+    isDragged && 'opacity-40',
+    isDropped && 'bg-primary/10 ring-1 ring-primary/30',
+    props.ui?.th,
+    resolveValue(getColumnMeta(header.column)?.class?.th, header)
+  ];
 }
 
 function getHeaderLabel(column: DataTableColumnDef<T>) {
@@ -990,6 +1164,7 @@ watch(() => props.items, () => {
 
 defineExpose({
   api: tableApi,
+  selectedRows,
   tableRef,
   wrapperRef
 });
@@ -1011,15 +1186,14 @@ onMounted(() => {
         :data-selectable="!!props.onSelect || !!props.onHover || !!props.onContextmenu"
         :data-expanded="row.getIsExpanded()"
         :data-pinned="row.getIsPinned() || undefined"
+        :data-hovered="hoveredRowId === getResolvedRowId(row.original, row.index)"
         :role="props.onSelect ? 'button' : undefined"
         :tabindex="props.onSelect ? 0 : undefined"
         data-slot="tr"
-        :class="uiTable.tr({ class: [props.ui?.tr, resolveValue(tableApi.options.meta?.class?.tr, row)] })"
-        :style="[
-          resolveValue(tableApi.options.meta?.style?.tr, row),
-          style
-        ]"
+        :class="uiTable.tr({ class: [props.ui?.tr, resolveValue(meta.class?.tr, row)] })"
+        :style="[resolveValue(meta.style?.tr, row), style]"
         @click="onRowSelect($event, row)"
+        @keydown.self.exact.enter.space="onRowSelect($event, row)"
         @pointerenter="onRowHover($event, row)"
         @pointerleave="onRowHover($event, null)"
         @contextmenu="onRowContextmenu($event, row)"
@@ -1027,25 +1201,24 @@ onMounted(() => {
         <td
           v-for="cell in row.getVisibleCells()"
           :key="cell.id"
-          :colspan="resolveValue(cell.column.columnDef.meta?.colspan?.td, cell)"
-          :rowspan="resolveValue(cell.column.columnDef.meta?.rowspan?.td, cell)"
+          :colspan="resolveValue(getColumnMeta(cell.column)?.colspan?.td, cell)"
+          :rowspan="resolveValue(getColumnMeta(cell.column)?.rowspan?.td, cell)"
           data-slot="td"
           :data-label="getHeaderLabel(cell.column)"
           :data-pinned="cell.column.getIsPinned()"
           :data-pinned-index="cell.column.getIsPinned() ? cell.column.getPinnedIndex() : undefined"
           :data-pinned-section="getColumnPinningSection(cell.column)"
           :class="uiTable.td({
-            class: [props.ui?.td, resolveValue(cell.column.columnDef.meta?.class?.td, cell)],
+            class: [props.ui?.td, resolveValue(getColumnMeta(cell.column)?.class?.td, cell)],
             pinned: !!cell.column.getIsPinned()
           })"
           :style="[
             getColumnStyles(cell.column),
-            resolveValue(cell.column.columnDef.meta?.style?.td, cell)
+            resolveValue(getColumnMeta(cell.column)?.style?.td, cell)
           ]"
         >
           <FlexRender
-            :render="cell.column.columnDef.cell"
-            :props="cell.getContext()"
+            :cell="cell"
           />
         </td>
       </tr>
@@ -1097,19 +1270,46 @@ onMounted(() => {
               :data-pinned="header.column.getIsPinned()"
               :data-pinned-index="header.column.getIsPinned() ? header.column.getPinnedIndex() : undefined"
               :data-pinned-section="getColumnPinningSection(header.column)"
+              :data-column-order-id="isColumnReorderable(header) ? header.column.id : undefined"
+              :data-reorderable="isColumnReorderable(header) || undefined"
+              :data-dragging="draggedColumnId === header.column.id || undefined"
+              :data-drop-target="dropTargetColumnId === header.column.id && draggedColumnId !== header.column.id || undefined"
               :class="uiTable.th({
-                class: [props.ui?.th, resolveValue(header.column.columnDef.meta?.class?.th, header)],
+                class: resolveHeaderClass(header),
                 pinned: !!header.column.getIsPinned()
               })"
               :style="[
                 getColumnStyles(header.column),
-                resolveValue(header.column.columnDef.meta?.style?.th, header)
+                resolveValue(getColumnMeta(header.column)?.style?.th, header)
               ]"
+              @dragstart="isColumnReorderable(header) && onColumnDragStart($event, header.column.id)"
+              @dragenter="onColumnDragEnter($event, header)"
+              @dragover="onColumnDragOver($event, header)"
+              @drop="isColumnReorderable(header) && onColumnDrop($event, header.column.id)"
+              @dragend="resetColumnReorderState"
             >
+              <div
+                v-if="isColumnReorderable(header)"
+                class="flex h-full w-full items-center gap-2"
+                :class="props.variant === 'separated' ? 'px-4 py-1' : 'px-4 py-3.5'"
+              >
+                <UButton
+                  class="cursor-grab active:cursor-grabbing"
+                  v-bind="columnReorderingOptions?.handleProps"
+
+                  :draggable="true"
+                  :aria-label="`Move ${getColumnReorderLabel(header)} column`"
+                  @click.stop
+                />
+
+                <div class="min-w-0 flex-1">
+                  <FlexRender :header="header" />
+                </div>
+              </div>
+
               <FlexRender
-                v-if="!header.isPlaceholder"
-                :render="header.column.columnDef.header"
-                :props="header.getContext()"
+                v-else-if="!header.isPlaceholder"
+                :header="header"
               />
             </th>
           </tr>
@@ -1241,8 +1441,7 @@ onMounted(() => {
             >
               <FlexRender
                 v-if="!header.isPlaceholder"
-                :render="header.column.columnDef.footer"
-                :props="header.getContext()"
+                :footer="header"
               />
             </th>
           </tr>
@@ -1267,7 +1466,7 @@ onMounted(() => {
             Rows per page
           </div>
           <USelect
-            :model-value="tableApi?.getState().pagination.pageSize"
+            :model-value="paginationState.pageSize"
             :items="perPages"
             @update:model-value="onChangePerPage"
           />
@@ -1275,8 +1474,8 @@ onMounted(() => {
       </div>
 
       <UPagination
-        :page="(tableApi?.getState().pagination.pageIndex || 0) + 1"
-        :items-per-page="tableApi?.getState().pagination.pageSize"
+        :page="paginationState.pageIndex + 1"
+        :items-per-page="paginationState.pageSize"
         :total="tableApi?.getRowCount() || 0"
         :ui="props.uiPagination"
         class="flex justify-end"

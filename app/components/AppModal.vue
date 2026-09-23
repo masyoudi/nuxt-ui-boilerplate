@@ -1,9 +1,9 @@
 <script lang="ts">
 import type { ButtonProps, EmitsToProps, IconProps, LinkPropsKeys } from '@nuxt/ui';
-import { usePortal } from '#ui/composables';
+import { useLocale, usePortal } from '#ui/composables';
 import { fieldGroupInjectionKey } from '@nuxt/ui/composables/useFieldGroup';
 import { createReusableTemplate, reactivePick } from '@vueuse/core';
-import type { DialogRootProps, DialogContentProps, DialogContentEmits, PointerDownOutsideEvent } from 'reka-ui';
+import type { DialogRootEmits, DialogContentProps, DialogContentEmits, PointerDownOutsideEvent } from 'reka-ui';
 import {
   DialogRoot,
   DialogClose,
@@ -14,7 +14,7 @@ import {
   DialogOverlay,
   VisuallyHidden,
   DialogContent,
-  useForwardProps
+  useForwardPropsEmits
 } from 'reka-ui';
 import { tv } from 'tailwind-variants';
 import { pointerDownOutside } from '#ui/utils/overlay';
@@ -23,7 +23,24 @@ import theme from '~/theme/modal';
 
 type ModalTheme = typeof theme;
 
-export interface AppModalProps extends Omit<DialogRootProps, 'open'> {
+const modalTheme = tv(theme);
+
+type ModalUI = ReturnType<typeof modalTheme>;
+
+export interface AppModalProps {
+  /** The open state of the dialog when it is initially rendered. Use when you do not need to control its open state. */
+  defaultOpen?: boolean;
+  /**
+   * The modality of the dialog When set to `true`, <br>
+   * interaction with outside elements will be disabled and only dialog content will be visible to screen readers.
+   */
+  modal?: boolean;
+  /**
+   * When set to `false`, the dialog content will not be unmounted when closed, but instead hidden with CSS. <br>
+   * Useful for SEO or when you want to improve performance by not remounting the component on every open.
+   * @defaultValue true
+   */
+  unmountOnHide?: boolean;
   title?: string;
   description?: string;
   /** The content of the modal. */
@@ -74,8 +91,10 @@ export interface AppModalProps extends Omit<DialogRootProps, 'open'> {
   ui?: Partial<ModalTheme['slots']>;
 }
 
-export interface AppModalEmits {
+export interface AppModalEmits extends DialogRootEmits {
+  'leave': [];
   'after:leave': [];
+  'enter': [];
   'after:enter': [];
   'close:prevent': [];
 }
@@ -92,7 +111,7 @@ export interface AppModalSlots {
   title?(): VNode[];
   description?(): VNode[];
   actions?(): VNode[];
-  close?(): VNode[];
+  close?(props: { ui: ModalUI }): VNode[];
   body?(props: Pick<SlotProps, 'close'>): VNode[];
   footer?(props: Pick<SlotProps, 'close'>): VNode[];
 }
@@ -102,7 +121,7 @@ export interface AppModalSlots {
 const props = withDefaults(defineProps<AppModalProps>(), {
   portal: true,
   overlay: true,
-  scrollable: true,
+  scrollable: false,
   transition: true,
   close: true,
   closeIcon: 'lucide:x',
@@ -113,9 +132,13 @@ const emits = defineEmits<AppModalEmits>();
 const slots = defineSlots<AppModalSlots>();
 const open = defineModel<boolean>({ required: false, default: false });
 
-const rootProps = useForwardProps(reactivePick(props, 'defaultOpen', 'modal'));
+const rootProps = useForwardPropsEmits(
+  reactivePick(props, 'defaultOpen', 'modal', 'unmountOnHide'),
+  emits
+);
 const portalProps = usePortal(toRef(() => props.portal));
 const contentProps = toRef(() => props.content);
+const { t } = useLocale();
 
 const CLOSE_EVENTS = ['interactOutside', 'escapeKeyDown'] as const;
 const contentEvents = computed(() => {
@@ -136,9 +159,7 @@ const contentEvents = computed(() => {
 });
 
 const uiTheme = computed(() => {
-  const _theme = tv(theme);
-
-  return _theme({
+  return modalTheme({
     transition: props.transition,
     fullscreen: props.fullscreen,
     overlay: props.overlay,
@@ -163,7 +184,7 @@ const [DefineContentTemplate, ReuseContentTemplate] = createReusableTemplate();
 
 <template>
   <DialogRoot
-    v-slot="{ close: onClose }"
+    v-slot="{ open: isOpen, close: onClose }"
     v-model:open="open"
     v-bind="rootProps"
   >
@@ -172,8 +193,10 @@ const [DefineContentTemplate, ReuseContentTemplate] = createReusableTemplate();
         data-slot="content"
         :class="uiTheme.content({ class: [props.class, props.ui?.content] })"
         v-bind="contentProps"
-        @after-enter="emits('after:enter')"
-        @after-leave="emits('after:leave')"
+        @enter="!props.scrollable && emits('enter')"
+        @after-enter="!props.scrollable && emits('after:enter')"
+        @leave="!props.scrollable && emits('leave')"
+        @after-leave="!props.scrollable && emits('after:leave')"
         v-on="contentEvents"
       >
         <VisuallyHidden v-if="(!props.title && !slots.title) || (!props.description && !slots.description) || !!slots.default">
@@ -196,13 +219,18 @@ const [DefineContentTemplate, ReuseContentTemplate] = createReusableTemplate();
           v-if="!!slots.default && (props.close || !!slots.close)"
           as-child
         >
-          <slot name="close">
+          <slot
+            name="close"
+            :ui="uiTheme"
+          >
             <UButton
               v-if="props.close"
               :icon="props.closeIcon"
               color="neutral"
               variant="ghost"
+              :aria-label="t('modal.close')"
               v-bind="(typeof props.close === 'object' ? props.close : {})"
+              data-slot="close"
               :class="uiTheme.close({ class: props.ui?.close })"
             />
           </slot>
@@ -210,7 +238,7 @@ const [DefineContentTemplate, ReuseContentTemplate] = createReusableTemplate();
 
         <slot :close="onClose">
           <div
-            v-if="!!slots.header || (props.title || !!slots.title) || (props.description || !!slots.description)"
+            v-if="!!slots.header || (props.title || !!slots.title) || (props.description || !!slots.description) || (props.close || !!slots.close)"
             data-slot="header"
             :class="uiTheme.header({ class: props.ui?.header })"
           >
@@ -249,13 +277,18 @@ const [DefineContentTemplate, ReuseContentTemplate] = createReusableTemplate();
                 v-if="props.close || !!slots.close"
                 as-child
               >
-                <slot name="close">
+                <slot
+                  name="close"
+                  :ui="uiTheme"
+                >
                   <UButton
                     v-if="props.close"
                     :icon="props.closeIcon"
                     color="neutral"
                     variant="ghost"
+                    :aria-label="t('modal.close')"
                     v-bind="(typeof props.close === 'object' ? props.close : {})"
+                    data-slot="close"
                     :class="uiTheme.close({ class: props.ui?.close })"
                   />
                 </slot>
@@ -294,16 +327,23 @@ const [DefineContentTemplate, ReuseContentTemplate] = createReusableTemplate();
     >
       <slot
         name="trigger"
-        :open="open"
+        :open="isOpen"
       />
     </DialogTrigger>
 
-    <DialogPortal v-bind="portalProps">
+    <DialogPortal
+      v-bind="portalProps"
+      :force-mount="portalProps.disabled && props.unmountOnHide === false || undefined"
+    >
       <FieldGroupReset>
         <template v-if="props.scrollable">
           <DialogOverlay
             data-slot="overlay"
             :class="uiTheme.overlay({ class: props.ui?.overlay })"
+            @enter="emits('enter')"
+            @after-enter="emits('after:enter')"
+            @leave="emits('leave')"
+            @after-leave="emits('after:leave')"
           >
             <ReuseContentTemplate />
           </DialogOverlay>

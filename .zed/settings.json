@@ -1,0 +1,22 @@
+{
+  "prettier": {
+    "allowed": false
+  },
+  "language_servers": ["!prettier", "..."],
+  "languages": {
+    "Vue.js": {
+      "format_on_save": "on",
+      "formatter": "none",
+      "code_actions_on_format": {
+        "source.fixAll.eslint": true
+      }
+    },
+    "TypeScript": {
+      "format_on_save": "on",
+      "formatter": "none",
+      "code_actions_on_format": {
+        "source.fixAll.eslint": true
+      }
+    }
+  }
+}

@@ -11,7 +11,6 @@ useHead({
 const datePicker = ref('');
 const datePickerRange = ref([]);
 const datetimePicker = ref('');
-const timePicker = ref('');
 </script>
 
 <template>
@@ -21,8 +20,11 @@ const timePicker = ref('');
         label="Datepicker"
         class="mb-5"
       >
-        <DatePicker v-model="datePicker" />
+        <DatePicker
+          v-model="datePicker"
+        />
       </UFormField>
+
       <UFormField
         label="Datepicker Range"
         class="mb-5"
@@ -32,27 +34,12 @@ const timePicker = ref('');
           range
         />
       </UFormField>
+
       <UFormField
         label="Datetimepicker"
         class="mb-5"
       >
-        <DatetimePicker
-          v-model="datetimePicker"
-          icon="lucide:calendar"
-        />
-      </UFormField>
-      <UFormField
-        label="Timepicker"
-        class="mb-5"
-      >
-        <UFieldGroup class="w-full">
-          <UButton label="Timepicker" />
-          <TimePicker
-            v-model="timePicker"
-            class="grow shrink"
-            color="error"
-          />
-        </UFieldGroup>
+        <DatetimePicker v-model="datetimePicker" />
       </UFormField>
     </UCard>
   </div>
