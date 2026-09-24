@@ -6,7 +6,6 @@ async function handler(event: H3Event) {
     const session = await useSession(event, authSessionConfig);
 
     await session.clear();
-
     const data = {
       success: true
     };

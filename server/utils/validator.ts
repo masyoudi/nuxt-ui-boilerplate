@@ -1,6 +1,7 @@
 import type { z } from 'zod/v4';
 import { ZodError } from 'zod/v4';
 import type { H3Error, H3Event } from 'h3';
+import { getQuery } from 'h3';
 import { parseBody } from './body';
 import type { ParseBodyOptions } from './body';
 
@@ -15,6 +16,8 @@ interface Options<T extends z.ZodType | Promise<z.ZodType>> {
 interface ValidateBodyOptions<T extends z.ZodType | Promise<z.ZodType>> extends Omit<Options<T>, 'source' | 'event'> {
   parserOptions?: ParseBodyOptions;
 }
+
+type ValidateQueryOptions<T extends z.ZodType | Promise<z.ZodType>> = Omit<Options<T>, 'source' | 'event'>;
 
 type ErrorResult = {
   name: string;
@@ -117,6 +120,28 @@ export async function useValidateBody<T extends Promise<z.ZodType>>(event: H3Eve
   catch {
     // noop
   }
+
+  return await useValidator<T>({ source, error, event, ...options });
+}
+
+/**
+ * Validate and parse request query parameters
+ * @param event - H3 event
+ * @param options - Validation options
+ * @returns Parsed query and validation result
+ */
+export async function useValidateQuery<T extends z.ZodType | Promise<z.ZodType>>(
+  event: H3Event,
+  options: ValidateQueryOptions<T>
+): Promise<ReturnValue<T>>;
+
+export async function useValidateQuery<T extends Promise<z.ZodType>>(event: H3Event, options: ValidateQueryOptions<T>) {
+  const source = getQuery(event);
+  const error: Partial<H3Error> = {
+    statusCode: 400,
+    statusMessage: 'Bad Request',
+    message: 'Invalid query parameters'
+  };
 
   return await useValidator<T>({ source, error, event, ...options });
 }

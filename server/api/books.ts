@@ -1,23 +1,13 @@
 import type { H3Event } from 'h3';
-import { faker } from '@faker-js/faker';
+import { listBooksQuerySchema } from '~~/server/domains/library/books/schema';
+import service from '~~/server/domains/library/books/service';
+import { parsePaginationQuery } from '~~/server/utils/pagination';
 
 async function handler(event: H3Event) {
-  const q = getQuery(event);
-  const perPage = (Number.parseInt(String(q.perpage)));
-  const data = [...Array(!Number.isNaN(perPage) ? perPage : 10)].map(() => ({
-    id: faker.string.uuid(),
-    title: faker.book.title(),
-    author: faker.book.author(),
-    series: faker.book.series(),
-    genre: faker.book.genre(),
-    format: faker.book.format(),
-    publisher: faker.book.publisher()
-  }));
+  const query = await parsePaginationQuery(event, listBooksQuerySchema);
+  const result = await service.getAll(query);
 
-  return {
-    data,
-    total: 100
-  };
+  return result;
 }
 
 export default defineEventHandler({

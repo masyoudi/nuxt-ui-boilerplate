@@ -1,20 +1,13 @@
 import type { H3Event } from 'h3';
-import { faker } from '@faker-js/faker';
+import { listTasksQuerySchema } from '~~/server/domains/work-management/tasks/schema';
+import service from '~~/server/domains/work-management/tasks/service';
+import { parsePaginationQuery } from '~~/server/utils/pagination';
 
 async function handler(event: H3Event) {
-  const q = getQuery(event);
-  const page = Number.parseInt(String(q.page)) || 1;
-  const perPage = Number.parseInt(String(q.perpage)) || 10;
-  const data = [...Array(!Number.isNaN(perPage) ? perPage : 10)].map((_, i) => ({
-    id: page <= 1 ? (i + 1) : ((page - 1) * perPage) + (i + 1),
-    task: faker.word.words(),
-    description: faker.lorem.paragraph(),
-    created_at: faker.date.recent()
-  }));
+  const query = await parsePaginationQuery(event, listTasksQuerySchema);
+  const result = await service.getAll(query);
 
-  return {
-    data
-  };
+  return result;
 }
 
 export default defineEventHandler({
