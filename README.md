@@ -1,42 +1,62 @@
-# Dashboard Boilerplate with Nuxt v4 + Nuxt UI v4
+# Nuxt UI Dashboard Template
 
-SSR version in [here](https://github.com/masyoudi/nuxt-ui-boilerplate/tree/ssr)
+A reusable dashboard starter built with Nuxt and Nuxt UI. It includes common application-shell components, form examples, data tables, authentication scaffolding and server API examples.
 
-![Screenshot](https://github.com/masyoudi/nuxt-ui-boilerplate/blob/master/screenshot.png?raw=true)
+The included pages and mock APIs are demonstrations only. They are not intended to prescribe a production domain model or backend contract.
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+![Dashboard screenshot](https://github.com/masyoudi/nuxt-ui-boilerplate/blob/master/screenshot.png?raw=true)
+
+A Server-side rendering variant is available on the [`ssr` branch](https://github.com/masyoudi/nuxt-ui-boilerplate/tree/ssr).
+
+## Features
+
+- Nuxt application structure under `app/`.
+- Nuxt UI components and centralized theme customization.
+- Zod validation.
+
+## Requirements
+
+- Node.js supported by the Nuxt version declared in `package.json`.
+- pnpm using the version declared in the `packageManager` field.
 
 ## Setup
 
-Make sure to install dependencies:
+Install dependencies:
 
 ```bash
 pnpm install
 ```
 
-Create config file `.env` under `/config` directory
+Create the local environment file:
 
-## Development Server
+```bash
+cp config/example.env config/.env
+```
 
-Start the development server on `http://localhost:3000`:
+Start the development server:
 
 ```bash
 pnpm dev
 ```
 
-## Production
+The host and port are read from `config/.env`.
 
-Build the application for production:
+## Commands
 
 ```bash
+pnpm dev
 pnpm build
-
-```
-
-Locally preview production build:
-
-```bash
 pnpm preview
+pnpm generate
+pnpm lint
+pnpm lint:fix
+pnpm exec vue-tsc --noEmit --pretty false
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+## Project structure
+
+```text
+app/             Vue pages, layouts, components, composables, themes, and client utilities
+shared/          Runtime-neutral types and utilities
+config/          Environment example and theme generation configuration
+```
