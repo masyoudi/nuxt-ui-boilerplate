@@ -1,6 +1,6 @@
 <script setup lang="ts">
 useHead({
-  titleTemplate: '%s | NuxtApp'
+  titleTemplate: '%s · NuxtApp'
 });
 
 const toast = useToast();

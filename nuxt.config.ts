@@ -27,9 +27,12 @@ export default defineNuxtConfig({
 
   srcDir: 'app/',
   serverDir: 'server/',
-
   future: {
     compatibilityVersion: 4
+  },
+
+  experimental: {
+    routeTypedFetch: true
   },
   compatibilityDate: '2024-11-01',
 

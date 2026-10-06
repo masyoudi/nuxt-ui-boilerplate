@@ -5,9 +5,12 @@ import { parsePaginationQuery } from '~~/server/utils/pagination';
 
 async function handler(event: H3Event) {
   const query = await parsePaginationQuery(event, listFakerDataQuerySchema);
-  const result = await service.getAll(query);
+  const { data, total } = await service.getAll(query);
 
-  return result;
+  return {
+    data,
+    total
+  };
 }
 
 export default defineEventHandler({

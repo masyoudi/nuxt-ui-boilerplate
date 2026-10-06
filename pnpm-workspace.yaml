@@ -4,5 +4,3 @@ allowBuilds:
   simple-git-hooks: false
   unrs-resolver: false
   vue-demi: false
-minimumReleaseAgeExclude:
-  - '@nuxt/ui@4.11.2'
