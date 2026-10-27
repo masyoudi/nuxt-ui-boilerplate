@@ -89,7 +89,6 @@ export default defineNuxtConfig({
         '@vueuse/components',
         '@unovis/ts',
         '@unovis/vue',
-        'chroma-js',
         'object-to-formdata',
         'tailwind-variants',
         'theme-colors',

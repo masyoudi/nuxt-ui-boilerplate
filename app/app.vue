@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getColors } from 'theme-colors';
-import chroma from 'chroma-js';
+import { oklch, formatCss } from 'culori';
 
 useHead({
   titleTemplate: '%s | NuxtApp'
@@ -34,9 +34,9 @@ appToastBus.on('clear', () => {
 });
 
 async function setThemeColor(value: string) {
-  document.documentElement.style.setProperty(`--color-primary`, `${chroma(value).css('oklch')}`);
+  document.documentElement.style.setProperty(`--color-primary`, `${formatCss(oklch(value))}`);
   Object.entries(getColors(value)).forEach(([key, color]) => {
-    document.documentElement.style.setProperty(`--color-primary-${key}`, `${chroma(color).css('oklch')}`);
+    document.documentElement.style.setProperty(`--color-primary-${key}`, `${formatCss(oklch(color))}`);
   });
 }
 
